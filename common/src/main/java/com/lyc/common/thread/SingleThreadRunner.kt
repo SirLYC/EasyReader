@@ -22,7 +22,7 @@ class SingleThreadRunner @JvmOverloads constructor(
         private const val TAG = "SingleThreadRunner"
     }
 
-    private val thread = HandlerThread(name)
+    private val thread = HandlerThread("STR-${name}")
 
     private val stateLock = ReentrantReadWriteLock()
 
@@ -142,6 +142,7 @@ class SingleThreadRunner @JvmOverloads constructor(
 
             thread.start()
             handler = Handler(thread.looper, callback)
+            started = true
         }
     }
 

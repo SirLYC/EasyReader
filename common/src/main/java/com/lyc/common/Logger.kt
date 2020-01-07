@@ -7,7 +7,10 @@ import android.os.Message
 import android.util.Log
 import com.lyc.common.thread.SingleThreadRunner
 import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintWriter
 import java.text.SimpleDateFormat
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.getOrSet
 
@@ -108,29 +111,84 @@ class Logger private constructor() : Handler.Callback {
     var outputToConsole = true
     @Volatile
     var outputToFile = true
+    @Volatile
+    var logFileName: String = "logger"
+        set(value) {
+            if (value.isNotBlank()) {
+                field = value
+            }
+        }
 
     private val fileRunner =
-        SingleThreadRunner("LYC-Logs", instance)
+        SingleThreadRunner("Logger", this)
     private val pendingLogEntry = CopyOnWriteArrayList<LogEntry>()
+    private val specialTagMap = ConcurrentHashMap<String, String>()
 
-    fun init(context: Context, outputToConsole: Boolean = true, outputToFile: Boolean = true) {
+    fun init(
+        context: Context,
+        outputToConsole: Boolean = true,
+        outputToFile: Boolean = true,
+        logFileName: String = ""
+    ) {
         appContext = context.applicationContext
         this.outputToFile = outputToFile
         this.outputToConsole = outputToConsole
+        if (logFileName.isNotBlank()) {
+            this.logFileName = logFileName
+        }
+    }
+
+    fun addSpecialTagForFile(logTag: String, name: String) {
+        instance.specialTagMap[logTag] = name
     }
 
     @SuppressLint("SimpleDateFormat")
     private fun doWriteFile() {
-        appContext?.getExternalFilesDir(".Logs")?.let { dirPath ->
-            File(dirPath, "lyc-log").printWriter().let { writer ->
-                val list = ArrayList(pendingLogEntry)
-                val format = timeFormatThreadLocal.getOrSet {
-                    SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S ")
-                }
-                for (logEntry in list) {
+        val specialMapSnapshot = HashMap(specialTagMap)
+        val format = timeFormatThreadLocal.getOrSet {
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S ")
+        }
+        val specialLogs = HashMap<String, MutableList<LogEntry>>()
+
+        val logEntriesToRemove = mutableListOf<LogEntry>()
+
+        appendToLogFile("${logFileName}.log") { writer ->
+            val list = ArrayList(pendingLogEntry)
+            for (logEntry in list) {
+                val specialName = specialMapSnapshot[logEntry.tag]
+                if (specialName?.isNotEmpty() == true) {
+                    specialLogs.getOrPut(specialName, { arrayListOf() }).add(logEntry)
+                } else {
                     writer.println("${format.format(logEntry.time)}|${logEntry}")
+                    logEntriesToRemove.add(logEntry)
                 }
             }
+        }
+
+        specialLogs.forEach { entry ->
+            appendToLogFile("${logFileName}-${entry.key}.log") { writer ->
+                entry.value.forEach { logEntry ->
+                    writer.println("${format.format(logEntry.time)}|${logEntry}")
+                    logEntriesToRemove.add(logEntry)
+                }
+            }
+        }
+
+        pendingLogEntry.removeAll(logEntriesToRemove)
+    }
+
+    private inline fun appendToLogFile(filename: String, action: (writer: PrintWriter) -> Unit) {
+        try {
+            appContext?.getExternalFilesDir(".logger")?.let { dirPath ->
+                if ((dirPath.exists() && dirPath.isDirectory) || dirPath.mkdirs()) {
+                    PrintWriter(FileOutputStream(File(dirPath, filename), true)).use {
+                        action(it)
+                        it.flush()
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            d("Logger", ex = t)
         }
     }
 
