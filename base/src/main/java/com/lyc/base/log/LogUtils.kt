@@ -35,8 +35,11 @@ class LogUtils {
         }
 
         private fun initLogger() {
-            Logger.singleInstance()
-                .init(ReaderApplication.appContext(), BuildConfig.DEBUG, BuildConfig.LOG_FILE)
+            Logger.singleInstance().apply {
+                init(ReaderApplication.appContext())
+                outputToConsole = BuildConfig.LOG_CONSOLE
+                outputToFile = BuildConfig.LOG_FILE
+            }
         }
 
         fun d(tag: String, msg: String? = null, ex: Throwable? = null) {
@@ -60,6 +63,7 @@ class LogUtils {
         }
 
         fun addSpecialNameForTag(tag: String, name: String) {
+            initLoggerIfNeeded()
             Logger.singleInstance().addSpecialTagForFile(tag, name)
         }
     }

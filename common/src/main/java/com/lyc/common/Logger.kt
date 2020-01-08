@@ -125,17 +125,9 @@ class Logger private constructor() : Handler.Callback {
     private val specialTagMap = ConcurrentHashMap<String, String>()
 
     fun init(
-        context: Context,
-        outputToConsole: Boolean = true,
-        outputToFile: Boolean = true,
-        logFileName: String = ""
+        context: Context
     ) {
         appContext = context.applicationContext
-        this.outputToFile = outputToFile
-        this.outputToConsole = outputToConsole
-        if (logFileName.isNotBlank()) {
-            this.logFileName = logFileName
-        }
     }
 
     fun addSpecialTagForFile(logTag: String, name: String) {

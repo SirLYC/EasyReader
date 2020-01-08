@@ -1,10 +1,19 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+
+final String FIELD_LOG_FILE = "LOG_FILE"
+final String FIELD_LOG_CONSOLE = "LOG_CONSOLE"
+final String KEY_LOG_FILE = "logToFile"
+final String KEY_LOG_CONSOLE = "logToConsole"
+
+Properties commonProp = new Properties()
+commonProp.load(new FileInputStream(new File(rootDir, "common.properties")))
+println(commonProp)
+
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
-
 
     defaultConfig {
         minSdkVersion 19
@@ -15,13 +24,15 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
 
-        buildConfigField("Boolean", "LOG_FILE", 'true')
+        buildConfigField("Boolean", FIELD_LOG_FILE, commonProp.get(KEY_LOG_FILE))
+        buildConfigField("Boolean", FIELD_LOG_CONSOLE, commonProp.get(KEY_LOG_CONSOLE))
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("Boolean", FIELD_LOG_CONSOLE, "false")
         }
     }
 
