@@ -10,8 +10,15 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <EditText
+            android:id="@+id/edit_test_link"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="跳转链接"
+            android:text="lycer://home" />
+
         <Button
-            android:id="@+id/bt_test_link_main"
+            android:id="@+id/bt_test_link"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="测试链接跳转主页" />

@@ -21,9 +21,8 @@
             <!--主页-->
             <intent-filter>
                 <data
-                    android:host="home"
+                    android:host="*"
                     android:scheme="lycer" />
-
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />

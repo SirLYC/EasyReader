@@ -1,11 +1,9 @@
 package com.lyc.base.log
 
-import android.os.Looper
 import com.lyc.base.BuildConfig
 import com.lyc.base.ReaderApplication
+import com.lyc.base.waitFinishOnMain
 import com.lyc.common.Logger
-import com.lyc.common.thread.ExecutorFactory
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -28,16 +26,9 @@ class LogUtils {
                 if (init) {
                     return
                 }
-                if (Looper.myLooper() == Looper.getMainLooper()) {
+                waitFinishOnMain(Runnable {
                     initLogger()
-                } else {
-                    val latch = CountDownLatch(1)
-                    ExecutorFactory.getExecutorByType(ExecutorFactory.MAIN).execute {
-                        initLogger()
-                        latch.countDown()
-                    }
-                    latch.await()
-                }
+                })
 
                 init = true
             }

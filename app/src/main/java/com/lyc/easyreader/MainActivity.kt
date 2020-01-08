@@ -1,19 +1,33 @@
 package com.lyc.easyreader
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import android.widget.FrameLayout
 import com.lyc.base.log.LogUtils
+import com.lyc.base.ui.BaseActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     companion object {
         const val TAG = "MainActivity"
+
+        const val FRAGMENT_CONTAINER_ID = 1
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    private lateinit var container: FrameLayout
+
+    override fun afterBaseOnCreate(savedInstanceState: Bundle?) {
+        container = FrameLayout(this)
+        container.id = FRAGMENT_CONTAINER_ID
+        setContentView(container)
+
+        container = FrameLayout(this)
+        container.id = FRAGMENT_CONTAINER_ID
+        container.setBackgroundColor(Color.BLACK)
+
+        setContentView(container)
+
         LogUtils.d(
             TAG,
             "[MainActivity] OnCreate...bundle=${savedInstanceState}, intent.data=${intent?.data}"

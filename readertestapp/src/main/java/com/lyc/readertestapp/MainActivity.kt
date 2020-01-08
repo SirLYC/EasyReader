@@ -13,10 +13,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        bt_test_link_main.setOnClickListener {
+        bt_test_link.setOnClickListener {
             val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse("lycer://home")
             try {
+                intent.data = Uri.parse(edit_test_link.text.toString())
                 startActivity(intent)
             } catch (e: Exception) {
                 Toast.makeText(this, "打开主页失败", Toast.LENGTH_SHORT).show()
