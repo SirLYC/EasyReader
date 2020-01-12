@@ -31,6 +31,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -45,8 +46,10 @@ public class InjectTransform extends Transform {
 
     private static final String MODULE_HOLDERS_CLASS_NAME = "com/lyc/appinject/ModuleApiHolders.class";
     private final Project project;
-    private Set<String> serviceClasses = new HashSet<>();
-    private Map<String, String> serviceImpClasses = new HashMap<>();
+    private final Set<String> serviceClasses = new HashSet<>();
+    private final Map<String, String> serviceImpClasses = new HashMap<>();
+    private final Set<String> extensionClasses = new HashSet<>();
+    private final Map<String, List<String>> extensionImpClasses = new HashMap<>();
 
     InjectTransform(Project project) {
         this.project = project;
@@ -122,7 +125,7 @@ public class InjectTransform extends Transform {
 
         checkCollectedInfo();
 
-        if (!serviceImpClasses.isEmpty()) {
+        if (!serviceImpClasses.isEmpty() || !extensionImpClasses.isEmpty()) {
             findModuleApiHoldersAndWrite(moduleApiHoldersJar, transformInvocation.getOutputProvider());
         } else {
             System.out.println("No need to write to API, just copy jar...");
@@ -163,11 +166,14 @@ public class InjectTransform extends Transform {
                 System.out.println("---------------- begin ServiceImpClassesMap ----------------");
                 System.out.println(serviceImpClasses);
                 System.out.println("---------------- end ServiceImpClassesMap ----------------");
+                System.out.println("---------------- begin ExtensionImpClassesMap ----------------");
+                System.out.println(extensionImpClasses);
+                System.out.println("---------------- end ExtensionImpClassesMap ----------------");
 
                 jarOutputStream.putNextEntry(zipEntry);
                 ClassReader classReader = new ClassReader(IOUtils.toByteArray(inputStream));
                 ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
-                InjectWriteClassVisitor cv = new InjectWriteClassVisitor(classWriter, serviceImpClasses);
+                InjectWriteClassVisitor cv = new InjectWriteClassVisitor(classWriter, serviceImpClasses, extensionImpClasses);
                 classReader.accept(cv, ClassReader.EXPAND_FRAMES);
                 byte[] code = classWriter.toByteArray();
                 jarOutputStream.write(code);
@@ -205,6 +211,19 @@ public class InjectTransform extends Transform {
         for (String serviceClass : serviceClasses) {
             if (!serviceImpClasses.containsKey(serviceClass)) {
                 project.getLogger().warn("Service " + serviceClass + " does not have any implement class.");
+            }
+        }
+
+        extensionImpClasses.forEach((key, value) -> {
+            if (!extensionClasses.contains(key)) {
+                throw new RuntimeException(key + " does not implement any interface with @Extension!");
+            }
+        });
+
+
+        for (String extensionClass : extensionClasses) {
+            if (!extensionImpClasses.containsKey(extensionClass)) {
+                project.getLogger().warn("Extension " + extensionClass + " does not have any implement class.");
             }
         }
     }
@@ -288,7 +307,7 @@ public class InjectTransform extends Transform {
     private void collectInfoFromClass(String name, byte[] classBytes) {
         if (acceptClassFileName(name)) {
             ClassReader classReader = new ClassReader(classBytes);
-            InjectCollectorClassVisitor cv = new InjectCollectorClassVisitor(serviceClasses, serviceImpClasses);
+            InjectCollectorClassVisitor cv = new InjectCollectorClassVisitor(serviceClasses, serviceImpClasses, extensionClasses, extensionImpClasses);
             classReader.accept(cv, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
         }
     }

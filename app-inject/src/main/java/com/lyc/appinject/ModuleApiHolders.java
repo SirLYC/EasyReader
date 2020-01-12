@@ -1,7 +1,7 @@
 package com.lyc.appinject;
 
-
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,9 +14,11 @@ class ModuleApiHolders {
     private static final Lock INSTANCE_LOCK = new ReentrantLock();
     private static volatile ModuleApiHolders instance;
     private Map<Class<?>, Class<?>> serviceClassMap = new HashMap<>();
+    private Map<Class<?>, List<Class<?>>> extensionMap = new HashMap<>();
 
     private ModuleApiHolders() {
-        initFields();
+        initServices();
+        initExtensions();
     }
 
     static ModuleApiHolders getInstance() {
@@ -35,11 +37,20 @@ class ModuleApiHolders {
     }
 
     // 插桩方法
-    private void initFields() {
+    private void initServices() {
 
+    }
+
+    // 插桩方法
+    private void initExtensions() {
+        List<Class<?>> list;
     }
 
     Class<?> getClassForService(Class<?> serviceClazz) {
         return serviceClassMap.get(serviceClazz);
+    }
+
+    List<Class<?>> getClassesForExtension(Class<?> extensionClazz) {
+        return extensionMap.get(extensionClazz);
     }
 }

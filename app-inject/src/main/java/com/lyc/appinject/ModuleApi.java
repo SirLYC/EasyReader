@@ -1,7 +1,10 @@
 package com.lyc.appinject;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -14,8 +17,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ModuleApi {
     private static final Lock INSTANCE_LOCK = new ReentrantLock();
     private volatile static ModuleApi instance;
-    private ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private ReadWriteLock serviceReadWriteLock = new ReentrantReadWriteLock();
     private Map<Class<?>, Object> serviceCache = new HashMap<>();
+
+    private ReadWriteLock extensionReadWriteLock = new ReentrantReadWriteLock();
+    private Map<Class<?>, List<?>> extensionCache = new HashMap<>();
 
     private ModuleApi() {
 
@@ -36,9 +42,10 @@ public class ModuleApi {
         return instance;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getService(Class<T> serviceClass) {
         Object serviceImp;
-        Lock readLock = readWriteLock.readLock();
+        Lock readLock = serviceReadWriteLock.readLock();
         try {
             readLock.lock();
             serviceImp = serviceCache.get(serviceClass);
@@ -47,7 +54,7 @@ public class ModuleApi {
         }
 
         if (serviceImp == null) {
-            Lock writeLock = readWriteLock.writeLock();
+            Lock writeLock = serviceReadWriteLock.writeLock();
             try {
                 writeLock.lock();
                 serviceImp = serviceCache.get(serviceClass);
@@ -70,5 +77,54 @@ public class ModuleApi {
         }
 
         return (T) serviceImp;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> List<T> getExtensions(Class<T> extensionClass) {
+        List<T> result = new ArrayList<>();
+        boolean hasCache;
+        Lock readLock = extensionReadWriteLock.readLock();
+        try {
+            readLock.lock();
+            List<?> extensionList = extensionCache.get(extensionClass);
+            hasCache = extensionList != null;
+            if (hasCache) {
+                for (Object o : extensionList) {
+                    result.add((T) o);
+                }
+            }
+        } finally {
+            readLock.unlock();
+        }
+
+        if (!hasCache) {
+            Lock writeLock = extensionReadWriteLock.writeLock();
+            try {
+                writeLock.lock();
+                List<?> extensionList = extensionCache.get(extensionClass);
+                hasCache = extensionList != null;
+                if (hasCache) {
+                    for (Object o : extensionList) {
+                        result.add((T) o);
+                    }
+                } else {
+                    List<Class<?>> classes = ModuleApiHolders.getInstance().getClassesForExtension(extensionClass);
+                    if (classes != null) {
+                        for (Class<?> clazz : classes) {
+                            try {
+                                result.add((T) clazz.getConstructor().newInstance());
+                            } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        extensionCache.put(extensionClass, Collections.unmodifiableList(result));
+                    }
+                }
+            } finally {
+                writeLock.unlock();
+            }
+        }
+
+        return result;
     }
 }

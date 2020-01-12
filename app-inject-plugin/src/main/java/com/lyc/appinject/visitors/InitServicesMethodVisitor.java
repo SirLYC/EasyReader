@@ -9,10 +9,10 @@ import java.util.Map;
 /**
  * Created by Liu Yuchuan on 2020/1/12.
  */
-class ModuleApiHoldersConstructorVisitor extends MethodVisitor implements Opcodes {
+class InitServicesMethodVisitor extends MethodVisitor implements Opcodes {
     private final Map<String, String> serviceImpClasses;
 
-    ModuleApiHoldersConstructorVisitor(MethodVisitor mv, Map<String, String> serviceImpClasses) {
+    InitServicesMethodVisitor(MethodVisitor mv, Map<String, String> serviceImpClasses) {
         super(ASM6, mv);
         this.serviceImpClasses = serviceImpClasses;
     }
