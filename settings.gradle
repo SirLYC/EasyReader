@@ -1,2 +1,2 @@
-include ':app', ':common', ':base', ':readertestapp'
+include ':app', ':common', ':base', ':readertestapp', ':app-inject-plugin', ':app-inject'
 rootProject.name='EasyReader'
