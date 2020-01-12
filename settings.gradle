@@ -1,2 +1,8 @@
-include ':app', ':common', ':base', ':readertestapp', ':app-inject-plugin', ':app-inject'
-rootProject.name='EasyReader'
+include ':app', ':common', ':base', ':app-inject'
+rootProject.name = 'EasyReader'
+
+// 这个是app-inject的gradle插件工程
+// 平常调试没必要打开
+//include ':app-inject-plugin'
+// 平常不用可以关掉
+//include ':readertestapp'
