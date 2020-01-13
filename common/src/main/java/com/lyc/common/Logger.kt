@@ -32,11 +32,10 @@ class Logger private constructor() : Handler.Callback {
 
         private val timeFormatThreadLocal = ThreadLocal<SimpleDateFormat>()
 
-        private val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        @JvmStatic
+        val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
             Logger()
         }
-
-        fun singleInstance() = instance
 
         private fun Int.level2String() = when (this) {
             LEVEL_DEBUG -> "DEBUG"
