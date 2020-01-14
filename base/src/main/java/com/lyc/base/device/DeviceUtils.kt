@@ -7,6 +7,7 @@ import com.lyc.base.ReaderApplication
 import com.lyc.base.log.LogUtils
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.math.roundToInt
 
 /**
  * Created by Liu Yuchuan on 2020/1/8.
@@ -44,4 +45,34 @@ fun Window?.statusBarBlackText(isBlack: Boolean) {
                 if (isBlack) View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR else View.SYSTEM_UI_FLAG_VISIBLE
         }
     }
+}
+
+fun dp2px(dpVal: Int): Int {
+    val resources = ReaderApplication.appContext().resources
+    return (dpVal * resources.displayMetrics.density).roundToInt()
+}
+
+fun dp2pxf(dpVal: Float): Float {
+    val resources = ReaderApplication.appContext().resources
+    return dpVal * resources.displayMetrics.density
+}
+
+fun px2dp(dpVal: Int): Int {
+    val resources = ReaderApplication.appContext().resources
+    return (dpVal / resources.displayMetrics.density).roundToInt()
+}
+
+fun px2dpf(dpVal: Float): Float {
+    val resources = ReaderApplication.appContext().resources
+    return dpVal / resources.displayMetrics.density
+}
+
+fun sp2px(spVal: Int): Int {
+    val resources = ReaderApplication.appContext().resources
+    return (spVal * resources.displayMetrics.scaledDensity).roundToInt()
+}
+
+fun sp2pxf(spVal: Float): Float {
+    val resources = ReaderApplication.appContext().resources
+    return spVal * resources.displayMetrics.scaledDensity
 }
