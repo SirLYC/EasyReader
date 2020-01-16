@@ -17,10 +17,30 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    signingConfigs {
+        common {
+            Properties prop = new Properties()
+            prop.load(new FileInputStream(new File(rootDir, "private.properties")))
+            println prop
+            File storeFile = new File(getRootDir(), "reader_key.jks")
+            setStoreFile(storeFile)
+            setStorePassword(prop['sign_store_password'])
+            setKeyPassword(prop['sign_key_password'])
+            setKeyAlias(prop['sign_key_alias'])
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig signingConfigs.common
+        }
+
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.common
         }
     }
 }
@@ -28,7 +48,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(":base")
-    implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.core:core-ktx:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
