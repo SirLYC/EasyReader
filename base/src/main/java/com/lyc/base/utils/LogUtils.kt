@@ -1,8 +1,7 @@
-package com.lyc.base.log
+package com.lyc.base.utils
 
 import com.lyc.base.BuildConfig
 import com.lyc.base.ReaderApplication
-import com.lyc.base.waitFinishOnMain
 import com.lyc.common.Logger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock

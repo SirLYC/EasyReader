@@ -4,8 +4,8 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.FrameLayout
-import com.lyc.base.log.LogUtils
 import com.lyc.base.ui.BaseActivity
+import com.lyc.base.utils.LogUtils
 
 class MainActivity : BaseActivity() {
 

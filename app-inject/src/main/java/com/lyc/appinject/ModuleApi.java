@@ -1,6 +1,11 @@
 package com.lyc.appinject;
 
+import com.lyc.appinject.annotations.ExtensionImp;
+import com.lyc.appinject.annotations.ServiceImp;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,11 +66,13 @@ public class ModuleApi {
                 if (serviceImp == null) {
                     Class<?> clazz = ModuleApiHolders.getInstance().getClassForService(serviceClass);
                     if (clazz != null) {
-                        try {
-                            serviceImp = clazz.getConstructor().newInstance();
-                        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-                            e.printStackTrace();
+                        CreateMethod method = CreateMethod.NEW;
+                        for (Annotation annotation : clazz.getAnnotations()) {
+                            if (annotation instanceof ServiceImp) {
+                                method = ((ServiceImp) annotation).createMethod();
+                            }
                         }
+                        serviceImp = createNewInstance(clazz, method);
                     }
                 }
                 if (serviceImp != null) {
@@ -111,10 +118,16 @@ public class ModuleApi {
                     List<Class<?>> classes = ModuleApiHolders.getInstance().getClassesForExtension(extensionClass);
                     if (classes != null) {
                         for (Class<?> clazz : classes) {
-                            try {
-                                result.add((T) clazz.getConstructor().newInstance());
-                            } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-                                e.printStackTrace();
+                            CreateMethod method = CreateMethod.NEW;
+                            for (Annotation annotation : clazz.getAnnotations()) {
+                                if (annotation instanceof ExtensionImp) {
+                                    method = ((ExtensionImp) annotation).createMethod();
+                                    break;
+                                }
+                            }
+                            Object instance = createNewInstance(clazz, method);
+                            if (instance != null) {
+                                result.add((T) instance);
                             }
                         }
                         extensionCache.put(extensionClass, Collections.unmodifiableList(result));
@@ -126,5 +139,36 @@ public class ModuleApi {
         }
 
         return result;
+    }
+
+    private <T> T createNewInstance(Class<T> clazz, CreateMethod method) {
+        switch (method) {
+            case NEW:
+                return newInstance(clazz);
+            case GET_INSTANCE:
+                return staticGetInstance(clazz);
+        }
+
+        return null;
+    }
+
+    private <T> T newInstance(Class<T> clazz) {
+        try {
+            return clazz.getConstructor().newInstance();
+        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T staticGetInstance(Class<T> clazz) {
+        try {
+            Method method = clazz.getMethod("getInstance");
+            return (T) method.invoke(null);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

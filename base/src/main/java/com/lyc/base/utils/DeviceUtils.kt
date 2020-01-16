@@ -1,10 +1,9 @@
-package com.lyc.base.device
+package com.lyc.base.utils
 
 import android.os.Build
 import android.view.View
 import android.view.Window
 import com.lyc.base.ReaderApplication
-import com.lyc.base.log.LogUtils
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.math.roundToInt
