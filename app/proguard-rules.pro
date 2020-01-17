@@ -33,7 +33,6 @@
 -dontpreverify
 # 混淆时是否记录日志
 -verbose
--printmapping proguardMapping.txt
 # 混淆时所采用的算法
 -optimizations !code/simplification/cast,!field/*,!class/merging/*
 -keepattributes *Annotation*,InnerClasses
@@ -146,3 +145,9 @@
 -keepclasseswithmembers @com.lyc.appinject.annotations.ExtensionImpl class * {
     public static * getInstance();
 }
+
+# remove Log.*
+-assumenosideeffects class android.util.Log {
+    *;
+}
+

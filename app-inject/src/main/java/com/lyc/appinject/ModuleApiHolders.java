@@ -45,15 +45,6 @@ class ModuleApiHolders {
     // 插桩方法
     private void initExtensions() {
         List<Implementation> list;
-
-//        list = extensionMap.get(Runnable.class);
-//        if (list == null) {
-//            list = new ArrayList<>();
-//            extensionMap.put(Runnable.class, list);
-//        }
-//
-//        list.add(ImplementationFactory.createImpl(Thread.class, "NEW"));
-//        list.add(ImplementationFactory.createImpl(Thread.class, "GET_INSTANCE"));
     }
 
     Implementation getImplForService(Class<?> serviceClazz) {
