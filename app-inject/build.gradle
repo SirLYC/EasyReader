@@ -1,8 +1,33 @@
-apply plugin: 'java-library'
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
+
+
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'consumer-rules.pro'
+
+        buildConfigField("Boolean", FIELD_LOG_FILE, commonProp.get(KEY_LOG_FILE))
+        buildConfigField("Boolean", FIELD_LOG_CONSOLE, commonProp.get(KEY_LOG_CONSOLE))
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(":common")
 }
-
-sourceCompatibility = "7"
-targetCompatibility = "7"

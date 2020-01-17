@@ -2,15 +2,6 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
-final String FIELD_LOG_FILE = "LOG_FILE"
-final String FIELD_LOG_CONSOLE = "LOG_CONSOLE"
-final String KEY_LOG_FILE = "logToFile"
-final String KEY_LOG_CONSOLE = "logToConsole"
-
-Properties commonProp = new Properties()
-commonProp.load(new FileInputStream(new File(rootDir, "common.properties")))
-println(commonProp)
-
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"

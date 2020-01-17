@@ -1,6 +1,7 @@
 package com.lyc.appinject;
 
 import com.lyc.appinject.impl.Implementation;
+import com.lyc.common.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +25,8 @@ public class ModuleApi {
     private ReadWriteLock extensionReadWriteLock = new ReentrantReadWriteLock();
     private Map<Class<?>, List<?>> extensionCache = new HashMap<>();
 
+    private static final String TAG = "ModuleApi";
+
     private ModuleApi() {
 
     }
@@ -45,35 +48,43 @@ public class ModuleApi {
 
     @SuppressWarnings("unchecked")
     public <T> T getService(Class<T> serviceClass) {
-        Object serviceImp;
+        Object serviceImpl;
         Lock readLock = serviceReadWriteLock.readLock();
         try {
             readLock.lock();
-            serviceImp = serviceCache.get(serviceClass);
+            serviceImpl = serviceCache.get(serviceClass);
         } finally {
             readLock.unlock();
         }
 
-        if (serviceImp == null) {
+        if (serviceImpl == null) {
             Lock writeLock = serviceReadWriteLock.writeLock();
             try {
                 writeLock.lock();
-                serviceImp = serviceCache.get(serviceClass);
-                if (serviceImp == null) {
+                serviceImpl = serviceCache.get(serviceClass);
+                if (serviceImpl == null) {
                     Implementation impl = ModuleApiHolders.getInstance().getImplForService(serviceClass);
                     if (impl != null) {
-                        serviceImp = impl.createInstance();
+                        serviceImpl = impl.createInstance();
+                        if (serviceImpl != null) {
+                            Logger.i(TAG, "[getService] create a new instance, impl=" + impl +
+                                    ", serviceImpl=" + serviceImpl + ", serviceImplClass=" + serviceImpl.getClass().getName());
+                        }
+                    }
+
+                    if (serviceImpl == null) {
+                        Logger.i(TAG, "[getService] cannot a new instance, impl=" + impl);
                     }
                 }
-                if (serviceImp != null) {
-                    serviceCache.put(serviceClass, serviceImp);
+                if (serviceImpl != null) {
+                    serviceCache.put(serviceClass, serviceImpl);
                 }
             } finally {
                 writeLock.unlock();
             }
         }
 
-        return (T) serviceImp;
+        return (T) serviceImpl;
     }
 
     @SuppressWarnings("unchecked")
@@ -110,7 +121,11 @@ public class ModuleApi {
                         for (Implementation impl : impls) {
                             Object instance = impl.createInstance();
                             if (instance != null) {
+                                Logger.i(TAG, "[getExtensions] create a new instance, impl=" + impl +
+                                        ", extensionImpl=" + instance + ", extensionImplClass=" + instance.getClass().getName());
                                 result.add((T) instance);
+                            } else {
+                                Logger.i(TAG, "[getExtensions] cannot a new instance, impl=" + impl);
                             }
                         }
                         extensionCache.put(extensionClass, Collections.unmodifiableList(result));

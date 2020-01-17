@@ -11,4 +11,11 @@ public abstract class Implementation {
     }
 
     public abstract Object createInstance();
+
+    @Override
+    public String toString() {
+        return "Implementation{" +
+                "clazz=" + clazz +
+                '}';
+    }
 }

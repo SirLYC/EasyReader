@@ -1,5 +1,7 @@
 package com.lyc.appinject.impl;
 
+import com.lyc.common.Logger;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -7,6 +9,8 @@ import java.lang.reflect.Method;
  * Created by Liu Yuchuan on 2020/1/17.
  */
 public class ImplementationGetInstance extends Implementation {
+
+    private static final String TAG = "ImplementationGetInstance";
 
     public ImplementationGetInstance(Class<?> clazz) {
         super(clazz);
@@ -18,8 +22,15 @@ public class ImplementationGetInstance extends Implementation {
             Method method = clazz.getMethod("getInstance");
             return method.invoke(null);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
+            Logger.e(TAG, null, e);
         }
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return "ImplementationGetInstance{" +
+                "clazz=" + clazz +
+                '}';
     }
 }

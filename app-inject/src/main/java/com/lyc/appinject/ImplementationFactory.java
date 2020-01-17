@@ -3,6 +3,7 @@ package com.lyc.appinject;
 import com.lyc.appinject.impl.Implementation;
 import com.lyc.appinject.impl.ImplementationGetInstance;
 import com.lyc.appinject.impl.ImplementationNew;
+import com.lyc.common.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +14,8 @@ import java.util.Map;
 public class ImplementationFactory {
 
     private static final Map<String, CreateMethod> createMethodMap;
+
+    private static final String TAG = "ImplementationFactory";
 
     static {
         Map<String, CreateMethod> map = new HashMap<>();
@@ -26,11 +29,15 @@ public class ImplementationFactory {
     public static Implementation createImpl(Class<?> clazz, String name) {
         CreateMethod createMethod = createMethodMap.get(name);
 
-        switch (createMethod) {
-            case NEW:
-                return new ImplementationNew(clazz);
-            case GET_INSTANCE:
-                return new ImplementationGetInstance(clazz);
+        if (createMethod != null) {
+            switch (createMethod) {
+                case NEW:
+                    return new ImplementationNew(clazz);
+                case GET_INSTANCE:
+                    return new ImplementationGetInstance(clazz);
+            }
+        } else {
+            Logger.e(TAG, "for clazz: " + (clazz == null ? "null" : clazz.getName()) + ", createMethod=null, name=" + name);
         }
 
         return new ImplementationNew(clazz);
