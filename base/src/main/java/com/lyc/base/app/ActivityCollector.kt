@@ -4,14 +4,14 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ExtensionImp
+import com.lyc.appinject.annotations.ExtensionImpl
 import com.lyc.base.ui.BaseActivity
 import com.lyc.base.utils.LogUtils
 
 /**
  * Created by Liu Yuchuan on 2020/1/16.
  */
-@ExtensionImp(
+@ExtensionImpl(
     extension = IApplicationOnCreateListener::class,
     createMethod = CreateMethod.GET_INSTANCE
 )

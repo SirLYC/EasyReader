@@ -13,6 +13,7 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.lyc.appinject.data.Impl;
 import com.lyc.appinject.visitors.InjectCollectorClassVisitor;
 import com.lyc.appinject.visitors.InjectWriteClassVisitor;
 
@@ -47,9 +48,9 @@ public class InjectTransform extends Transform {
     private static final String MODULE_HOLDERS_CLASS_NAME = "com/lyc/appinject/ModuleApiHolders.class";
     private final Project project;
     private final Set<String> serviceClasses = new HashSet<>();
-    private final Map<String, String> serviceImpClasses = new HashMap<>();
+    private final Map<String, Impl> serviceImpClasses = new HashMap<>();
     private final Set<String> extensionClasses = new HashSet<>();
-    private final Map<String, List<String>> extensionImpClasses = new HashMap<>();
+    private final Map<String, List<Impl>> extensionImpClasses = new HashMap<>();
 
     InjectTransform(Project project) {
         this.project = project;
@@ -138,63 +139,86 @@ public class InjectTransform extends Transform {
     }
 
     private void findModuleApiHoldersAndWrite(JarInput jarInput, TransformOutputProvider outputProvider) throws IOException {
-        if (jarInput == null) {
-            return;
-        }
 
-        final File file = jarInput.getFile();
-
-        if (!file.getName().endsWith(".jar")) {
-            return;
-        }
-
-        JarFile jarFile = new JarFile(file);
-        Enumeration enumeration = jarFile.entries();
         File tmpFile = new File(project.getBuildDir(), "tmp.jar");
-        if (tmpFile.exists() && !tmpFile.delete()) {
-            throw new RuntimeException("Cannot delete file " + tmpFile);
-        }
-        JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(tmpFile));
-        while (enumeration.hasMoreElements()) {
-            JarEntry jarEntry = (JarEntry) enumeration.nextElement();
-            String entryName = jarEntry.getName();
-            ZipEntry zipEntry = new ZipEntry(entryName);
-            InputStream inputStream = jarFile.getInputStream(jarEntry);
-            if (MODULE_HOLDERS_CLASS_NAME.equals(entryName)) {
-
-                System.out.println("============== Starts to write to ModuleApiHolders ==============");
-                System.out.println("---------------- begin ServiceImpClassesMap ----------------");
-                System.out.println(serviceImpClasses);
-                System.out.println("---------------- end ServiceImpClassesMap ----------------");
-                System.out.println("---------------- begin ExtensionImpClassesMap ----------------");
-                System.out.println(extensionImpClasses);
-                System.out.println("---------------- end ExtensionImpClassesMap ----------------");
-
-                jarOutputStream.putNextEntry(zipEntry);
-                ClassReader classReader = new ClassReader(IOUtils.toByteArray(inputStream));
-                ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
-                InjectWriteClassVisitor cv = new InjectWriteClassVisitor(classWriter, serviceImpClasses, extensionImpClasses);
-                classReader.accept(cv, ClassReader.EXPAND_FRAMES);
-                byte[] code = classWriter.toByteArray();
-                jarOutputStream.write(code);
-
-                System.out.println("============== Starts to write to ModuleApiHolders ==============");
-
-            } else {
-                jarOutputStream.putNextEntry(zipEntry);
-                jarOutputStream.write(IOUtils.toByteArray(inputStream));
+        try {
+            if (jarInput == null) {
+                return;
             }
-            jarOutputStream.closeEntry();
-        }
-        jarOutputStream.close();
-        jarFile.close();
 
-        // No modify to bytecode
-        File dest = outputProvider.getContentLocation(file.getAbsolutePath(),
-                jarInput.getContentTypes(), jarInput.getScopes(), Format.JAR);
-        FileUtils.copyFile(tmpFile, dest);
-        if (!tmpFile.delete()) {
-            project.getLogger().warn("Cannot delete tmp file " + tmpFile);
+            final File file = jarInput.getFile();
+
+            if (!file.getName().endsWith(".jar")) {
+                return;
+            }
+
+            JarFile jarFile = new JarFile(file);
+            Enumeration enumeration = jarFile.entries();
+            if (tmpFile.exists() && !tmpFile.delete()) {
+                throw new RuntimeException("Cannot delete file " + tmpFile);
+            }
+            JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(tmpFile));
+            while (enumeration.hasMoreElements()) {
+                JarEntry jarEntry = (JarEntry) enumeration.nextElement();
+                String entryName = jarEntry.getName();
+                ZipEntry zipEntry = new ZipEntry(entryName);
+                InputStream inputStream = jarFile.getInputStream(jarEntry);
+                if (MODULE_HOLDERS_CLASS_NAME.equals(entryName)) {
+
+                    System.out.println("============== Starts to write to ModuleApiHolders ==============");
+
+                    System.out.println();
+                    System.out.println("********************************************************");
+                    System.out.println("************** begin ServiceImpClassesMap **************");
+                    System.out.println("********************************************************");
+                    serviceImpClasses.forEach((s, impl) -> System.out.println(s + " -> " + impl));
+                    System.out.println("******************************************************");
+                    System.out.println("************** end ServiceImpClassesMap **************");
+                    System.out.println("******************************************************");
+                    System.out.println();
+
+                    System.out.println();
+                    System.out.println("**************************************************************");
+                    System.out.println("**************** begin ExtensionImpClassesMap ****************");
+                    System.out.println("**************************************************************");
+                    extensionImpClasses.forEach((s, impls) -> {
+                        System.out.println(s + ":");
+                        for (Impl impl : impls) {
+                            System.out.println("-> " + impl);
+                        }
+                    });
+                    System.out.println(extensionImpClasses);
+                    System.out.println("************************************************************");
+                    System.out.println("**************** end ExtensionImpClassesMap ****************");
+                    System.out.println("************************************************************");
+
+                    jarOutputStream.putNextEntry(zipEntry);
+                    ClassReader classReader = new ClassReader(IOUtils.toByteArray(inputStream));
+                    ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
+                    InjectWriteClassVisitor cv = new InjectWriteClassVisitor(classWriter, serviceImpClasses, extensionImpClasses);
+                    classReader.accept(cv, ClassReader.EXPAND_FRAMES);
+                    byte[] code = classWriter.toByteArray();
+                    jarOutputStream.write(code);
+
+                    System.out.println("============== Starts to write to ModuleApiHolders ==============");
+
+                } else {
+                    jarOutputStream.putNextEntry(zipEntry);
+                    jarOutputStream.write(IOUtils.toByteArray(inputStream));
+                }
+                jarOutputStream.closeEntry();
+            }
+            jarOutputStream.close();
+            jarFile.close();
+
+            // No modify to bytecode
+            File dest = outputProvider.getContentLocation(file.getAbsolutePath(),
+                    jarInput.getContentTypes(), jarInput.getScopes(), Format.JAR);
+            FileUtils.copyFile(tmpFile, dest);
+        } finally {
+            if (tmpFile.exists() && !tmpFile.delete()) {
+                tmpFile.deleteOnExit();
+            }
         }
     }
 
@@ -241,7 +265,6 @@ public class InjectTransform extends Transform {
         }
 
         Iterator<File> iterator = FileUtils.iterateFiles(dir, new String[]{"class"}, true);
-        System.out.println(iterator);
         iterator.forEachRemaining(file -> {
             if (file.isFile()) {
                 try {

@@ -1,5 +1,7 @@
 package com.lyc.appinject;
 
+import com.lyc.appinject.impl.Implementation;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +15,8 @@ class ModuleApiHolders {
 
     private static final Lock INSTANCE_LOCK = new ReentrantLock();
     private static volatile ModuleApiHolders instance;
-    private Map<Class<?>, Class<?>> serviceClassMap = new HashMap<>();
-    private Map<Class<?>, List<Class<?>>> extensionMap = new HashMap<>();
+    private Map<Class<?>, Implementation> serviceClassMap = new HashMap<>();
+    private Map<Class<?>, List<Implementation>> extensionMap = new HashMap<>();
 
     private ModuleApiHolders() {
         initServices();
@@ -38,19 +40,27 @@ class ModuleApiHolders {
 
     // 插桩方法
     private void initServices() {
-
     }
 
     // 插桩方法
     private void initExtensions() {
-        List<Class<?>> list;
+        List<Implementation> list;
+
+//        list = extensionMap.get(Runnable.class);
+//        if (list == null) {
+//            list = new ArrayList<>();
+//            extensionMap.put(Runnable.class, list);
+//        }
+//
+//        list.add(ImplementationFactory.createImpl(Thread.class, "NEW"));
+//        list.add(ImplementationFactory.createImpl(Thread.class, "GET_INSTANCE"));
     }
 
-    Class<?> getClassForService(Class<?> serviceClazz) {
+    Implementation getImplForService(Class<?> serviceClazz) {
         return serviceClassMap.get(serviceClazz);
     }
 
-    List<Class<?>> getClassesForExtension(Class<?> extensionClazz) {
+    List<Implementation> getImplsForExtension(Class<?> extensionClazz) {
         return extensionMap.get(extensionClazz);
     }
 }
