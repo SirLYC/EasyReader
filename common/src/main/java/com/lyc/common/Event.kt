@@ -44,7 +44,7 @@ class EventHubFactory private constructor() {
     companion object {
         @JvmStatic
         fun <T> createDefault(threadSafe: Boolean): EventHub<T> {
-            return NonRepeatableWeakEventHub(threadSafe)
+            return NonRepeatableEventHub(threadSafe)
         }
 
         @JvmStatic

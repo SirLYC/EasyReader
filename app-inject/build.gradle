@@ -13,9 +13,6 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
-
-        buildConfigField("Boolean", FIELD_LOG_FILE, commonProp.get(KEY_LOG_FILE))
-        buildConfigField("Boolean", FIELD_LOG_CONSOLE, commonProp.get(KEY_LOG_CONSOLE))
     }
 
     buildTypes {
