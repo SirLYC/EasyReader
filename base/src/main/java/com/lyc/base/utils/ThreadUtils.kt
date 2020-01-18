@@ -22,3 +22,10 @@ fun waitFinishOnMain(runnable: Runnable) {
         }
     }
 }
+
+
+fun checkMainThread() {
+    if (Looper.getMainLooper() != Looper.myLooper()) {
+        throw IllegalStateException("This method is only allowed run on main thread! Current thread=${Thread.currentThread()}.")
+    }
+}

@@ -44,6 +44,12 @@ object ExecutorFactory {
      */
     const val MAIN = 6
 
+    fun getMainExecutor() = MAIN_EXECUTOR
+    fun getCpuBoundExecutor() = CPU_BOUND_EXECUTOR
+    fun singleExecutor() = SINGLE_EXECUTOR
+    fun timeoutExecutor() = TIMEOUT_EXECUTOR
+    fun instantExecutor() = INSTANT_EXECUTOR
+
     fun getExecutorByType(type: Int): Executor = when (type) {
         CPU_BOUND -> CPU_BOUND_EXECUTOR
         IO -> IO_EXECUTOR
