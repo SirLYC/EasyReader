@@ -13,6 +13,15 @@ buildscript {
     println(commonProp)
     ext.commonProp = commonProp
 
+    ext.buildInfo = [
+            'compileSdkVersion': Integer.parseInt(commonProp['compileSdkVersion']),
+            'buildToolsVersion': commonProp['buildToolsVersion'],
+            'versionCode'      : Integer.parseInt(commonProp['versionCode']),
+            'versionName'      : commonProp['versionName'],
+            'targetSdkVersion' : Integer.parseInt(commonProp['targetSdkVersion']),
+            'minSdkVersion'    : Integer.parseInt(commonProp['minSdkVersion'])
+    ]
+
     repositories {
         google()
         jcenter()

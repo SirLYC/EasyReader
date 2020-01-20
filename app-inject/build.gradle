@@ -1,17 +1,14 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.2"
-
+    compileSdkVersion buildInfo['compileSdkVersion']
+    buildToolsVersion buildInfo['buildToolsVersion']
 
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        minSdkVersion buildInfo['minSdkVersion']
+        targetSdkVersion buildInfo['targetSdkVersion']
+        versionCode buildInfo['versionCode']
+        versionName buildInfo['versionName']
         consumerProguardFiles 'consumer-rules.pro'
     }
 

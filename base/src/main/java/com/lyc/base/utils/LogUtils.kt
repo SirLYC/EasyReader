@@ -35,9 +35,10 @@ class LogUtils {
 
         private fun initLogger() {
             Logger.instance.apply {
-                init(ReaderApplication.appContext())
+                logFileName = "Log-${BuildConfig.VERSION_CODE}.${BuildConfig.VERSION_NAME}"
                 outputToConsole = BuildConfig.LOG_CONSOLE
                 outputToFile = BuildConfig.LOG_FILE
+                init(ReaderApplication.appContext())
             }
         }
 
