@@ -31,14 +31,14 @@ object ReaderToast : Handler.Callback {
     ) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             showToastInternal(
-                ReaderResources.getString(textResId),
+                getStringRes(textResId),
                 duration,
                 center
             )
         } else {
             handler.post {
                 showToastInternal(
-                    ReaderResources.getString(textResId),
+                    getStringRes(textResId),
                     duration,
                     center
                 )

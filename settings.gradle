@@ -1,4 +1,4 @@
-include ':app', ':common', ':base', ':app-inject'
+include ':app', ':common', ':base', ':app-inject', ':api', ':bookshelf', ':discover', ':usercenter'
 rootProject.name = 'EasyReader'
 
 // 这个是app-inject的gradle插件工程

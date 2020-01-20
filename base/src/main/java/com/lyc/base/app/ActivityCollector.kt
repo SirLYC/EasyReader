@@ -21,6 +21,8 @@ class ActivityCollector private constructor() : IApplicationOnCreateListener,
     private val createdActivity = arrayListOf<BaseActivity>()
     var currentForegroundActivity: BaseActivity? = null
         private set
+    var mostRecentStartActivity: BaseActivity? = null
+        private set
 
     companion object {
         @JvmStatic
@@ -49,10 +51,15 @@ class ActivityCollector private constructor() : IApplicationOnCreateListener,
     }
 
     override fun onActivityPaused(activity: Activity) {
+        if (activity == currentForegroundActivity) {
+            currentForegroundActivity = null
+        }
     }
 
     override fun onActivityStarted(activity: Activity) {
-
+        doIfIsBaseActivity(activity, "onActivityStarted") {
+            mostRecentStartActivity = it
+        }
     }
 
     override fun onActivityDestroyed(activity: Activity) {
@@ -66,8 +73,8 @@ class ActivityCollector private constructor() : IApplicationOnCreateListener,
     }
 
     override fun onActivityStopped(activity: Activity) {
-        if (activity == currentForegroundActivity) {
-            currentForegroundActivity = null
+        if (mostRecentStartActivity == activity) {
+            mostRecentStartActivity = null
         }
     }
 
