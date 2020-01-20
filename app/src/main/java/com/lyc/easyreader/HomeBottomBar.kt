@@ -14,9 +14,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.setPadding
-import com.lyc.api.main.IMainActivityEventBus.Companion.ID_BOOK_SHELF
-import com.lyc.api.main.IMainActivityEventBus.Companion.ID_DISCOVER
-import com.lyc.api.main.IMainActivityEventBus.Companion.ID_USER_CENTER
+import com.lyc.api.main.IMainTabDelegate
+import com.lyc.base.getAppExtensions
 import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.getDrawableRes
 import com.lyc.base.ui.theme.color_accent
@@ -24,6 +23,7 @@ import com.lyc.base.ui.theme.color_primary
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
 import com.lyc.base.utils.drawTopDivideLine
+import java.util.*
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
@@ -39,21 +39,6 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
             )
         }
         val NORMAL_FILTER by lazy { PorterDuffColorFilter(color_accent, PorterDuff.Mode.SRC_ATOP) }
-        private val tabs = arrayOf(
-            Pair(ID_BOOK_SHELF, R.drawable.ic_library_books_24dp),
-            Pair(ID_DISCOVER, R.drawable.ic_explore_24dp),
-            Pair(ID_USER_CENTER, R.drawable.ic_person_24dp)
-        )
-        private val tabIds = tabs.map {
-            it.first
-        }.toSet()
-
-        fun isTabId(tabId: Int?): Boolean {
-            if (tabId == null) {
-                return false
-            }
-            return tabIds.contains(tabId)
-        }
     }
 
     var currentId = -1
@@ -63,13 +48,14 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
     init {
         setBackgroundColor(Color.WHITE)
         orientation = HORIZONTAL
-        tabs.forEach {
+        val tabSet = TreeSet<IMainTabDelegate>(getAppExtensions<IMainTabDelegate>())
+        tabSet.forEach {
             val button = BottomBarButton(
                 context,
-                it.second,
-                MainActivityEventBus.instance.tabIdToString(it.first)
+                it.getIconDrawableResId(),
+                it.getName()
             )
-            button.id = it.first
+            button.id = it.getId()
             button.setOnClickListener(this)
             viewMap[button.id] = button
             addView(button, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
@@ -83,16 +69,16 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
 
     override fun onClick(v: View?) {
         v?.id?.let { id ->
-            if (id in tabIds) {
+            if (MainActivityDelegate.instance.isMainTabId(id)) {
                 if (!changeTab(id)) {
-                    MainActivityEventBus.instance.notifyTabClick(id)
+                    MainActivityDelegate.instance.notifyTabClick(id)
                 }
             }
         }
     }
 
     fun changeTab(newTabId: Int): Boolean {
-        if (newTabId !in tabIds) {
+        if (!(MainActivityDelegate.instance.isMainTabId(newTabId))) {
             return false
         }
         val oldId = currentId
@@ -100,7 +86,7 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
             currentId = newTabId
             viewMap[oldId]?.current = false
             viewMap[newTabId]?.current = true
-            MainActivityEventBus.instance.notifyTabChange(newTabId)
+            MainActivityDelegate.instance.notifyTabChange(newTabId)
             return true
         }
 

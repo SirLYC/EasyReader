@@ -7,7 +7,8 @@ import com.lyc.base.ui.BaseFragment
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
-abstract class AbstractMainTab<T : AbstractMainTabFragment> : IMainTab {
+abstract class AbstractMainTabDelegate<T : AbstractMainTabFragment> : IMainTabDelegate,
+    Comparable<IMainTabDelegate> {
     protected var visible: Boolean? = null
     private var fragment: T? = null
 
@@ -37,11 +38,12 @@ abstract class AbstractMainTab<T : AbstractMainTabFragment> : IMainTab {
 
     final override fun createFragment(): BaseFragment {
         val result = fragment ?: newFragmentInstance().also { fragment = it }
-        result.arguments = Bundle().apply { putBoolean(IMainTab.KEY_VISIBLE, visible == true) }
+        result.arguments =
+            Bundle().apply { putBoolean(IMainTabDelegate.KEY_VISIBLE, visible == true) }
         return result
     }
 
-    override fun recoverFragment(fragment: Fragment?) {
+    final override fun recoverFragment(fragment: Fragment?) {
         if (this.fragment == fragment) {
             return
         }

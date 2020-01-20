@@ -9,9 +9,9 @@ object Schema {
     // 主页
     const val MAIN_PAGE = "lycer://main"
 
-    val MAIN_BOOK_SHELF = "lycer://main/${IMainActivityEventBus.ID_BOOK_SHELF}"
+    val MAIN_BOOK_SHELF = "lycer://main/${IMainActivityDelegate.ID_BOOK_SHELF}"
 
-    val MAIN_DISCOVER = "lycer://main/${IMainActivityEventBus.ID_DISCOVER}"
+    val MAIN_DISCOVER = "lycer://main/${IMainActivityDelegate.ID_DISCOVER}"
 
-    val MAIN_USER_CENTER = "lycer://main/${IMainActivityEventBus.ID_USER_CENTER}"
+    val MAIN_USER_CENTER = "lycer://main/${IMainActivityDelegate.ID_USER_CENTER}"
 }

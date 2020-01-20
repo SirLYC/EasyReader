@@ -1,5 +1,6 @@
 package com.lyc.api.main
 
+import androidx.annotation.DrawableRes
 import androidx.fragment.app.Fragment
 import com.lyc.appinject.annotations.Extension
 import com.lyc.base.ui.BaseFragment
@@ -8,13 +9,17 @@ import com.lyc.base.ui.BaseFragment
  * Created by Liu Yuchuan on 2020/1/20.
  */
 @Extension
-interface IMainTab {
+interface IMainTabDelegate : Comparable<IMainTabDelegate> {
 
     companion object {
         const val KEY_VISIBLE = "KEY_VISIBLE"
     }
 
+    fun getOrder(): Int
+
     fun getId(): Int
+
+    fun getName(): String
 
     fun createFragment(): BaseFragment
 
@@ -27,4 +32,9 @@ interface IMainTab {
     fun onInvisible()
 
     fun onThisTabClick()
+
+    @DrawableRes
+    fun getIconDrawableResId(): Int
+
+    override fun compareTo(other: IMainTabDelegate) = this.getOrder() - other.getOrder()
 }

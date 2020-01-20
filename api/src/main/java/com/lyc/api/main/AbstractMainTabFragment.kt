@@ -16,7 +16,7 @@ abstract class AbstractMainTabFragment : BaseFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            visible = it.getBoolean(IMainTab.KEY_VISIBLE, false)
+            visible = it.getBoolean(IMainTabDelegate.KEY_VISIBLE, false)
         }
     }
 

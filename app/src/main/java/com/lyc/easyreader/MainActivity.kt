@@ -9,8 +9,8 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.util.forEach
-import com.lyc.api.main.IMainActivityEventBus
-import com.lyc.api.main.IMainTab
+import com.lyc.api.main.IMainActivityDelegate
+import com.lyc.api.main.IMainTabDelegate
 import com.lyc.api.main.ITabChangeListener
 import com.lyc.api.main.Schema
 import com.lyc.base.getAppExtensions
@@ -28,16 +28,15 @@ class MainActivity : BaseActivity(), ITabChangeListener {
         val FRAGMENT_CONTAINER_ID = generateNewViewId()
 
         const val KEY_CURRENT_TAB_ID = "KEY_CURRENT_TAB_ID"
-
-        val mainTabs = SparseArray<IMainTab>().apply {
-            for (appExtension in getAppExtensions<IMainTab>()) {
-                put(appExtension.getId(), appExtension)
-            }
-        }
     }
 
     private lateinit var container: FrameLayout
     private lateinit var bottomBar: HomeBottomBar
+    private val mainTabs = SparseArray<IMainTabDelegate>().apply {
+        for (tabDelegate in getAppExtensions<IMainTabDelegate>()) {
+            put(tabDelegate.getId(), tabDelegate)
+        }
+    }
 
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: ViewGroup) {
         container = FrameLayout(this)
@@ -69,7 +68,7 @@ class MainActivity : BaseActivity(), ITabChangeListener {
             }
         )
 
-        MainActivityEventBus.instance.addTabChangeListener(this)
+        MainActivityDelegate.instance.addTabChangeListener(this)
 
         val fm = supportFragmentManager
         if (savedInstanceState != null) {
@@ -91,13 +90,13 @@ class MainActivity : BaseActivity(), ITabChangeListener {
 
         if (savedInstanceState != null && targetTabId == null) {
             val tabId = savedInstanceState.getInt(KEY_CURRENT_TAB_ID, 0)
-            if (HomeBottomBar.isTabId(tabId)) {
+            if (MainActivityDelegate.instance.isMainTabId(tabId)) {
                 targetTabId = tabId
             }
         }
 
         if (targetTabId == null) {
-            targetTabId = IMainActivityEventBus.ID_BOOK_SHELF
+            targetTabId = IMainActivityDelegate.ID_BOOK_SHELF
         }
 
         bottomBar.changeTab(targetTabId)
@@ -127,7 +126,7 @@ class MainActivity : BaseActivity(), ITabChangeListener {
             val tabPath = url.substring(Schema.MAIN_PAGE.length + 1).substringBefore("/", "")
             if (tabPath.isNotEmpty()) {
                 val tabId = tabPath.toIntOrNull()
-                if (HomeBottomBar.isTabId(tabId)) {
+                if (tabId?.let { MainActivityDelegate.instance.isMainTabId(it) } == true) {
                     return tabId
                 }
             }
@@ -137,19 +136,19 @@ class MainActivity : BaseActivity(), ITabChangeListener {
     }
 
     override fun onDestroy() {
-        MainActivityEventBus.instance.removeTabChangeListener(this)
+        MainActivityDelegate.instance.removeTabChangeListener(this)
         super.onDestroy()
     }
 
     override fun onChangeToNewTab(tabId: Int) {
         LogUtils.d(
             TAG,
-            "Tab change, new tab id=$tabId, name=${MainActivityEventBus.instance.tabIdToString(tabId)}"
+            "Tab change, new tab id=$tabId, name=${MainActivityDelegate.instance.tabIdToString(tabId)}"
         )
 
         val targetTab = mainTabs[tabId]
             ?: throw IllegalArgumentException(
-                "Cannot find main tab id for {id= ${tabId}, name=${MainActivityEventBus.instance.tabIdToString(
+                "Cannot find main tab id for {id= ${tabId}, name=${MainActivityDelegate.instance.tabIdToString(
                     tabId
                 )}}"
             )
@@ -172,7 +171,7 @@ class MainActivity : BaseActivity(), ITabChangeListener {
     override fun onCurrentTabClick(tabId: Int) {
         LogUtils.d(
             TAG,
-            "Tab click, click tab id=$tabId, name=${MainActivityEventBus.instance.tabIdToString(
+            "Tab click, click tab id=$tabId, name=${MainActivityDelegate.instance.tabIdToString(
                 tabId
             )}"
         )
