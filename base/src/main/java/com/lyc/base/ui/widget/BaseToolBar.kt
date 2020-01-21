@@ -26,7 +26,8 @@ import com.lyc.base.utils.*
 open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean = true) :
     FrameLayout(context) {
     protected val titleTv = TextView(context)
-    protected var leftButton: ImageView? = null
+    var leftButton: ImageView? = null
+        protected set
     var drawDivideLine = true
         set(value) {
             if (value != field) {
@@ -36,7 +37,7 @@ open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean =
         }
 
     companion object {
-        private val BAR_HEIGHT = dp2px(48)
+        val BAR_HEIGHT = dp2px(48)
 
         val VIEW_ID_BAR = generateNewViewId()
         val VIEW_ID_LEFT_BUTTON = generateNewViewId()

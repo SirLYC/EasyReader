@@ -3,7 +3,6 @@ package com.lyc.base
 import android.app.Application
 import android.content.Context
 import android.os.StrictMode
-import android.os.SystemClock
 import com.lyc.base.app.IApplicationOnCreateListener
 import com.lyc.base.utils.LogUtils
 
@@ -24,16 +23,17 @@ class ReaderApplication : Application() {
         super.onCreate()
         context = this
         StrictMode.enableDefaults()
-        val start = SystemClock.elapsedRealtime()
+        LogUtils.startTiming("Application Querying extensions")
         val extensions = getAppExtensions<IApplicationOnCreateListener>()
-        LogUtils.d(TAG, "Querying extensions uses ${SystemClock.elapsedRealtime() - start}ms")
+        LogUtils.debugLogTiming(
+            TAG,
+            "App finish query IApplicationOnCreateListener extensions.",
+            "Application Querying extensions"
+        )
         extensions.forEach {
-            val methodStart = SystemClock.elapsedRealtime()
+            LogUtils.startTiming("onAppCreate")
             it.onAppCreate(this)
-            LogUtils.d(
-                TAG,
-                "${it.javaClass.name}#onAppCreate costs ${SystemClock.elapsedRealtime() - methodStart}ms"
-            )
+            LogUtils.debugLogTiming(TAG, "${it.javaClass.name}#onAppCreate called", "onAppCreate")
         }
     }
 }
