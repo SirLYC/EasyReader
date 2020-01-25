@@ -67,13 +67,13 @@ public class ModuleApi {
                     if (impl != null) {
                         serviceImpl = impl.createInstance();
                         if (serviceImpl != null) {
-                            Logger.i(TAG, "[getService] create a new instance, impl=" + impl +
+                            Logger.getGlobalInstance().i(TAG, "[getService] create a new instance, impl=" + impl +
                                     ", serviceImpl=" + serviceImpl + ", serviceImplClass=" + serviceImpl.getClass().getName());
                         }
                     }
 
                     if (serviceImpl == null) {
-                        Logger.i(TAG, "[getService] cannot a new instance, impl=" + impl);
+                        Logger.getGlobalInstance().i(TAG, "[getService] cannot a new instance, impl=" + impl);
                     }
                 }
                 if (serviceImpl != null) {
@@ -121,11 +121,11 @@ public class ModuleApi {
                         for (Implementation impl : impls) {
                             Object instance = impl.createInstance();
                             if (instance != null) {
-                                Logger.i(TAG, "[getExtensions] create a new instance, impl=" + impl +
+                                Logger.getGlobalInstance().i(TAG, "[getExtensions] create a new instance, impl=" + impl +
                                         ", extensionImpl=" + instance + ", extensionImplClass=" + instance.getClass().getName());
                                 result.add((T) instance);
                             } else {
-                                Logger.i(TAG, "[getExtensions] cannot a new instance, impl=" + impl);
+                                Logger.getGlobalInstance().i(TAG, "[getExtensions] cannot a new instance, impl=" + impl);
                             }
                         }
                         extensionCache.put(extensionClass, Collections.unmodifiableList(result));

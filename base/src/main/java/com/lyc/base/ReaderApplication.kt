@@ -3,6 +3,7 @@ package com.lyc.base
 import android.app.Application
 import android.content.Context
 import android.os.StrictMode
+import android.os.StrictMode.VmPolicy
 import com.lyc.base.app.IApplicationOnCreateListener
 import com.lyc.base.utils.LogUtils
 
@@ -22,7 +23,7 @@ class ReaderApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         context = this
-        StrictMode.enableDefaults()
+        StrictMode.setVmPolicy(VmPolicy.Builder().detectAll().penaltyLog().build())
         LogUtils.startTiming("Application Querying extensions")
         val extensions = getAppExtensions<IApplicationOnCreateListener>()
         LogUtils.debugLogTiming(

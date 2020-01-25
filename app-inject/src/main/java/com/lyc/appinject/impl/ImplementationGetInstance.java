@@ -22,7 +22,7 @@ public class ImplementationGetInstance extends Implementation {
             Method method = clazz.getMethod("getInstance");
             return method.invoke(null);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            Logger.e(TAG, null, e);
+            Logger.getGlobalInstance().e(TAG, null, e);
         }
         return null;
     }

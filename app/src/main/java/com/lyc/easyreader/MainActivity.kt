@@ -38,16 +38,15 @@ class MainActivity : BaseActivity(), ITabChangeListener {
         }
     }
 
-    override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: ViewGroup) {
+    override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
         container = FrameLayout(this)
         container.id = FRAGMENT_CONTAINER_ID
-        setContentView(container)
 
         container = FrameLayout(this)
         container.id = FRAGMENT_CONTAINER_ID
         container.setBackgroundColor(Color.WHITE)
 
-        val dp56 = dp2px(56)
+        val dp56 = dp2px(48)
         rootView.addView(
             container,
             FrameLayout.LayoutParams(

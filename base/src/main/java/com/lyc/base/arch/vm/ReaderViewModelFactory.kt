@@ -10,12 +10,21 @@ import com.lyc.base.utils.LogUtils
  */
 object ReaderViewModelFactory : ViewModelProvider.NewInstanceFactory() {
     private const val TAG = "ReaderViewModelFactory"
+    private val createFactoryMap = hashMapOf<Class<out ViewModel>, IViewModelFactory>()
 
-    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        val factory = createFactoryMap[modelClass]
+        if (factory != null) {
+            return factory.createViewMode(modelClass)!!
+        }
+
         val extensions = getAppExtensions<IViewModelFactory>()
         for (extension in extensions) {
-            val viewModel = extension.create(modelClass)
+            val viewModel = extension.createViewMode(modelClass)
             if (viewModel != null) {
+                if (extension.shouldCache()) {
+                    createFactoryMap[modelClass] = extension
+                }
                 return viewModel
             }
         }

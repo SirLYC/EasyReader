@@ -13,6 +13,9 @@ import androidx.fragment.app.Fragment
 abstract class BaseFragment : Fragment() {
     protected var rootView: View? = null
 
+    val isActivityCreateFromConfigChange
+        get() = (activity as? BaseActivity)?.isCreateFromConfigChange == true
+
     final override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -34,9 +37,19 @@ abstract class BaseFragment : Fragment() {
 
     open fun onRecoverState(savedInstanceState: Bundle) = Unit
 
+    final override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        handleActivityResult(requestCode, resultCode, data)
+    }
+
     open fun handleActivityResult(
         requestCode: Int,
         resultCode: Int,
         data: Intent?
+    ) = false
+
+    open fun handlePermissionResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
     ) = false
 }

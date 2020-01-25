@@ -37,7 +37,7 @@ public class ImplementationFactory {
                     return new ImplementationGetInstance(clazz);
             }
         } else {
-            Logger.e(TAG, "for clazz: " + (clazz == null ? "null" : clazz.getName()) + ", createMethod=null, name=" + name);
+            Logger.getGlobalInstance().e(TAG, "for clazz: " + (clazz == null ? "null" : clazz.getName()) + ", createMethod=null, name=" + name);
         }
 
         return new ImplementationNew(clazz);

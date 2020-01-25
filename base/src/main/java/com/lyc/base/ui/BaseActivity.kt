@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
@@ -19,11 +18,14 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
 
     companion object {
         const val NIGHT_MODE_MASK_COLOR = 0x7F000000
+        private const val KEY_CONFIG_CHANGE = "KEY_CONFIG_CHANGE"
     }
 
     lateinit var rootView: FrameLayout
     private var createRootView = false
     private var maskView: View? = null
+    var isCreateFromConfigChange: Boolean = false
+        private set
 
     override fun onNightModeChange(enable: Boolean) {
         if (!createRootView) {
@@ -43,6 +45,7 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
     }
 
     final override fun onCreate(savedInstanceState: Bundle?) {
+        isCreateFromConfigChange = savedInstanceState?.getBoolean(KEY_CONFIG_CHANGE, false) == true
         beforeOnCreate(savedInstanceState)
         super.onCreate(savedInstanceState)
         beforeBaseOnCreate(savedInstanceState)
@@ -61,10 +64,16 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
             window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
         }
         rootView = FrameLayout(this)
+        rootView.setBackgroundColor(Color.WHITE)
         afterBaseOnCreate(savedInstanceState, rootView)
         createRootView = true
         onNightModeChange(NightModeManager.nightModeEnable)
         setContentView(rootView)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_CONFIG_CHANGE, isChangingConfigurations)
     }
 
     /**
@@ -84,15 +93,21 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
     /**
      * [BaseActivity.onCreate]末尾调用
      */
-    open fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: ViewGroup) {
+    open fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
 
     }
 
-    open fun fragmentHandleRequestFirst() = true
+    open fun fragmentHandleActivityRequestFirst() = true
+
+    open fun fragmentHandlePermissionFirst() = true
 
     final override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        val fragmentFirst = fragmentHandleRequestFirst()
+        if (((requestCode shr 16) and 0xffff) != 0) {
+            // 已经由父方法被Fragment消费了
+            return
+        }
+        val fragmentFirst = fragmentHandleActivityRequestFirst()
         if (!fragmentFirst && handleActivityResult(
                 requestCode,
                 resultCode,
@@ -117,7 +132,50 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (((requestCode shr 16) and 0xffff) != 0) {
+            // 已经由父方法被Fragment消费了
+            return
+        }
+        val fragmentFirst = fragmentHandlePermissionFirst()
+        if (!fragmentFirst && handlePermissionResult(
+                requestCode,
+                permissions,
+                grantResults
+            )
+        ) {
+            return
+        }
+        for (fragment in supportFragmentManager.fragments) {
+            if ((fragment as? BaseFragment)?.handlePermissionResult(
+                    requestCode,
+                    permissions,
+                    grantResults
+                ) == true
+            ) {
+                return
+            }
+        }
+
+        if (fragmentFirst) {
+            handlePermissionResult(requestCode, permissions, grantResults)
+        }
+    }
+
     open fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        return false
+    }
+
+    open fun handlePermissionResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ): Boolean {
         return false
     }
 

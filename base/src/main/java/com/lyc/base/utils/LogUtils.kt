@@ -38,7 +38,7 @@ class LogUtils {
         }
 
         private fun initLogger() {
-            Logger.instance.apply {
+            Logger.globalInstance.apply {
                 logFileName = "Log-${BuildConfig.VERSION_CODE}.${BuildConfig.VERSION_NAME}"
                 outputToConsole = BuildConfig.LOG_CONSOLE
                 outputToFile = BuildConfig.LOG_FILE
@@ -46,29 +46,47 @@ class LogUtils {
             }
         }
 
-        fun d(tag: String, msg: String? = null, ex: Throwable? = null) {
+        fun d(
+            tag: String,
+            msg: String? = null,
+            ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
+        ) {
             initLoggerIfNeeded()
-            Logger.d(tag, msg, ex)
+            Logger.globalInstance.d(tag, msg, ex, outputToConsole, outputToFile)
         }
 
-        fun i(tag: String, msg: String? = null, ex: Throwable? = null) {
+        fun i(
+            tag: String, msg: String? = null, ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
+        ) {
             initLoggerIfNeeded()
-            Logger.i(tag, msg, ex)
+            Logger.globalInstance.i(tag, msg, ex, outputToConsole, outputToFile)
         }
 
-        fun w(tag: String, msg: String? = null, ex: Throwable? = null) {
+        fun w(
+            tag: String, msg: String? = null, ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
+        ) {
             initLoggerIfNeeded()
-            Logger.w(tag, msg, ex)
+            Logger.globalInstance.w(tag, msg, ex, outputToConsole, outputToFile)
         }
 
-        fun e(tag: String, msg: String? = null, ex: Throwable? = null) {
+        fun e(
+            tag: String, msg: String? = null, ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
+        ) {
             initLoggerIfNeeded()
-            Logger.e(tag, msg, ex)
+            Logger.globalInstance.e(tag, msg, ex, outputToConsole, outputToFile)
         }
 
         fun addSpecialNameForTag(tag: String, name: String) {
             initLoggerIfNeeded()
-            Logger.instance.addSpecialTagForFile(tag, name)
+            Logger.globalInstance.addSpecialTagForFile(tag, name)
         }
 
         fun startTiming(key: String) {
@@ -79,36 +97,44 @@ class LogUtils {
             tag: String,
             msg: String? = null,
             key: String,
-            ex: Throwable? = null
+            ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
         ) {
-            logTiming(tag, msg, key, Level.DEBUG, ex)
+            logTiming(tag, msg, key, Level.DEBUG, ex, outputToConsole, outputToFile)
         }
 
         fun infoLogTiming(
             tag: String,
             msg: String? = null,
             key: String,
-            ex: Throwable? = null
+            ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
         ) {
-            logTiming(tag, msg, key, Level.INFO, ex)
+            logTiming(tag, msg, key, Level.INFO, ex, outputToConsole, outputToFile)
         }
 
         fun warnLogTiming(
             tag: String,
             msg: String? = null,
             key: String,
-            ex: Throwable? = null
+            ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
         ) {
-            logTiming(tag, msg, key, Level.WARN, ex)
+            logTiming(tag, msg, key, Level.WARN, ex, outputToConsole, outputToFile)
         }
 
         fun errorLogTiming(
             tag: String,
             msg: String? = null,
             key: String,
-            ex: Throwable? = null
+            ex: Throwable? = null,
+            outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
+            outputToFile: Boolean = Logger.globalInstance.outputToFile
         ) {
-            logTiming(tag, msg, key, Level.ERROR, ex)
+            logTiming(tag, msg, key, Level.ERROR, ex, outputToConsole, outputToFile)
         }
 
         private fun logTiming(
@@ -116,26 +142,28 @@ class LogUtils {
             msg: String? = null,
             key: String,
             level: Level,
-            ex: Throwable? = null
+            ex: Throwable? = null,
+            outputToConsole: Boolean,
+            outputToFile: Boolean
         ) {
             val current = SystemClock.elapsedRealtime()
             val lastTime = timingMap.remove(key) ?: current - 1
             val logMsg = "[${current - lastTime}ms] ${msg ?: ""}"
             when (level) {
                 Level.INFO -> {
-                    i(tag, logMsg, ex)
+                    i(tag, logMsg, ex, outputToConsole, outputToFile)
                 }
 
                 Level.WARN -> {
-                    w(tag, logMsg, ex)
+                    w(tag, logMsg, ex, outputToConsole, outputToFile)
                 }
 
                 Level.ERROR -> {
-                    e(tag, logMsg, ex)
+                    e(tag, logMsg, ex, outputToConsole, outputToFile)
                 }
 
                 Level.DEBUG -> {
-                    d(tag, logMsg, ex)
+                    d(tag, logMsg, ex, outputToConsole, outputToFile)
                 }
             }
         }

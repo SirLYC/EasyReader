@@ -24,7 +24,7 @@ public class ImplementationNew extends Implementation {
         try {
             return clazz.getConstructor().newInstance();
         } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            Logger.e(TAG, null, e);
+            Logger.getGlobalInstance().e(TAG, null, e);
         }
 
         return null;

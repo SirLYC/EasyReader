@@ -1,1 +1,7 @@
-<manifest package="com.lyc.bookshelf" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.lyc.bookshelf">
+
+    <application>
+        <activity android:name=".scan.BookScanActivity" />
+    </application>
+</manifest>

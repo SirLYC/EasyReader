@@ -1,11 +1,11 @@
 package com.lyc.base.route
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import com.lyc.base.ReaderApplication
 import com.lyc.base.app.ActivityCollector
 import com.lyc.base.getAppExtensions
+import com.lyc.base.ui.BaseActivity
 import com.lyc.base.utils.LogUtils
 
 /**
@@ -15,7 +15,7 @@ object AppRoute {
 
     const val TAG = "AppRoute"
 
-    fun jumpToUrl(urlParams: UrlParams, activityFrom: Activity? = null) {
+    fun jumpToUrl(urlParams: UrlParams, activityFrom: BaseActivity? = null) {
         LogUtils.i(TAG, "start jumpToUrl: $urlParams")
         for (appExtension in getAppExtensions<IUrlInterceptor>()) {
             if (appExtension.acceptUrl(urlParams.url) and appExtension.handleUrl(urlParams)) {

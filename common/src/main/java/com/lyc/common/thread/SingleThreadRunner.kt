@@ -50,7 +50,7 @@ class SingleThreadRunner @JvmOverloads constructor(
                 action(handler)
                 result = true
             } else {
-                Logger.w(
+                Logger.globalInstance.w(
                     TAG,
                     "[${name}] No handler present! started=${started}, stopped=${stopped}"
                 )
@@ -76,7 +76,7 @@ class SingleThreadRunner @JvmOverloads constructor(
                 try {
                     condition.await()
                 } catch (e: InterruptedException) {
-                    Logger.e(
+                    Logger.globalInstance.e(
                         TAG,
                         "[${name}]",
                         e
@@ -102,7 +102,7 @@ class SingleThreadRunner @JvmOverloads constructor(
                     try {
                         condition.await()
                     } catch (e: InterruptedException) {
-                        Logger.e(
+                        Logger.globalInstance.e(
                             TAG,
                             "[${name}]",
                             e

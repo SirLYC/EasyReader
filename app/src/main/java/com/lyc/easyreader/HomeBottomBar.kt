@@ -110,7 +110,7 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
             }
 
         init {
-            setPadding(dp2px(8))
+            setPadding(dp2px(4))
             iconIv.setImageDrawable(iconDrawable)
             getDrawableAttrRes(android.R.attr.selectableItemBackground)?.let {
                 background = it
@@ -140,11 +140,11 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
             val textHeight = tv.paint.let {
                 val fontMetrics = it.fontMetrics
                 return@let fontMetrics.descent - fontMetrics.ascent
-            }.toInt() + dp2px(8)
+            }.toInt() + dp2px(4)
             addView(tv, LayoutParams(LayoutParams.MATCH_PARENT, textHeight).apply {
                 gravity = Gravity.BOTTOM
             })
-            iconIv.scaleType = ImageView.ScaleType.CENTER
+            iconIv.scaleType = ImageView.ScaleType.CENTER_INSIDE
             addView(
                 iconIv,
                 LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT).apply {

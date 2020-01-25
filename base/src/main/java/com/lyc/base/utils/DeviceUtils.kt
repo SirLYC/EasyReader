@@ -1,6 +1,9 @@
 package com.lyc.base.utils
 
+import android.content.Context
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.View
 import android.view.Window
 import com.lyc.base.ReaderApplication
@@ -35,6 +38,18 @@ fun statusBarHeight(forceRetrieve: Boolean = false): Int {
     }
 
     return result
+}
+
+fun vibrate(millis: Long) {
+    (ReaderApplication.appContext().getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.run {
+        if (Build.VERSION.SDK_INT < 26) {
+            vibrate(millis)
+        } else {
+            val effect =
+                VibrationEffect.createOneShot(millis, VibrationEffect.DEFAULT_AMPLITUDE)
+            vibrate(effect)
+        }
+    }
 }
 
 fun Window?.statusBarBlackText(isBlack: Boolean) {

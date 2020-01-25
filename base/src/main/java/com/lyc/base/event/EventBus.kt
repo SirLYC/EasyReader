@@ -1,9 +1,9 @@
 package com.lyc.base.event
 
+import com.lyc.base.utils.LogUtils
 import com.lyc.common.EventHub
 import com.lyc.common.EventHubFactory
 import com.lyc.common.EventHubParam
-import com.lyc.common.Logger
 
 /**
  * Created by Liu Yuchuan on 2020/1/13.
@@ -52,7 +52,7 @@ class EventBus private constructor() {
     }
 
     fun emitEvent(message: EventMessage) {
-        Logger.i(TAG, "Emmit event: $message")
+        LogUtils.i(TAG, "Emmit event: $message")
         eventHubMap[message.event]?.getEventListeners()?.forEach {
             it.onEventEmit(message)
         }

@@ -8,7 +8,7 @@ import com.lyc.base.arch.vm.ReaderViewModelFactory
 import com.lyc.base.getAppExtensions
 import com.lyc.base.ui.BaseActivity
 import com.lyc.base.ui.BaseFragment
-import com.lyc.common.Logger
+import com.lyc.base.utils.LogUtils
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
@@ -34,6 +34,6 @@ inline fun <reified T : IRepository> provideRepository(vararg params: Any): T? {
             return repo
         }
     }
-    Logger.w("ArchExt", "cannot get repository: " + T::class.java.name)
+    LogUtils.w("ArchExt", "cannot get repository: " + T::class.java.name)
     return null
 }

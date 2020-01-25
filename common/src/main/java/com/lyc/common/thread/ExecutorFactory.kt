@@ -13,59 +13,6 @@ import kotlin.math.max
 
 
 object ExecutorFactory {
-    /**
-     * 以CPU核心数为现状的线程池
-     * 适合加解密、复杂算法等
-     */
-    const val CPU_BOUND = 1
-
-    /**
-     * 适合IO操作
-     */
-    const val IO = 2
-
-    /**
-     * 相当于[Thread.start]
-     */
-    const val TIMEOUT = 3
-
-    /**
-     * 单线程，无需同步
-     */
-    const val SINGLE = 4
-
-    /**
-     * 相当于直接调用[Runnable.run]
-     */
-    const val INSTANT = 5
-
-    /**
-     * 主线程
-     */
-    const val MAIN = 6
-
-    fun getMainExecutor() = MAIN_EXECUTOR
-    fun getCpuBoundExecutor() = CPU_BOUND_EXECUTOR
-    fun singleExecutor() = SINGLE_EXECUTOR
-    fun timeoutExecutor() = TIMEOUT_EXECUTOR
-    fun instantExecutor() = INSTANT_EXECUTOR
-
-    fun getExecutorByType(type: Int): Executor = when (type) {
-        CPU_BOUND -> CPU_BOUND_EXECUTOR
-        IO -> IO_EXECUTOR
-        TIMEOUT -> TIMEOUT_EXECUTOR
-        SINGLE -> SINGLE_EXECUTOR
-        INSTANT -> INSTANT_EXECUTOR
-        MAIN -> MAIN_EXECUTOR
-        else -> {
-            Logger.w(
-                TAG,
-                "Invalid executor type! Type=$type"
-            )
-            INSTANT_EXECUTOR
-        }
-    }
-
 
     private const val TAG = "ExecutorFactory"
     private fun String.toThreadName(id: Int) = "EX-${this}-${id}"
@@ -74,12 +21,12 @@ object ExecutorFactory {
         Handler(Looper.getMainLooper())
     }
 
-    private val CPU_BOUND_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+    val CPU_BOUND_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
         val cpuCount = Runtime.getRuntime().availableProcessors()
         val id = AtomicInteger()
         val resultCount = max(2, cpuCount + 1)
 
-        Logger.d(
+        Logger.globalInstance.d(
             TAG,
             "[CPU_BOUND] cpuCount=$cpuCount, resultCoreThreadCount=$resultCount"
         )
@@ -90,23 +37,23 @@ object ExecutorFactory {
             60,
             TimeUnit.SECONDS,
             LinkedBlockingQueue<Runnable>(),
-            ThreadFactory { Thread("CPU_BOUND".toThreadName(id.incrementAndGet())) },
+            ThreadFactory { Thread(it, "CPU_BOUND".toThreadName(id.incrementAndGet())) },
             RejectedExecutionHandler { r, executor ->
-                Logger.e(
+                Logger.globalInstance.e(
                     TAG,
                     "[CPU_BOUND] Rejected, executor=$executor, r=$r"
                 )
             })
     }
 
-    private val IO_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+    val IO_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
 
         val cpuCount = Runtime.getRuntime().availableProcessors()
         val id = AtomicInteger()
         val coreCount = max(2, cpuCount + 1)
         val maxCount = max(3, 2 * cpuCount + 1)
 
-        Logger.d(
+        Logger.globalInstance.d(
             TAG,
             "[IO] cpuCount=$cpuCount, coreCount=$coreCount, maxCount=$maxCount"
         )
@@ -117,16 +64,16 @@ object ExecutorFactory {
             60,
             TimeUnit.SECONDS,
             LinkedBlockingQueue<Runnable>(),
-            ThreadFactory { Thread("IO".toThreadName(id.incrementAndGet())) },
+            ThreadFactory { Thread(it, "IO".toThreadName(id.incrementAndGet())) },
             RejectedExecutionHandler { r, executor ->
-                Logger.e(
+                Logger.globalInstance.e(
                     TAG,
                     "[IO] Rejected, executor=$executor, r=$r"
                 )
             })
     }
 
-    private val TIMEOUT_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+    val TIMEOUT_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
         val id = AtomicInteger()
 
         ThreadPoolExecutor(
@@ -135,16 +82,16 @@ object ExecutorFactory {
             60,
             TimeUnit.SECONDS,
             LinkedBlockingQueue<Runnable>(),
-            ThreadFactory { Thread("TIMEOUT".toThreadName(id.incrementAndGet())) },
+            ThreadFactory { Thread(it, "TIMEOUT".toThreadName(id.incrementAndGet())) },
             RejectedExecutionHandler { r, executor ->
-                Logger.e(
+                Logger.globalInstance.e(
                     TAG,
                     "[TIMEOUT] Rejected, executor=$executor, r=$r"
                 )
             })
     }
 
-    private val SINGLE_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+    val SINGLE_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
         val id = AtomicInteger()
 
         ThreadPoolExecutor(
@@ -153,22 +100,22 @@ object ExecutorFactory {
             60,
             TimeUnit.SECONDS,
             LinkedBlockingQueue<Runnable>(),
-            ThreadFactory { Thread("SINGLE".toThreadName(id.incrementAndGet())) },
+            ThreadFactory { Thread(it, "SINGLE".toThreadName(id.incrementAndGet())) },
             RejectedExecutionHandler { r, executor ->
-                Logger.e(
+                Logger.globalInstance.e(
                     TAG,
                     "[SINGLE] Rejected, executor=$executor, r=$r"
                 )
             })
     }
 
-    private val INSTANT_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+    val INSTANT_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
         Executor {
             it.run()
         }
     }
 
-    private val MAIN_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+    val MAIN_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
         Executor {
             MAIN_HANDLER.post(it)
         }
