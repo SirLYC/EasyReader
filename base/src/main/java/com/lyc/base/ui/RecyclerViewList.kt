@@ -3,15 +3,15 @@ package com.lyc.base.ui
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
+import com.lyc.base.arch.FuncCallLiveEvent
 import com.lyc.base.arch.SingleLiveEvent
-import com.lyc.base.arch.VoidLiveEvent
 
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
 class RecyclerViewList {
     val list = mutableListOf<Pair<Int, Any>>()
-    val refreshListCall = VoidLiveEvent()
+    val refreshListCall = FuncCallLiveEvent()
     val addItemCall = SingleLiveEvent<Int>()
     val removeItemCall = SingleLiveEvent<Int>()
     val changeItemCall = SingleLiveEvent<Int>()

@@ -3,6 +3,7 @@ package com.lyc.bookshelf
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.view.Gravity
 import android.view.MenuItem
 import android.view.View
@@ -16,6 +17,9 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.lyc.api.main.AbstractMainTabFragment
 import com.lyc.base.ReaderApplication
+import com.lyc.base.arch.provideViewModel
+import com.lyc.base.ui.BaseActivity
+import com.lyc.base.ui.ReaderToast
 import com.lyc.base.ui.widget.SimpleToolbar
 import com.lyc.base.utils.LogUtils
 import com.lyc.base.utils.generateNewRequestCode
@@ -33,6 +37,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var refreshLayout: SwipeRefreshLayout
+    private lateinit var viewModel: BookShelfViewModel
     private var menu: PopupMenu? = null
 
     companion object {
@@ -62,6 +67,11 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             topMargin = toolBar.getViewHeight()
         })
         return rootView
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        viewModel = provideViewModel()
     }
 
     override fun onResume() {
@@ -110,9 +120,25 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             }
 
             if (singleUri != null) {
-                testLogUri(singleUri)
-            } else {
-                multiUri?.forEach { testLogUri(it) }
+                val len = singleUriDocumentFile(singleUri).length()
+                if (len <= 0) {
+                    ReaderToast.showToast("文件过小")
+                    return true
+                }
+            }
+
+            val uriList =
+                if (singleUri != null) {
+                    testLogUri(singleUri)
+                    listOf(singleUri)
+                } else {
+                    multiUri?.forEach { testLogUri(it) }
+                    multiUri
+                }
+            (activity as? BaseActivity)?.let {
+                if (uriList != null) {
+                    BookManager.instance.importBooks(uriList)
+                }
             }
 
             return true
@@ -123,17 +149,29 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     BookScanActivity.start(it, dirUri, REQUEST_CODE_SCAN)
                 }
             }
+        } else if (requestCode == REQUEST_CODE_SCAN) {
+            val uris =
+                data?.getParcelableArrayExtra(KEY_SELECT_SCAN_FILES)?.mapNotNull {
+                    it as? Uri
+                }
+            if (uris != null && uris.isNotEmpty()) {
+                uris.forEach { testLogUri(it) }
+                BookManager.instance.importBooks(uris)
+            }
         }
 
         return false
     }
 
     private fun testLogUri(uri: Uri) {
+        if ("release" == BuildConfig.BUILD_TYPE) {
+            return
+        }
         val documentFile = singleUriDocumentFile(uri)
         val charset = uri.detectCharset()
         LogUtils.d(
             TAG,
-            "Uri=${uri.path}; File exists: ${documentFile.exists()}; Charset=${charset}"
+            "Uri=${Uri.decode(uri.toString())}; File exists: ${documentFile.exists()}; Charset=${charset}"
         )
         ReaderApplication.appContext().contentResolver.openFileDescriptor(uri, "r")
             ?.use { fd ->

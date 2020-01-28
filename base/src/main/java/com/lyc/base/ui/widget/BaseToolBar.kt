@@ -1,7 +1,6 @@
 package com.lyc.base.ui.widget
 
 import android.content.Context
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
@@ -18,7 +17,10 @@ import com.lyc.base.R
 import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.getDrawableRes
 import com.lyc.base.ui.theme.color_primary_text
-import com.lyc.base.utils.*
+import com.lyc.base.utils.dp2px
+import com.lyc.base.utils.dp2pxf
+import com.lyc.base.utils.generateNewViewId
+import com.lyc.base.utils.statusBarHeight
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
@@ -51,6 +53,7 @@ open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean =
 
     private fun initView() {
         setBackgroundColor(Color.WHITE)
+        elevation = dp2pxf(4f)
         if (paddingStatusBar) {
             setPadding(0, statusBarHeight(), 0, 0)
         }
@@ -112,12 +115,12 @@ open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean =
 
     }
 
-    override fun dispatchDraw(canvas: Canvas?) {
-        super.dispatchDraw(canvas)
-        if (drawDivideLine) {
-            canvas?.drawBottomDivideLine(width.toFloat(), height.toFloat())
-        }
-    }
+//    override fun dispatchDraw(canvas: Canvas?) {
+//        super.dispatchDraw(canvas)
+//        if (drawDivideLine) {
+//            canvas?.drawBottomDivideLine(width.toFloat(), height.toFloat())
+//        }
+//    }
 
     fun getViewHeight() = BAR_HEIGHT + paddingTop
 }

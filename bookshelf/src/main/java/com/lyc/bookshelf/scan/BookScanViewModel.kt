@@ -2,8 +2,8 @@ package com.lyc.bookshelf.scan
 
 import android.net.Uri
 import android.os.Bundle
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.lyc.base.arch.NonNullLiveData
 import com.lyc.base.utils.LogUtils
 import com.lyc.base.utils.rv.ObservableList
 import com.lyc.bookshelf.VIEW_TYPE_EMPTY_ITEM
@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class BookScanViewModel : ViewModel() {
     var uri: Uri? = null
-    private val scanFinishLiveData = MutableLiveData<Boolean>(false)
-    val scanningLiveData = MutableLiveData<Boolean>(false)
+    private val scanFinishLiveData = NonNullLiveData(false)
+    val scanningLiveData = NonNullLiveData(false)
     private val idle = AtomicBoolean(true)
     val list = ObservableList<Pair<Int, Any>>(arrayListOf())
     val selectController = PositionSelectController()
@@ -33,7 +33,7 @@ class BookScanViewModel : ViewModel() {
     }
 
     fun startScan() {
-        if (scanFinishLiveData.value == true || !idle.compareAndSet(true, false)) {
+        if (scanFinishLiveData.value || !idle.compareAndSet(true, false)) {
             return
         }
 
@@ -54,7 +54,7 @@ class BookScanViewModel : ViewModel() {
             val tmpList = LinkedList<BookScanItem>()
             treeDocumentFile(uriLocal).forEach({ file ->
                 val ext = file.getExt()
-                if (ext.toLowerCase(Locale.getDefault()) == "txt") {
+                if (ext.toLowerCase(Locale.getDefault()) == "txt" && file.length() > 0) {
                     val bookScanItem =
                         BookScanItem(file.name, ext, file.uri, file.lastModified(), file.length())
                     LogUtils.d(TAG, "Scan a book: $bookScanItem")
@@ -100,6 +100,18 @@ class BookScanViewModel : ViewModel() {
 
     fun restoreState(bundle: Bundle) {
         uri = bundle.getParcelable(KEY_URI)
+    }
+
+    fun hasFile(): Boolean {
+        if (list.isEmpty()) {
+            return true
+        }
+
+        if (list.size == 1) {
+            return list[0].second !== EmptyItem
+        }
+
+        return true
     }
 
     override fun onCleared() {

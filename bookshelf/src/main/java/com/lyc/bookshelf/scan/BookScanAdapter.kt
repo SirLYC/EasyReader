@@ -6,9 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
-import com.lyc.base.ui.theme.color_secondary_text
+import com.lyc.base.ui.getDrawableRes
+import com.lyc.base.ui.theme.color_accent
+import com.lyc.base.utils.changeToColor
+import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
 import com.lyc.base.utils.rv.ReactiveAdapter
 import com.lyc.bookshelf.VIEW_TYPE_EMPTY_ITEM
@@ -38,12 +43,27 @@ class BookScanAdapter(
 
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {
         return if (viewType == VIEW_TYPE_EMPTY_ITEM) {
-            TextView(parent.context).apply {
-                gravity = Gravity.CENTER
+            FrameLayout(parent.context).apply {
+                addView(TextView(parent.context).apply {
+                    setPadding(dp2px(16))
+                    gravity = Gravity.CENTER
+
+                    setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(16f))
+                    text = "没有符合条件的文件~"
+                    setCompoundDrawablesWithIntrinsicBounds(
+                        null,
+                        getDrawableRes(com.lyc.api.R.drawable.ic_sleeping_cat)?.apply {
+                            changeToColor(color_accent)
+                        },
+                        null,
+                        null
+                    )
+                    compoundDrawablePadding = dp2px(32)
+                    setTextColor(color_accent)
+                }, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                    gravity = Gravity.CENTER
+                })
                 layoutParams = RecyclerView.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(16f))
-                text = "没有符合条件的文件~"
-                setTextColor(color_secondary_text)
             }
         } else {
             BookScanItemView(parent.context, positionSelectController).apply {

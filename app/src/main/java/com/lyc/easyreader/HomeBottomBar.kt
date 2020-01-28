@@ -1,7 +1,6 @@
 package com.lyc.easyreader
 
 import android.content.Context
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
@@ -22,7 +21,6 @@ import com.lyc.base.ui.theme.color_accent
 import com.lyc.base.ui.theme.color_primary
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
-import com.lyc.base.utils.drawTopDivideLine
 import java.util.*
 
 /**
@@ -47,6 +45,7 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
 
     init {
         setBackgroundColor(Color.WHITE)
+        elevation = dp2pxf(8f)
         orientation = HORIZONTAL
         val tabSet = TreeSet<IMainTabDelegate>(getAppExtensions<IMainTabDelegate>())
         tabSet.forEach {
@@ -60,11 +59,6 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
             viewMap[button.id] = button
             addView(button, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
         }
-    }
-
-    override fun dispatchDraw(canvas: Canvas?) {
-        super.dispatchDraw(canvas)
-        canvas?.drawTopDivideLine(width.toFloat())
     }
 
     override fun onClick(v: View?) {

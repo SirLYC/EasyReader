@@ -1,6 +1,8 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'org.greenrobot.greendao'
+
 android {
     compileSdkVersion buildInfo['compileSdkVersion']
     buildToolsVersion buildInfo['buildToolsVersion']
@@ -22,7 +24,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+}
 
+greendao {
+    targetGenDir 'src/main/java'
 }
 
 dependencies {
@@ -30,6 +35,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation project(":app-inject")
     implementation project(":base")
+    api "org.greenrobot:greendao:$green_dao_version"
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'

@@ -1,9 +1,7 @@
 package com.lyc.base.utils
 
 import android.content.res.ColorStateList
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
+import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.PaintDrawable
@@ -39,6 +37,10 @@ fun generateNewRequestCode(): Int {
     }
 
     return ++currentRequestCode
+}
+
+fun Drawable.changeToColor(newColor: Int) {
+    colorFilter = PorterDuffColorFilter(newColor, PorterDuff.Mode.SRC_ATOP)
 }
 
 private val divideLinePaint by lazy {

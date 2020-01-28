@@ -187,7 +187,6 @@ public class InjectTransform extends Transform {
                             System.out.println("-> " + impl);
                         }
                     });
-                    System.out.println(extensionImpClasses);
                     System.out.println("************************************************************");
                     System.out.println("**************** end ExtensionImpClassesMap ****************");
                     System.out.println("************************************************************");

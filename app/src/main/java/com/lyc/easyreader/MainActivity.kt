@@ -1,6 +1,8 @@
 package com.lyc.easyreader
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -8,16 +10,22 @@ import android.util.SparseArray
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.util.forEach
+import com.lyc.api.book.IBookManager
 import com.lyc.api.main.IMainActivityDelegate
 import com.lyc.api.main.IMainTabDelegate
 import com.lyc.api.main.ITabChangeListener
 import com.lyc.api.main.Schema
 import com.lyc.base.getAppExtensions
+import com.lyc.base.getAppService
 import com.lyc.base.ui.BaseActivity
 import com.lyc.base.ui.BaseFragment
+import com.lyc.base.ui.ReaderToast
 import com.lyc.base.utils.LogUtils
 import com.lyc.base.utils.dp2px
+import com.lyc.base.utils.generateNewRequestCode
 import com.lyc.base.utils.generateNewViewId
 
 class MainActivity : BaseActivity(), ITabChangeListener {
@@ -28,15 +36,19 @@ class MainActivity : BaseActivity(), ITabChangeListener {
         val FRAGMENT_CONTAINER_ID = generateNewViewId()
 
         const val KEY_CURRENT_TAB_ID = "KEY_CURRENT_TAB_ID"
+
+        val REQUEST_CODE_IMPORT_FILE_SCHEMA_URI = generateNewRequestCode()
     }
 
     private lateinit var container: FrameLayout
     private lateinit var bottomBar: HomeBottomBar
+    private var pendingImportUri: Uri? = null
     private val mainTabs = SparseArray<IMainTabDelegate>().apply {
         for (tabDelegate in getAppExtensions<IMainTabDelegate>()) {
             put(tabDelegate.getId(), tabDelegate)
         }
     }
+    private val bookManager by lazy { getAppService<IBookManager>() }
 
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
         container = FrameLayout(this)
@@ -112,6 +124,14 @@ class MainActivity : BaseActivity(), ITabChangeListener {
             TAG,
             "[MainActivity] onNewIntent...new intent.data=${intent?.data}"
         )
+        if (intent?.action in setOf(
+                Intent.ACTION_SEND,
+                Intent.ACTION_VIEW
+            ) && intent?.data?.let { handleImportUri(it) } == true
+        ) {
+            LogUtils.d(TAG, "New intent handled by import book.")
+            return
+        }
         val targetTabId = intent?.data?.let { getTargetTabIdFromIntent(it) }
         intent?.data = null
         if (targetTabId != null) {
@@ -119,8 +139,60 @@ class MainActivity : BaseActivity(), ITabChangeListener {
         }
     }
 
+    private fun handleImportUri(uri: Uri): Boolean {
+        val scheme = uri.scheme
+        if (scheme !in setOf("file", "content")) {
+            return false
+        }
+
+        if (scheme == "file") {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                pendingImportUri = uri
+                ActivityCompat.requestPermissions(
+                    this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    REQUEST_CODE_IMPORT_FILE_SCHEMA_URI
+                )
+                return true
+            }
+        }
+
+        bookManager?.importBooks(listOf(uri))
+        return true
+    }
+
+    override fun handlePermissionResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ): Boolean {
+        if (requestCode == REQUEST_CODE_IMPORT_FILE_SCHEMA_URI) {
+            for (grantResult in grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    LogUtils.d(TAG, "Permission denied. Cannot import uri=${pendingImportUri}")
+                    ReaderToast.showToast("导入失败")
+                    return true
+                }
+            }
+            bookManager?.run {
+                pendingImportUri?.let {
+                    if (it.scheme == "file") {
+                        bookManager?.importBooks(listOf(it))
+                    }
+                }
+            }
+            pendingImportUri = null
+            return true
+        }
+
+        return false
+    }
+
     private fun getTargetTabIdFromIntent(dataFromIntent: Uri): Int? {
-        val url = dataFromIntent.toString()
+        val url = Uri.decode(dataFromIntent.toString())
         if (url.startsWith(Schema.MAIN_PAGE + "/")) {
             val tabPath = url.substring(Schema.MAIN_PAGE.length + 1).substringBefore("/", "")
             if (tabPath.isNotEmpty()) {

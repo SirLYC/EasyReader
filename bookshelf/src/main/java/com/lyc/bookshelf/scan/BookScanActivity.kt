@@ -2,7 +2,6 @@ package com.lyc.bookshelf.scan
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Canvas
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -55,18 +54,20 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
 
         const val IMPORT_BUTTON_TEXT_FORMAT = "导入%d项"
 
-        val VIEW_ID_STOP_SCAN = generateNewViewId()
+        private val VIEW_ID_STOP_SCAN = generateNewViewId()
 
-        val VIEW_ID_IMPORT = generateNewViewId()
+        private val VIEW_ID_IMPORT = generateNewViewId()
 
-        val VIEW_ID_CHANGE_SELECT_ALL = generateNewViewId()
+        private val VIEW_ID_CHANGE_SELECT_ALL = generateNewViewId()
+
+        private val VIEW_ID_RV = generateNewViewId()
 
         const val TAG = "BookScanActivity"
     }
 
     override fun beforeBaseOnCreate(savedInstanceState: Bundle?) {
         super.beforeBaseOnCreate(savedInstanceState)
-        viewModel = provideViewModel()!!
+        viewModel = provideViewModel()
         if (savedInstanceState == null) {
             viewModel.uri = intent?.data
         } else if (!isCreateFromConfigChange) {
@@ -97,6 +98,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
         recyclerView.adapter = BookScanAdapter(viewModel, selectController).also {
             it.observe(this)
         }
+        recyclerView.id = VIEW_ID_RV
 
         val dp48 = dp2px(48)
         val refreshLayout = SwipeRefreshLayout(this)
@@ -108,12 +110,9 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
         })
 
         val dp16 = dp2px(16)
-        scanningBottomBar = object : FrameLayout(this) {
-            override fun dispatchDraw(canvas: Canvas?) {
-                super.dispatchDraw(canvas)
-                canvas?.drawTopDivideLine(width.toFloat())
-            }
-        }.apply {
+        scanningBottomBar = FrameLayout(this).apply {
+            elevation = dp2pxf(4f)
+            setBackgroundColor(Color.WHITE)
             setPadding(dp16, 0, 0, 0)
             val textView = TextView(this@BookScanActivity)
             textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
@@ -130,6 +129,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
             stopButton.gravity = Gravity.CENTER
             stopButton.paint.isFakeBoldText = true
             stopButton.background = buildCommonButtonBg(Color.RED, true)
+            stopButton.elevation = dp2pxf(8f)
             stopButton.setTextColor(buildCommonButtonTextColor(Color.RED))
             stopButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
             stopButton.setOnClickListener(this@BookScanActivity)
@@ -142,12 +142,11 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
             gravity = Gravity.BOTTOM
         })
 
-        toolBottomBar = object : FrameLayout(this) {
-            override fun dispatchDraw(canvas: Canvas?) {
-                super.dispatchDraw(canvas)
-                canvas?.drawTopDivideLine(width.toFloat())
-            }
-        }.apply {
+        toolBottomBar = FrameLayout(this).apply {
+
+            elevation = dp2pxf(4f)
+            setBackgroundColor(Color.WHITE)
+
             val dp8 = dp2px(8)
             val importButton = TextView(this@BookScanActivity)
             importButton.setPadding(dp8)
@@ -156,6 +155,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
             importButton.gravity = Gravity.CENTER
             importButton.paint.isFakeBoldText = true
             importButton.background = buildCommonButtonBg(color_primary)
+            importButton.elevation = dp2pxf(8f)
             importButton.setTextColor(buildCommonButtonTextColor(Color.WHITE))
             importButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
             importButton.setOnClickListener(this@BookScanActivity)
@@ -172,6 +172,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
             selectAllButton.gravity = Gravity.CENTER
             selectAllButton.paint.isFakeBoldText = true
             selectAllButton.background = buildCommonButtonBg(color_primary)
+            selectAllButton.elevation = dp2pxf(8f)
             selectAllButton.setTextColor(buildCommonButtonTextColor(Color.WHITE))
             selectAllButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
             selectAllButton.setOnClickListener(this@BookScanActivity)
@@ -252,7 +253,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
         val cnt = selectController.selectCount()
         importButton.text = IMPORT_BUTTON_TEXT_FORMAT.format(cnt)
         importButton.isEnabled = cnt > 0
-        selectAllButton.isVisible = viewModel.list.isNotEmpty()
+        selectAllButton.isVisible = viewModel.hasFile()
         selectAllButton.text =
             if (selectController.isSelectAll(viewModel.list.size)) "取消全选" else "全选"
     }

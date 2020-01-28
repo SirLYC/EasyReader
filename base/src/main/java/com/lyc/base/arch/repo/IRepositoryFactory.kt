@@ -8,4 +8,6 @@ import com.lyc.appinject.annotations.Extension
 @Extension
 interface IRepositoryFactory {
     fun <T : IRepository> getRepository(clazz: Class<T>, vararg params: Any): T?
+
+    fun shouldCache(): Boolean = true
 }
