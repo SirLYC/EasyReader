@@ -20,7 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.lyc.base.arch.provideViewModel
 import com.lyc.base.ui.BaseActivity
-import com.lyc.base.ui.theme.color_primary
+import com.lyc.base.ui.theme.color_light_blue
 import com.lyc.base.ui.theme.color_primary_text
 import com.lyc.base.ui.widget.BaseToolBar
 import com.lyc.base.utils.*
@@ -154,7 +154,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
             importButton.text = IMPORT_BUTTON_TEXT_FORMAT
             importButton.gravity = Gravity.CENTER
             importButton.paint.isFakeBoldText = true
-            importButton.background = buildCommonButtonBg(color_primary)
+            importButton.background = buildCommonButtonBg(color_light_blue)
             importButton.elevation = dp2pxf(8f)
             importButton.setTextColor(buildCommonButtonTextColor(Color.WHITE))
             importButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
@@ -171,7 +171,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
             selectAllButton.text = "全选"
             selectAllButton.gravity = Gravity.CENTER
             selectAllButton.paint.isFakeBoldText = true
-            selectAllButton.background = buildCommonButtonBg(color_primary)
+            selectAllButton.background = buildCommonButtonBg(color_light_blue)
             selectAllButton.elevation = dp2pxf(8f)
             selectAllButton.setTextColor(buildCommonButtonTextColor(Color.WHITE))
             selectAllButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))

@@ -2,7 +2,6 @@ package com.lyc.bookshelf
 
 import android.app.Activity.RESULT_OK
 import android.content.Intent
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
@@ -29,10 +28,11 @@ import com.lyc.base.ReaderApplication
 import com.lyc.base.arch.provideViewModel
 import com.lyc.base.ui.BaseActivity
 import com.lyc.base.ui.ReaderToast
+import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.getDrawableRes
-import com.lyc.base.ui.theme.color_bg
 import com.lyc.base.ui.theme.color_light_blue
 import com.lyc.base.ui.theme.color_secondary_text
+import com.lyc.base.ui.widget.ReaderPopupMenu
 import com.lyc.base.ui.widget.SimpleToolbar
 import com.lyc.base.utils.*
 import com.lyc.bookshelf.scan.BookScanActivity
@@ -102,63 +102,57 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             setPadding(dp2px(24))
             contentLayout.addView(this, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
             emptyViewList.add(this)
-            text = "还没有添加任何书籍~"
+            text = "还没有添加任何书籍"
         }
 
-        LinearLayout(ctx).apply {
-            orientation = LinearLayout.HORIZONTAL
+        TextView(ctx).apply {
             emptyViewList.add(this)
-            contentLayout.addView(
-                this,
-                LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
-                    leftMargin = dp2px(32)
-                    rightMargin = dp2px(32)
-                })
-
-            val leftButton = TextView(ctx)
-            leftButton.setCompoundDrawablesWithIntrinsicBounds(
-                getDrawableRes(com.lyc.api.R.drawable.ic_add_24dp),
+            setCompoundDrawablesWithIntrinsicBounds(
+                getDrawableRes(com.lyc.api.R.drawable.ic_add_24dp)?.apply {
+                    changeToColor(color_light_blue)
+                },
                 null,
                 null,
                 null
             )
-            leftButton.compoundDrawablePadding = dp2px(4)
-            leftButton.elevation = dp2pxf(4f)
-            leftButton.id = VIEW_ID_ADD_FILE
-            leftButton.setOnClickListener(this@BookShelfFragment)
-            leftButton.setPadding(dp2px(4), dp2px(8), dp2px(4), dp2px(8))
-            leftButton.paint.isFakeBoldText = true
-            leftButton.gravity = Gravity.CENTER_VERTICAL
-            leftButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
-            leftButton.setTextColor(Color.WHITE)
-            leftButton.text = "添加文件"
-            leftButton.background = buildCommonButtonBg(color_light_blue)
-            addView(leftButton, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
-                rightMargin = dp2px(16)
-            })
-
-            val rightButton = TextView(ctx)
-            rightButton.setCompoundDrawablesWithIntrinsicBounds(
-                getDrawableRes(com.lyc.api.R.drawable.ic_folder_24dp),
-                null,
-                null,
-                null
-            )
-            rightButton.compoundDrawablePadding = dp2px(4)
-            rightButton.elevation = dp2pxf(4f)
-            rightButton.id = VIEW_ID_SCAN_FOLDER
-            rightButton.setOnClickListener(this@BookShelfFragment)
-            rightButton.setPadding(dp2px(4), dp2px(8), dp2px(4), dp2px(8))
-            rightButton.paint.isFakeBoldText = true
-            rightButton.gravity = Gravity.CENTER_VERTICAL
-            rightButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
-            rightButton.setTextColor(Color.WHITE)
-            rightButton.text = "扫描目录"
-            rightButton.background = buildCommonButtonBg(color_light_blue)
-            addView(rightButton, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
-                leftMargin = dp2px(16)
-            })
+            compoundDrawablePadding = dp2px(8)
+            id = VIEW_ID_ADD_FILE
+            setOnClickListener(this@BookShelfFragment)
+            setPadding(dp2px(16))
+            paint.isFakeBoldText = true
+            gravity = Gravity.CENTER
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
+            setTextColor(buildCommonButtonTextColor(color_light_blue))
+            text = "添加文件"
+            background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
+            contentLayout.addView(this, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
         }
+
+
+        TextView(ctx).apply {
+            emptyViewList.add(this)
+            setCompoundDrawablesWithIntrinsicBounds(
+                getDrawableRes(com.lyc.api.R.drawable.ic_folder_open_24dp)?.apply {
+                    changeToColor(color_light_blue)
+                },
+                null,
+                null,
+                null
+            )
+            compoundDrawablePadding = dp2px(8)
+            id = VIEW_ID_SCAN_FOLDER
+            setOnClickListener(this@BookShelfFragment)
+            setPadding(dp2px(16))
+            paint.isFakeBoldText = true
+            gravity = Gravity.CENTER
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
+            setTextColor(color_light_blue)
+            text = "扫描目录"
+            background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
+            contentLayout.addView(this, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+        }
+
+
         for (view in emptyViewList) {
             view.isVisible = false
         }
@@ -168,7 +162,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         rootView.addView(refreshLayout, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT).apply {
             topMargin = toolBar.getViewHeight()
         })
-        rootView.setBackgroundColor(color_bg)
         return rootView
     }
 
@@ -202,7 +195,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
                 menu?.dismiss()
 
-                menu = PopupMenu(v.context, v, Gravity.LEFT or Gravity.BOTTOM).also {
+                menu = ReaderPopupMenu(v.context, v, Gravity.LEFT or Gravity.BOTTOM).also {
                     it.setOnMenuItemClickListener(this)
                     it.menu.run {
                         add(0, MENU_ID_ADD_FROM_LOCAL, MENU_ID_ADD_FROM_LOCAL, "导入本地书籍")

@@ -13,6 +13,8 @@ import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import androidx.core.view.setPadding
 import com.lyc.base.ReaderApplication
+import com.lyc.base.ui.theme.NightModeManager
+import com.lyc.base.utils.blendColor
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
 
@@ -73,7 +75,11 @@ object ReaderToast : Handler.Callback {
             background = bg
             this.text = text
             setPadding(dp2px(8))
-            setTextColor(Color.WHITE)
+            if (NightModeManager.nightModeEnable) {
+                setTextColor(blendColor(Color.WHITE, NightModeManager.NIGHT_MODE_MASK_COLOR))
+            } else {
+                setTextColor(Color.WHITE)
+            }
             setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
             this.gravity = Gravity.CENTER
         }

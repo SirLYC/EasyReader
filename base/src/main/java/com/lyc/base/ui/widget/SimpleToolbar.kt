@@ -1,14 +1,13 @@
 package com.lyc.base.ui.widget
 
 import android.content.Context
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.view.Gravity
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.getDrawableRes
 import com.lyc.base.ui.theme.color_primary_text
+import com.lyc.base.utils.changeToColor
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.generateNewViewId
 
@@ -33,10 +32,8 @@ class SimpleToolbar(context: Context, @DrawableRes private val leftIconRes: Int)
                 gravity = Gravity.RIGHT
             })
             getDrawableRes(leftIconRes)?.let {
-                val newDrawable = it.mutate()
-                newDrawable.colorFilter =
-                    PorterDuffColorFilter(color_primary_text, PorterDuff.Mode.SRC_ATOP)
-                setImageDrawable(newDrawable)
+                it.changeToColor(color_primary_text)
+                setImageDrawable(it)
             }
             getDrawableAttrRes(android.R.attr.selectableItemBackground)?.let {
                 background = it

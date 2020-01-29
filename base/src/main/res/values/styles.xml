@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="PopupMenuDay" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:itemBackground">@drawable/bg_popup_menu_item_day</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="PopupMenuNight" parent="PopupMenuDay">
+        <item name="android:textColor">#ff808080</item>
+        <item name="android:itemBackground">@drawable/bg_popup_menu_item_night</item>
+    </style>
+</resources>

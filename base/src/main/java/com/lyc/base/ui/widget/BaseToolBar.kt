@@ -2,8 +2,6 @@ package com.lyc.base.ui.widget
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
@@ -17,10 +15,7 @@ import com.lyc.base.R
 import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.getDrawableRes
 import com.lyc.base.ui.theme.color_primary_text
-import com.lyc.base.utils.dp2px
-import com.lyc.base.utils.dp2pxf
-import com.lyc.base.utils.generateNewViewId
-import com.lyc.base.utils.statusBarHeight
+import com.lyc.base.utils.*
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
@@ -99,10 +94,8 @@ open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean =
                 gravity = Gravity.LEFT
             })
             getDrawableRes(R.drawable.ic_arrow_back_24dp)?.let {
-                val newDrawable = it.mutate()
-                newDrawable.colorFilter =
-                    PorterDuffColorFilter(color_primary_text, PorterDuff.Mode.SRC_ATOP)
-                setImageDrawable(newDrawable)
+                it.changeToColor(color_primary_text)
+                setImageDrawable(it)
             }
             getDrawableAttrRes(android.R.attr.selectableItemBackground)?.let {
                 background = it
@@ -114,13 +107,6 @@ open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean =
     protected open fun initRightButton() {
 
     }
-
-//    override fun dispatchDraw(canvas: Canvas?) {
-//        super.dispatchDraw(canvas)
-//        if (drawDivideLine) {
-//            canvas?.drawBottomDivideLine(width.toFloat(), height.toFloat())
-//        }
-//    }
 
     fun getViewHeight() = BAR_HEIGHT + paddingTop
 }

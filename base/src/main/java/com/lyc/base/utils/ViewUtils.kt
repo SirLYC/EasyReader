@@ -10,7 +10,7 @@ import androidx.annotation.IntRange
 import androidx.annotation.MainThread
 import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.theme.color_divider
-import com.lyc.base.ui.theme.color_primary
+import com.lyc.base.ui.theme.color_orange
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
@@ -57,7 +57,7 @@ fun Canvas.drawTopDivideLine(width: Float, lineSize: Float = 1f) {
     drawRect(0f, 0f, width, lineSize, divideLinePaint)
 }
 
-fun buildCommonButtonBg(color: Int = color_primary, outline: Boolean = false): Drawable {
+fun buildCommonButtonBg(color: Int = color_orange, outline: Boolean = false): Drawable {
     val commonBg = PaintDrawable(color).apply {
         setCornerRadius(dp2pxf(4f))
         if (outline) {
@@ -93,7 +93,7 @@ fun buildCommonButtonBg(color: Int = color_primary, outline: Boolean = false): D
     return result
 }
 
-fun buildCommonButtonTextColor(color: Int = color_primary) = ColorStateList(
+fun buildCommonButtonTextColor(color: Int = color_orange) = ColorStateList(
     arrayOf(
         intArrayOf(android.R.attr.state_enabled),
         intArrayOf(-android.R.attr.state_enabled)
@@ -103,3 +103,17 @@ fun buildCommonButtonTextColor(color: Int = color_primary) = ColorStateList(
 
 fun Int.addColorAlpha(@IntRange(from = 0, to = 0xff) alpha: Int) =
     Color.argb(alpha, Color.red(this), Color.green(this), Color.blue(this))
+
+fun blendColor(bg: Int, fg: Int): Int {
+    val scr = Color.red(fg)
+    val scg = Color.green(fg)
+    val scb = Color.blue(fg)
+    val sa = fg ushr 24
+    val dcr = Color.red(bg)
+    val dcg = Color.green(bg)
+    val dcb = Color.blue(bg)
+    val colorR = dcr * (0xff - sa) / 0xff + scr * sa / 0xff
+    val colorG = dcg * (0xff - sa) / 0xff + scg * sa / 0xff
+    val colorB = dcb * (0xff - sa) / 0xff + scb * sa / 0xff
+    return ((colorR shl 16) + (colorG shl 8) + colorB) or (0xff000000.toInt())
+}

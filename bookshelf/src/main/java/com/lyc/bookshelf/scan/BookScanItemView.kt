@@ -1,7 +1,6 @@
 package com.lyc.bookshelf.scan
 
 import android.content.Context
-import android.graphics.Canvas
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.PaintDrawable
@@ -15,10 +14,12 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.lyc.base.ui.getDrawableRes
-import com.lyc.base.ui.theme.*
+import com.lyc.base.ui.theme.color_orange
+import com.lyc.base.ui.theme.color_orange_deep
+import com.lyc.base.ui.theme.color_primary_text
+import com.lyc.base.ui.theme.color_secondary_text
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
-import com.lyc.base.utils.drawBottomDivideLine
 import com.lyc.bookshelf.utils.toFileSizeString
 import com.lyc.bookshelf.utils.toFileTimeString
 import java.util.*
@@ -40,11 +41,11 @@ class BookScanItemView(
 
     private val checkedDrawable =
         getDrawableRes(com.lyc.api.R.drawable.ic_check_circle_24dp)?.apply {
-            colorFilter = PorterDuffColorFilter(color_primary_dark, PorterDuff.Mode.SRC_ATOP)
+            colorFilter = PorterDuffColorFilter(color_orange, PorterDuff.Mode.SRC_ATOP)
         }
     private val uncheckDrawable =
         getDrawableRes(com.lyc.api.R.drawable.ic_radio_button_unchecked_24dp)?.apply {
-            colorFilter = PorterDuffColorFilter(color_primary_dark, PorterDuff.Mode.SRC_ATOP)
+            colorFilter = PorterDuffColorFilter(color_orange, PorterDuff.Mode.SRC_ATOP)
         }
 
     private var data: BookScanItem? = null
@@ -101,11 +102,6 @@ class BookScanItemView(
             LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
                 leftMargin = dp2px(8)
             })
-    }
-
-    override fun dispatchDraw(canvas: Canvas?) {
-        super.dispatchDraw(canvas)
-        canvas?.drawBottomDivideLine(width.toFloat(), height.toFloat())
     }
 
     override fun onClick(v: View?) {

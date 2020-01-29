@@ -11,7 +11,7 @@ import android.widget.TextView
 import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import com.lyc.base.ui.getDrawableRes
-import com.lyc.base.ui.theme.color_accent
+import com.lyc.base.ui.theme.color_gray
 import com.lyc.base.utils.changeToColor
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
@@ -53,13 +53,13 @@ class BookScanAdapter(
                     setCompoundDrawablesWithIntrinsicBounds(
                         null,
                         getDrawableRes(com.lyc.api.R.drawable.ic_sleeping_cat)?.apply {
-                            changeToColor(color_accent)
+                            changeToColor(color_gray)
                         },
                         null,
                         null
                     )
                     compoundDrawablePadding = dp2px(32)
-                    setTextColor(color_accent)
+                    setTextColor(color_gray)
                 }, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
                     gravity = Gravity.CENTER
                 })

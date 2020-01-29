@@ -2,8 +2,6 @@ package com.lyc.bookshelf
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.PaintDrawable
 import android.util.TypedValue
 import android.view.Gravity
@@ -15,12 +13,12 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.lyc.api.book.BookFile
-import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.getDrawableRes
 import com.lyc.base.ui.theme.color_orange
 import com.lyc.base.ui.theme.color_primary_text
 import com.lyc.base.ui.theme.color_secondary_text
 import com.lyc.base.utils.addColorAlpha
+import com.lyc.base.utils.buildCommonButtonBg
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
 import com.lyc.bookshelf.utils.toFileTimeString
@@ -45,12 +43,7 @@ class BookShelfItemView(
     private var position = -1
 
     init {
-        background = LayerDrawable(
-            arrayOf(
-                getDrawableAttrRes(android.R.attr.selectableItemBackground),
-                ColorDrawable(Color.WHITE)
-            )
-        )
+        background = buildCommonButtonBg(Color.WHITE)
         setPadding(dp2px(16), dp2px(8), dp2px(16), dp2px(8))
         initView()
         setOnClickListener(this)

@@ -3,6 +3,7 @@ package com.lyc.base.ui
 import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import androidx.annotation.AttrRes
+import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
@@ -30,3 +31,6 @@ fun getDrawableAttrRes(@AttrRes resId: Int): Drawable? {
     typedArray.recycle()
     return drawable
 }
+
+fun getColorRes(@ColorRes resId: Int): Int =
+    ContextCompat.getColor(ReaderApplication.appContext(), resId)

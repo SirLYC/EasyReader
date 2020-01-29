@@ -17,8 +17,8 @@ import com.lyc.api.main.IMainTabDelegate
 import com.lyc.base.getAppExtensions
 import com.lyc.base.ui.getDrawableAttrRes
 import com.lyc.base.ui.getDrawableRes
-import com.lyc.base.ui.theme.color_accent
-import com.lyc.base.ui.theme.color_primary
+import com.lyc.base.ui.theme.color_gray
+import com.lyc.base.ui.theme.color_orange
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
 import java.util.*
@@ -32,11 +32,11 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
 
         val CURRENT_FILTER by lazy {
             PorterDuffColorFilter(
-                color_primary,
+                color_orange,
                 PorterDuff.Mode.SRC_ATOP
             )
         }
-        val NORMAL_FILTER by lazy { PorterDuffColorFilter(color_accent, PorterDuff.Mode.SRC_ATOP) }
+        val NORMAL_FILTER by lazy { PorterDuffColorFilter(color_gray, PorterDuff.Mode.SRC_ATOP) }
     }
 
     var currentId = -1
@@ -115,11 +115,11 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
         private fun applyCurrent() {
             if (current) {
                 iconIv.colorFilter = CURRENT_FILTER
-                tv.setTextColor(color_primary)
+                tv.setTextColor(color_orange)
                 tv.paint.isFakeBoldText = true
             } else {
                 iconIv.colorFilter = if (current) CURRENT_FILTER else NORMAL_FILTER
-                tv.setTextColor(color_accent)
+                tv.setTextColor(color_gray)
                 tv.paint.isFakeBoldText = false
             }
         }

@@ -7,6 +7,8 @@ import com.lyc.common.EventHubFactory
  */
 object NightModeManager {
 
+    const val NIGHT_MODE_MASK_COLOR = 0x7F000000
+
     private val eventHub = EventHubFactory.createDefault<INightModeChangeListener>(true)
     var nightModeEnable = false
         set(value) {

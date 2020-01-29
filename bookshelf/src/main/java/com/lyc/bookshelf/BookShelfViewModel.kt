@@ -123,6 +123,9 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
                     handler.post(mainTask)
                 }
             } else {
+                if (currentList.isEmpty() && shelfBooks.isEmpty()) {
+                    hasChange.set(false)
+                }
                 handler.post(mainTask)
             }
         }

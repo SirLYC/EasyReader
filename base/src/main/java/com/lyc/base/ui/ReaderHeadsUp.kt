@@ -1,7 +1,10 @@
 package com.lyc.base.ui
 
+import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.drawable.PaintDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -16,7 +19,8 @@ import android.widget.Toast
 import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import com.lyc.base.ReaderApplication
-import com.lyc.base.ui.theme.color_primary_light
+import com.lyc.base.ui.theme.NightModeManager
+import com.lyc.base.ui.theme.color_light_blue
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
 
@@ -53,7 +57,7 @@ object ReaderHeadsUp : Handler.Callback {
 
     fun showHeadsUp(
         @StringRes textResId: Int, duration: Int = Toast.LENGTH_SHORT,
-        bgColor: Int = color_primary_light,
+        bgColor: Int = color_light_blue,
         textColor: Int = Color.WHITE
     ) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
@@ -80,7 +84,7 @@ object ReaderHeadsUp : Handler.Callback {
     fun showHeadsUp(
         text: String,
         duration: Int = Toast.LENGTH_SHORT,
-        bgColor: Int = color_primary_light,
+        bgColor: Int = color_light_blue,
         textColor: Int = Color.WHITE
     ) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
@@ -120,9 +124,6 @@ object ReaderHeadsUp : Handler.Callback {
         val toast = Toast(context)
         val contentView: View = if (text != null) {
             TextView(context).apply {
-                val bg = PaintDrawable(bgColor)
-                bg.setCornerRadius(dp2pxf(8f))
-                background = bg
                 this.text = text
                 setPadding(dp2px(12), dp2px(16), dp2px(12), dp2px(16))
                 setTextColor(textColor)
@@ -138,14 +139,8 @@ object ReaderHeadsUp : Handler.Callback {
             view!!
         }
 
-        val params = FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
-            leftMargin = dp2px(16)
-            rightMargin = dp2px(16)
-        }
         toast.setGravity(Gravity.TOP or Gravity.FILL_HORIZONTAL, 0, 0)
-        toast.view = FrameLayout(context).apply {
-            addView(contentView, params)
-        }
+        toast.view = HeadsUpWrapperView(context, bgColor).apply { setContentView(contentView) }
         toast.duration = Toast.LENGTH_LONG
         handler.removeMessages(MSG_CANCEL_TOAST)
         toast.show()
@@ -183,5 +178,62 @@ object ReaderHeadsUp : Handler.Callback {
         }
 
         return true
+    }
+
+    private class HeadsUpWrapperView(context: Context, private val bgColor: Int) :
+        FrameLayout(context) {
+        private val content: View?
+            get() = if (childCount > 0) getChildAt(0) else null
+        private val bgDrawable: Drawable = createContentWrapDrawable(bgColor)
+        private val foregroundDrawable by lazy { createContentWrapDrawable(NightModeManager.NIGHT_MODE_MASK_COLOR) }
+
+        fun setContentView(view: View) {
+            removeAllViews()
+            addView(view, LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                val dp32 = dp2px(32)
+                leftMargin = dp32
+                rightMargin = dp32
+            })
+        }
+
+        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+            super.onLayout(changed, left, top, right, bottom)
+            if (changed) {
+                content?.let { content ->
+                    bgDrawable.bounds.run {
+                        this.left = content.left
+                        this.top = content.top
+                        this.right = content.right
+                        this.bottom = content.bottom
+                    }
+                    if (NightModeManager.nightModeEnable) {
+                        foregroundDrawable.bounds.run {
+                            this.left = content.left
+                            this.top = content.top
+                            this.right = content.right
+                            this.bottom = content.bottom
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun dispatchDraw(canvas: Canvas) {
+            bgDrawable.draw(canvas)
+            super.dispatchDraw(canvas)
+            if (NightModeManager.nightModeEnable) {
+                foregroundDrawable.draw(canvas)
+            }
+        }
+
+
+        fun createContentWrapDrawable(color: Int): Drawable {
+            return GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(color, color)
+            ).apply {
+                cornerRadius = dp2pxf(8f)
+            }
+        }
     }
 }

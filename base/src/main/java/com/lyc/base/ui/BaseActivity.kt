@@ -5,11 +5,14 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.lyc.base.ui.theme.NightModeManager
+import com.lyc.base.ui.theme.NightModeManager.NIGHT_MODE_MASK_COLOR
+import com.lyc.base.ui.theme.color_bg
 
 /**
  * Created by Liu Yuchuan on 2020/1/8.
@@ -17,7 +20,6 @@ import com.lyc.base.ui.theme.NightModeManager
 abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeChangeListener {
 
     companion object {
-        const val NIGHT_MODE_MASK_COLOR = 0x7F000000
         private const val KEY_CONFIG_CHANGE = "KEY_CONFIG_CHANGE"
     }
 
@@ -37,7 +39,7 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         } else {
             val maskView = this.maskView ?: View(this).apply {
                 setBackgroundColor(NIGHT_MODE_MASK_COLOR)
-                this@BaseActivity.rootView.addView(this)
+                (window.decorView as? ViewGroup)?.addView(this)
             }
             maskView.bringToFront()
             maskView.isVisible = true
@@ -64,7 +66,7 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
             window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
         }
         rootView = FrameLayout(this)
-        rootView.setBackgroundColor(Color.WHITE)
+        rootView.setBackgroundColor(color_bg)
         afterBaseOnCreate(savedInstanceState, rootView)
         createRootView = true
         onNightModeChange(NightModeManager.nightModeEnable)

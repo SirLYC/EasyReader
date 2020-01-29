@@ -21,16 +21,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
 
     public static final String TABLENAME = "BOOK_FILE";
 
-    private final StatusConverter statusConverter = new StatusConverter();
-
-    public BookFileDao(DaoConfig config) {
-        super(config);
-    }
-
-    public BookFileDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
     /**
      * Creates the underlying database table.
      */
@@ -52,6 +42,24 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 " (\"IMPORT_TIME\" DESC);");
         db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_FILE_LAST_ACCESS_TIME_DESC ON \"BOOK_FILE\"" +
                 " (\"LAST_ACCESS_TIME\" DESC);");
+    }
+
+    private final StatusConverter statusConverter = new StatusConverter();
+
+    public BookFileDao(DaoConfig config) {
+        super(config);
+    }
+
+    public BookFileDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /**
+     * Drops the underlying database table.
+     */
+    public static void dropTable(Database db, boolean ifExists) {
+        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
+        db.execSQL(sql);
     }
 
     @Override
@@ -85,14 +93,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         if (status != null) {
             stmt.bindString(8, statusConverter.convertToDatabaseValue(status));
         }
-    }
-
-    /**
-     * Drops the underlying database table.
-     */
-    public static void dropTable(Database db, boolean ifExists) {
-        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
-        db.execSQL(sql);
     }
 
     @Override
@@ -160,21 +160,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         entity.setStatus(cursor.isNull(offset + 7) ? null : statusConverter.convertToEntityProperty(cursor.getString(offset + 7)));
     }
 
-    @Override
-    protected final Long updateKeyAfterInsert(BookFile entity, long rowId) {
-        entity.setId(rowId);
-        return rowId;
-    }
-    
-    @Override
-    public Long getKey(BookFile entity) {
-        if(entity != null) {
-            return entity.getId();
-        } else {
-            return null;
-        }
-    }
-    
     /**
      * Properties of entity BookFile.<br/>
      * Can be used for QueryBuilder and for referencing column names.
@@ -188,6 +173,21 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         public final static Property LastAccessTime = new Property(5, long.class, "lastAccessTime", false, "LAST_ACCESS_TIME");
         public final static Property DeleteTime = new Property(6, long.class, "deleteTime", false, "DELETE_TIME");
         public final static Property Status = new Property(7, String.class, "status", false, "STATUS");
+    }
+    
+    @Override
+    protected final Long updateKeyAfterInsert(BookFile entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
+    }
+    
+    @Override
+    public Long getKey(BookFile entity) {
+        if(entity != null) {
+            return entity.getId();
+        } else {
+            return null;
+        }
     }
 
     @Override
