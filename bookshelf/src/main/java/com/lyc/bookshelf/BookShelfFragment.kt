@@ -30,6 +30,7 @@ import com.lyc.base.arch.provideViewModel
 import com.lyc.base.ui.BaseActivity
 import com.lyc.base.ui.ReaderToast
 import com.lyc.base.ui.getDrawableRes
+import com.lyc.base.ui.theme.color_bg
 import com.lyc.base.ui.theme.color_light_blue
 import com.lyc.base.ui.theme.color_secondary_text
 import com.lyc.base.ui.widget.SimpleToolbar
@@ -167,6 +168,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         rootView.addView(refreshLayout, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT).apply {
             topMargin = toolBar.getViewHeight()
         })
+        rootView.setBackgroundColor(color_bg)
         return rootView
     }
 

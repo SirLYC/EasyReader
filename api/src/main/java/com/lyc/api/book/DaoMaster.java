@@ -45,9 +45,7 @@ public class DaoMaster extends AbstractDaoMaster {
         BookFileDao.createTable(db, ifNotExists);
     }
 
-    /**
-     * Drops underlying database table using DAOs.
-     */
+    /** Drops underlying database table using DAOs. */
     public static void dropAllTables(Database db, boolean ifExists) {
         BookFileDao.dropTable(db, ifExists);
     }

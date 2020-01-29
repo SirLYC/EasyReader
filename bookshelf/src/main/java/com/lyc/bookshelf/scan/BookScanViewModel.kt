@@ -2,8 +2,10 @@ package com.lyc.bookshelf.scan
 
 import android.net.Uri
 import android.os.Bundle
+import android.webkit.MimeTypeMap
 import androidx.lifecycle.ViewModel
 import com.lyc.base.arch.NonNullLiveData
+import com.lyc.base.ui.ReaderHeadsUp
 import com.lyc.base.utils.LogUtils
 import com.lyc.base.utils.rv.ObservableList
 import com.lyc.bookshelf.VIEW_TYPE_EMPTY_ITEM
@@ -14,6 +16,8 @@ import com.lyc.bookshelf.utils.treeDocumentFile
 import com.lyc.common.thread.ExecutorFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Created by Liu Yuchuan on 2020/1/24.
@@ -50,19 +54,22 @@ class BookScanViewModel : ViewModel() {
             return
         }
 
-        ExecutorFactory.IO_EXECUTOR.execute {
+        ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
+            val lock = ReentrantLock()
             val tmpList = LinkedList<BookScanItem>()
             treeDocumentFile(uriLocal).forEach({ file ->
                 val ext = file.getExt()
-                if (ext.toLowerCase(Locale.getDefault()) == "txt" && file.length() > 0) {
+                val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+                if (mimeType?.startsWith("text/") == true && file.length() > 0) {
                     val bookScanItem =
                         BookScanItem(file.name, ext, file.uri, file.lastModified(), file.length())
                     LogUtils.d(TAG, "Scan a book: $bookScanItem")
-                    tmpList.add(bookScanItem)
-                }
-
-                if (tmpList.size >= 5) {
-                    notifyAppendList(tmpList)
+                    lock.withLock {
+                        tmpList.add(bookScanItem)
+                        if (tmpList.size >= 5) {
+                            notifyAppendList(tmpList)
+                        }
+                    }
                 }
             }, cancelToken = idle)
             idle.set(true)
@@ -71,7 +78,10 @@ class BookScanViewModel : ViewModel() {
             }
             ExecutorFactory.MAIN_EXECUTOR.execute {
                 if (list.isEmpty()) {
+                    ReaderHeadsUp.showHeadsUp("没有扫描到相关文件")
                     list.add(Pair(VIEW_TYPE_EMPTY_ITEM, EmptyItem))
+                } else {
+                    ReaderHeadsUp.showHeadsUp("扫描到${list.size}本书，可多选导入")
                 }
                 scanFinishLiveData.value = true
                 scanningLiveData.value = false

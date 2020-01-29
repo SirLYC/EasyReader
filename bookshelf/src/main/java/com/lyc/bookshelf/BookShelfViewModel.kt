@@ -40,7 +40,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
     }
 
     @MainThread
-    fun refreshList() {
+    fun refreshList(fromCallback: Boolean = false) {
         if (isLoadingLiveData.value) {
             return
         }
@@ -56,7 +56,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
                 if (diffResult == null) {
                     if (hasChange.get()) {
                         list.replaceAll(resultList)
-                        if (firstLoadFinish) {
+                        if (firstLoadFinish && !fromCallback) {
                             ReaderHeadsUp.showHeadsUp("刷新完成")
                         }
                     } else {
@@ -68,7 +68,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
                         list.addAll(resultList)
                     }
                     diffResult.dispatchUpdatesTo(list)
-                    if (firstLoadFinish) {
+                    if (firstLoadFinish && !fromCallback) {
                         ReaderHeadsUp.showHeadsUp("刷新完成")
                     }
                 }
@@ -113,6 +113,8 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
                                 break
                             }
                         }
+                    } else {
+                        hasChange.set(true)
                     }
 
                     if (hasChange.get()) {
@@ -140,7 +142,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
 
     override fun onBooksImported(list: List<BookFile>) {
         if (list.isNotEmpty()) {
-            handler.post { refreshList() }
+            handler.post { refreshList(fromCallback = true) }
         }
     }
 }

@@ -2,6 +2,8 @@ package com.lyc.bookshelf
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.PaintDrawable
 import android.util.TypedValue
 import android.view.Gravity
@@ -22,6 +24,7 @@ import com.lyc.base.utils.addColorAlpha
 import com.lyc.base.utils.dp2px
 import com.lyc.base.utils.dp2pxf
 import com.lyc.bookshelf.utils.toFileTimeString
+import java.util.*
 
 /**
  *
@@ -42,7 +45,12 @@ class BookShelfItemView(
     private var position = -1
 
     init {
-        background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
+        background = LayerDrawable(
+            arrayOf(
+                getDrawableAttrRes(android.R.attr.selectableItemBackground),
+                ColorDrawable(Color.WHITE)
+            )
+        )
         setPadding(dp2px(16), dp2px(8), dp2px(16), dp2px(8))
         initView()
         setOnClickListener(this)
@@ -55,11 +63,11 @@ class BookShelfItemView(
         })
         coverImageView.setImageDrawable(getDrawableRes(com.lyc.api.R.drawable.ic_book_cover))
 
-        fileTypeTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(12f))
+        fileTypeTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(10f))
         fileTypeTv.gravity = Gravity.CENTER
         fileTypeTv.paint.isFakeBoldText = true
         fileTypeTv.setTextColor(Color.WHITE)
-        fileTypeTv.setPadding(dp2px(8), fileTypeTv.paddingTop, dp2px(8), fileTypeTv.paddingRight)
+        fileTypeTv.setPadding(dp2px(4), 0, dp2px(4), 0)
         fileTypeTv.background =
             PaintDrawable(color_orange.addColorAlpha((0xff * 0.4f).toInt())).apply {
                 setCornerRadii(
@@ -116,7 +124,7 @@ class BookShelfItemView(
         if (data != null) {
             filenameTv.text = data.filename
             fileInfoTv.text = data.importTime.toFileTimeString()
-            fileTypeTv.text = "TXT"
+            fileTypeTv.text = data.fileExt.toUpperCase(Locale.ENGLISH)
         }
     }
 

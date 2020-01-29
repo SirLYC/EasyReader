@@ -11,7 +11,7 @@ import org.greenrobot.greendao.converter.PropertyConverter;
  * Created by Liu Yuchuan on 2020/1/26.
  */
 @Entity(indexes = {
-        @Index(value = "filename", unique = true),
+        @Index(value = "filename"),
         @Index(value = "importTime desc"),
         @Index(value = "lastAccessTime desc")
 }, generateGettersSetters = false)
@@ -21,6 +21,7 @@ public class BookFile {
     private Long id;
     private String realPath;
     private String filename;
+    private String fileExt;
     private long importTime;
     private long lastAccessTime;
     private long deleteTime;
@@ -31,12 +32,13 @@ public class BookFile {
     public BookFile() {
     }
 
-    @Generated(hash = 838807339)
-    public BookFile(Long id, String realPath, String filename, long importTime,
-                    long lastAccessTime, long deleteTime, Status status) {
+    @Generated(hash = 2001899060)
+    public BookFile(Long id, String realPath, String filename, String fileExt,
+                    long importTime, long lastAccessTime, long deleteTime, Status status) {
         this.id = id;
         this.realPath = realPath;
         this.filename = filename;
+        this.fileExt = fileExt;
         this.importTime = importTime;
         this.lastAccessTime = lastAccessTime;
         this.deleteTime = deleteTime;
@@ -57,6 +59,14 @@ public class BookFile {
 
     public void setRealPath(String realPath) {
         this.realPath = realPath;
+    }
+
+    public String getFileExt() {
+        return fileExt;
+    }
+
+    public void setFileExt(String fileExt) {
+        this.fileExt = fileExt;
     }
 
     public String getFilename() {

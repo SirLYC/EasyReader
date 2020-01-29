@@ -5,9 +5,12 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.lyc.base.ReaderApplication
 import com.lyc.base.utils.LogUtils
+import com.lyc.common.thread.ExecutorFactory
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.getOrSet
 
@@ -100,19 +103,11 @@ fun DocumentFile.forEach(
     onlyFile: Boolean = true,
     recursive: Boolean = true,
     maxDepth: Int = 2,
-    cancelToken: AtomicBoolean? = null
+    cancelToken: AtomicBoolean? = null,
+    fastMode: Boolean = true
 ) {
     if (!recursive) {
-        if (isDirectory) {
-            listFiles().forEach {
-                if (cancelToken?.get() == true) {
-                    return
-                }
-                if (!onlyFile || (onlyFile && !it.isDirectory)) {
-                    func(it)
-                }
-            }
-        }
+        forEachSubFile(func, onlyFile, cancelToken)
         return
     }
 
@@ -120,6 +115,77 @@ fun DocumentFile.forEach(
         throw IllegalArgumentException("Param \"maxDepth\" must be positive!")
     }
 
+    if (fastMode) {
+        forEachFileRecursivelyFastMode(func, onlyFile, maxDepth, cancelToken)
+    } else {
+        forEachFileRecursivelyBfs(func, onlyFile, maxDepth, cancelToken)
+    }
+}
+
+private inline fun DocumentFile.forEachSubFile(
+    func: (file: DocumentFile) -> Unit,
+    onlyFile: Boolean,
+    cancelToken: AtomicBoolean?
+) {
+    if (isDirectory) {
+        listFiles().forEach {
+            if (cancelToken?.get() == true) {
+                return
+            }
+            if (!onlyFile || (onlyFile && !it.isDirectory)) {
+                func(it)
+            }
+        }
+    }
+}
+
+private fun DocumentFile.forEachFileRecursivelyFastMode(
+    func: (file: DocumentFile) -> Unit,
+    onlyFile: Boolean,
+    maxDepth: Int,
+    cancelToken: AtomicBoolean?
+) {
+    val list = CopyOnWriteArrayList<DocumentFile>()
+    list.add(this)
+    var currentDepth = 0
+    while (list.isNotEmpty()) {
+        val currentList = list.toList()
+        list.clear()
+        val latch = CountDownLatch(currentList.size)
+        for (documentFile in currentList) {
+            if (cancelToken?.get() == true) {
+                return
+            }
+            ExecutorFactory.IO_EXECUTOR.execute {
+                try {
+                    if (cancelToken?.get() == true) {
+                        return@execute
+                    }
+                    if (documentFile.isDirectory) {
+                        if (!onlyFile) {
+                            func(documentFile)
+                        } else if (currentDepth < maxDepth) {
+                            list.addAll(documentFile.listFiles())
+                        }
+                    } else {
+                        func(documentFile)
+                    }
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+        latch.await()
+        currentDepth++
+    }
+}
+
+private inline fun DocumentFile.forEachFileRecursivelyBfs(
+    func: (file: DocumentFile) -> Unit,
+    onlyFile: Boolean,
+    maxDepth: Int,
+    cancelToken: AtomicBoolean?
+) {
     val list = LinkedList<Pair<Int, DocumentFile>>()
     list.add(Pair(0, this))
 

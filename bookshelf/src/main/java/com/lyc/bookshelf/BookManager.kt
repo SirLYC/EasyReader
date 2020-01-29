@@ -128,6 +128,7 @@ class BookManager private constructor() : IBookManager {
                     null,
                     null,
                     null,
+                    null,
                     currentTime,
                     0,
                     0,
@@ -187,7 +188,9 @@ class BookManager private constructor() : IBookManager {
                     }
                 }
 
-                newBookFile.filename = getFileNameFromUri(uri)
+                val orgFilename = getFileNameFromUri(uri)
+                newBookFile.filename = orgFilename.substringBeforeLast(".")
+                newBookFile.fileExt = orgFilename.substringAfterLast(".", "txt")
                 newBookFile.realPath = outputFile.absolutePath
                 newBookFile.status = BookFile.Status.NORMAL
                 BookShelfOpenHelper.instance.insertOrReplaceBookFile(newBookFile)
@@ -223,6 +226,6 @@ class BookManager private constructor() : IBookManager {
                 }
         }
 
-        return (result ?: uri.path!!.substringAfterLast(File.separator)).substringBeforeLast(".")
+        return (result ?: uri.path!!.substringAfterLast(File.separator))
     }
 }
