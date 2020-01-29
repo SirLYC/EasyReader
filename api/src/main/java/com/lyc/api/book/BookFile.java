@@ -12,7 +12,8 @@ import org.greenrobot.greendao.converter.PropertyConverter;
  */
 @Entity(indexes = {
         @Index(value = "filename", unique = true),
-        @Index(value = "importTime desc")
+        @Index(value = "importTime desc"),
+        @Index(value = "lastAccessTime desc")
 }, generateGettersSetters = false)
 public class BookFile {
 

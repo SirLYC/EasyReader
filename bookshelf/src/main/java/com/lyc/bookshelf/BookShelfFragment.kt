@@ -2,28 +2,38 @@ package com.lyc.bookshelf
 
 import android.app.Activity.RESULT_OK
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
+import androidx.core.view.setPadding
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.lyc.api.book.BookFile
 import com.lyc.api.main.AbstractMainTabFragment
 import com.lyc.base.ReaderApplication
 import com.lyc.base.arch.provideViewModel
 import com.lyc.base.ui.BaseActivity
 import com.lyc.base.ui.ReaderToast
+import com.lyc.base.ui.getDrawableRes
+import com.lyc.base.ui.theme.color_light_blue
+import com.lyc.base.ui.theme.color_secondary_text
 import com.lyc.base.ui.widget.SimpleToolbar
-import com.lyc.base.utils.LogUtils
-import com.lyc.base.utils.generateNewRequestCode
-import com.lyc.base.utils.statusBarBlackText
+import com.lyc.base.utils.*
 import com.lyc.bookshelf.scan.BookScanActivity
 import com.lyc.bookshelf.utils.detectCharset
 import com.lyc.bookshelf.utils.singleUriDocumentFile
@@ -33,11 +43,13 @@ import java.io.FileInputStream
  * Created by Liu Yuchuan on 2020/1/20.
  */
 class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
-    PopupMenu.OnMenuItemClickListener {
+    PopupMenu.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener,
+    BookShelfListAdapter.OnItemClickListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var refreshLayout: SwipeRefreshLayout
     private lateinit var viewModel: BookShelfViewModel
+    private val emptyViewList = hashSetOf<View>()
     private var menu: PopupMenu? = null
 
     companion object {
@@ -47,6 +59,11 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         val REQUEST_CODE_FILE = generateNewRequestCode()
         val REQUEST_CODE_DIR = generateNewRequestCode()
         val REQUEST_CODE_SCAN = generateNewRequestCode()
+
+        val VIEW_ID_ADD_FILE = generateNewViewId()
+        val VIEW_ID_SCAN_FOLDER = generateNewViewId()
+
+        val VIEW_ID_RV = generateNewViewId()
 
         const val TAG = "BookShelfFragment"
     }
@@ -60,9 +77,93 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         toolBar.setBarClickListener(this)
         rootView.addView(toolBar, FrameLayout.LayoutParams(MATCH_PARENT, toolBar.getViewHeight()))
         refreshLayout = SwipeRefreshLayout(ctx)
+        val contentLayout = LinearLayout(ctx)
+        contentLayout.gravity = Gravity.CENTER
+        contentLayout.orientation = LinearLayout.VERTICAL
         recyclerView = RecyclerView(ctx)
         recyclerView.layoutManager = LinearLayoutManager(ctx)
-        refreshLayout.addView(recyclerView)
+        recyclerView.isVisible = false
+        recyclerView.id = VIEW_ID_RV
+        contentLayout.addView(recyclerView, LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+
+        ImageView(ctx).run {
+            contentLayout.addView(this, LinearLayout.LayoutParams(dp2px(100), dp2px(100)))
+            emptyViewList.add(this)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setImageDrawable(getDrawableRes(R.drawable.ic_empty_box)?.apply {
+                changeToColor(color_secondary_text)
+            })
+        }
+        TextView(ctx).run {
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(16f))
+            setTextColor(color_secondary_text)
+            gravity = Gravity.CENTER
+            setPadding(dp2px(24))
+            contentLayout.addView(this, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+            emptyViewList.add(this)
+            text = "还没有添加任何书籍~"
+        }
+
+        LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            emptyViewList.add(this)
+            contentLayout.addView(
+                this,
+                LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                    leftMargin = dp2px(32)
+                    rightMargin = dp2px(32)
+                })
+
+            val leftButton = TextView(ctx)
+            leftButton.setCompoundDrawablesWithIntrinsicBounds(
+                getDrawableRes(com.lyc.api.R.drawable.ic_add_24dp),
+                null,
+                null,
+                null
+            )
+            leftButton.compoundDrawablePadding = dp2px(4)
+            leftButton.elevation = dp2pxf(4f)
+            leftButton.id = VIEW_ID_ADD_FILE
+            leftButton.setOnClickListener(this@BookShelfFragment)
+            leftButton.setPadding(dp2px(4), dp2px(8), dp2px(4), dp2px(8))
+            leftButton.paint.isFakeBoldText = true
+            leftButton.gravity = Gravity.CENTER_VERTICAL
+            leftButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
+            leftButton.setTextColor(Color.WHITE)
+            leftButton.text = "添加文件"
+            leftButton.background = buildCommonButtonBg(color_light_blue)
+            addView(leftButton, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
+                rightMargin = dp2px(16)
+            })
+
+            val rightButton = TextView(ctx)
+            rightButton.setCompoundDrawablesWithIntrinsicBounds(
+                getDrawableRes(com.lyc.api.R.drawable.ic_folder_24dp),
+                null,
+                null,
+                null
+            )
+            rightButton.compoundDrawablePadding = dp2px(4)
+            rightButton.elevation = dp2pxf(4f)
+            rightButton.id = VIEW_ID_SCAN_FOLDER
+            rightButton.setOnClickListener(this@BookShelfFragment)
+            rightButton.setPadding(dp2px(4), dp2px(8), dp2px(4), dp2px(8))
+            rightButton.paint.isFakeBoldText = true
+            rightButton.gravity = Gravity.CENTER_VERTICAL
+            rightButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
+            rightButton.setTextColor(Color.WHITE)
+            rightButton.text = "扫描目录"
+            rightButton.background = buildCommonButtonBg(color_light_blue)
+            addView(rightButton, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
+                leftMargin = dp2px(16)
+            })
+        }
+        for (view in emptyViewList) {
+            view.isVisible = false
+        }
+
+        refreshLayout.addView(contentLayout)
+        refreshLayout.setOnRefreshListener(this)
         rootView.addView(refreshLayout, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT).apply {
             topMargin = toolBar.getViewHeight()
         })
@@ -72,6 +173,21 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         viewModel = provideViewModel()
+        recyclerView.adapter = BookShelfListAdapter(viewModel.list, this).apply {
+            observe(this@BookShelfFragment)
+        }
+        viewModel.isLoadingLiveData.observe(this, Observer { isLoading ->
+            refreshLayout.isRefreshing = isLoading
+        })
+        viewModel.hasDataLiveData.observe(this, Observer { hasData: Boolean? ->
+            val firstLoadFinish = viewModel.firstLoadFinish
+            recyclerView.isVisible = firstLoadFinish && hasData == true
+            val emptyViewVisible = firstLoadFinish && hasData == false
+            emptyViewList.forEach {
+                it.isVisible = emptyViewVisible
+            }
+        })
+        viewModel.firstLoadIfNeeded()
     }
 
     override fun onResume() {
@@ -92,6 +208,12 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     }
                     it.show()
                 }
+            }
+            VIEW_ID_ADD_FILE -> {
+                performFileSearch()
+            }
+            VIEW_ID_SCAN_FOLDER -> {
+                performDirSearch()
             }
         }
     }
@@ -197,5 +319,13 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     private fun performDirSearch() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
         startActivityForResult(intent, REQUEST_CODE_DIR)
+    }
+
+    override fun onRefresh() {
+        viewModel.refreshList()
+    }
+
+    override fun onBookShelfItemClick(pos: Int, data: BookFile, view: BookShelfItemView) {
+        LogUtils.d(TAG, "Click book item [position=${pos}] [data=${data}].")
     }
 }

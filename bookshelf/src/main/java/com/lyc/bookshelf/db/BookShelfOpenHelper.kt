@@ -45,4 +45,14 @@ class BookShelfOpenHelper private constructor() :
             db.execSQL(sql)
         })
     }
+
+    fun loadBookShelfList(): List<BookFile> {
+        return daoSession.bookFileDao.queryBuilder()
+            .where(
+                BookFileDao.Properties.RealPath.isNotNull,
+                BookFileDao.Properties.Status.eq(BookFile.Status.NORMAL.name)
+            )
+            .orderDesc(BookFileDao.Properties.LastAccessTime, BookFileDao.Properties.ImportTime)
+            .list()
+    }
 }

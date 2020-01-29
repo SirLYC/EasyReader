@@ -20,21 +20,12 @@ import org.greenrobot.greendao.internal.DaoConfig;
 public class BookFileDao extends AbstractDao<BookFile, Long> {
 
     public static final String TABLENAME = "BOOK_FILE";
-    private final StatusConverter statusConverter = new StatusConverter();
-
-    public BookFileDao(DaoConfig config) {
-        super(config);
-    }
-
-    public BookFileDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
 
     /**
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"BOOK_FILE\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY ," + // 0: id
                 "\"REAL_PATH\" TEXT," + // 1: realPath
@@ -48,11 +39,21 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 " (\"FILENAME\" ASC);");
         db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_FILE_IMPORT_TIME_DESC ON \"BOOK_FILE\"" +
                 " (\"IMPORT_TIME\" DESC);");
+        db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_FILE_LAST_ACCESS_TIME_DESC ON \"BOOK_FILE\"" +
+                " (\"LAST_ACCESS_TIME\" DESC);");
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+    private final StatusConverter statusConverter = new StatusConverter();
+
+    public BookFileDao(DaoConfig config) {
+        super(config);
+    }
+
+    public BookFileDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
         db.execSQL(sql);
@@ -142,14 +143,8 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         entity.setLastAccessTime(cursor.getLong(offset + 4));
         entity.setDeleteTime(cursor.getLong(offset + 5));
         entity.setStatus(cursor.isNull(offset + 6) ? null : statusConverter.convertToEntityProperty(cursor.getString(offset + 6)));
-    }
-
-    @Override
-    protected final Long updateKeyAfterInsert(BookFile entity, long rowId) {
-        entity.setId(rowId);
-        return rowId;
-    }
-
+     }
+     
     @Override
     public Long getKey(BookFile entity) {
         if (entity != null) {
@@ -160,13 +155,9 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
     }
 
     @Override
-    public boolean hasKey(BookFile entity) {
-        return entity.getId() != null;
-    }
-
-    @Override
-    protected final boolean isEntityUpdateable() {
-        return true;
+    protected final Long updateKeyAfterInsert(BookFile entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
 
     /**
@@ -183,4 +174,14 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         public final static Property Status = new Property(6, String.class, "status", false, "STATUS");
     }
 
+    @Override
+    public boolean hasKey(BookFile entity) {
+        return entity.getId() != null;
+    }
+
+    @Override
+    protected final boolean isEntityUpdateable() {
+        return true;
+    }
+    
 }

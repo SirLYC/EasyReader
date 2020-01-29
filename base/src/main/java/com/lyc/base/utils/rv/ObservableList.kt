@@ -127,6 +127,7 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
 
     inline fun withoutCallback(func: ObservableList<T>.() -> Unit) {
         val enable = enable
+        this.enable = false
         func()
         this.enable = enable
     }

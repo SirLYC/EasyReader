@@ -49,12 +49,12 @@ private val divideLinePaint by lazy {
     }
 }
 
-fun Canvas.drawBottomDivideLine(width: Float, height: Float) {
-    drawRect(0f, height - 1f, width, height, divideLinePaint)
+fun Canvas.drawBottomDivideLine(width: Float, height: Float, lineSize: Float = 1f) {
+    drawRect(0f, height - lineSize, width, height, divideLinePaint)
 }
 
-fun Canvas.drawTopDivideLine(width: Float) {
-    drawRect(0f, 0f, width, 1f, divideLinePaint)
+fun Canvas.drawTopDivideLine(width: Float, lineSize: Float = 1f) {
+    drawRect(0f, 0f, width, lineSize, divideLinePaint)
 }
 
 fun buildCommonButtonBg(color: Int = color_primary, outline: Boolean = false): Drawable {

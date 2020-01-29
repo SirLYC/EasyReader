@@ -2,6 +2,7 @@ package com.lyc.bookshelf
 
 import android.net.Uri
 import android.os.SystemClock
+import android.provider.OpenableColumns
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
 import com.lyc.api.book.BookFile
@@ -20,6 +21,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+
 
 /**
  * Created by Liu Yuchuan on 2020/1/26.
@@ -127,7 +129,7 @@ class BookManager private constructor() : IBookManager {
                     null,
                     null,
                     currentTime,
-                    currentTime,
+                    0,
                     0,
                     BookFile.Status.TMP
                 )
@@ -185,7 +187,7 @@ class BookManager private constructor() : IBookManager {
                     }
                 }
 
-                newBookFile.filename = filename
+                newBookFile.filename = getFileNameFromUri(uri)
                 newBookFile.realPath = outputFile.absolutePath
                 newBookFile.status = BookFile.Status.NORMAL
                 BookShelfOpenHelper.instance.insertOrReplaceBookFile(newBookFile)
@@ -207,5 +209,20 @@ class BookManager private constructor() : IBookManager {
         )
 
         return finish
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String {
+        var result: String? = null
+        if (uri.scheme.equals("content")) {
+            ReaderApplication.appContext().contentResolver.query(uri, null, null, null, null)
+                .use { cursor ->
+                    if (cursor != null && cursor.moveToFirst()) {
+                        result =
+                            cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                    }
+                }
+        }
+
+        return (result ?: uri.path!!.substringAfterLast(File.separator)).substringBeforeLast(".")
     }
 }
