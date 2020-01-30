@@ -11,7 +11,7 @@ import com.lyc.easyreader.base.utils.LogUtils
 class EventBus private constructor() {
     companion object {
 
-        const val TAG = "EventBus"
+        private const val TAG = "EventBus"
 
         @JvmStatic
         val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { EventBus() }

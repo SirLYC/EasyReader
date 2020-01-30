@@ -11,7 +11,7 @@ import com.lyc.easyreader.base.utils.LogUtils
 internal class AppCrashHandler : Thread.UncaughtExceptionHandler, IApplicationOnCreateListener {
 
     companion object {
-        const val TAG = "AppCrashHandler"
+        private const val TAG = "AppCrashHandler"
     }
 
     private val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()

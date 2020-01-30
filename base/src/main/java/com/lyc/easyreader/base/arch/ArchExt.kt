@@ -2,7 +2,6 @@ package com.lyc.easyreader.base.arch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.lyc.easyreader.base.arch.vm.ReaderViewModelFactory
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.BaseFragment
 

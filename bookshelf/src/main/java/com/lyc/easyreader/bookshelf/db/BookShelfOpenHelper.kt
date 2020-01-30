@@ -2,10 +2,9 @@ package com.lyc.easyreader.bookshelf.db
 
 import android.util.Log
 import com.lyc.common.thread.SingleThreadRunner
-import com.lyc.easyreader.api.book.BookFile
-import com.lyc.easyreader.api.book.BookFileDao
-import com.lyc.easyreader.api.book.DaoMaster
+import com.lyc.easyreader.api.book.*
 import com.lyc.easyreader.base.ReaderApplication
+import java.io.File
 
 /**
  * Created by Liu Yuchuan on 2020/1/26.
@@ -54,5 +53,38 @@ class BookShelfOpenHelper private constructor() :
             )
             .orderDesc(BookFileDao.Properties.LastAccessTime, BookFileDao.Properties.ImportTime)
             .list()
+    }
+
+    fun queryBookChapters(bookFile: BookFile): List<BookChapter>? {
+        if (bookFile.id == null) {
+            return null
+        }
+
+        val file = File(bookFile.realPath)
+        val lastModified = file.lastModified()
+        return daoSession.bookChapterDao.queryBuilder()
+            .where(
+                BookChapterDao.Properties.BookId.eq(bookFile.id),
+                BookChapterDao.Properties.LastModified.eq(lastModified)
+            )
+            .orderDesc()
+            .list()
+    }
+
+    fun saveBookChapters(bookFile: BookFile, lastModified: Long, list: List<BookChapter>) {
+        dbRunner.awaitRun(Runnable {
+            daoSession.bookChapterDao.saveInTx(list)
+        })
+        // 异步删除无用记录
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookChapterDao.queryBuilder()
+                .where(
+                    BookChapterDao.Properties.BookId.eq(bookFile.id),
+                    BookChapterDao.Properties.LastModified.notEq(lastModified)
+                )
+                .buildDelete()
+                .forCurrentThread()
+                .executeDeleteWithoutDetachingEntities()
+        }, true)
     }
 }

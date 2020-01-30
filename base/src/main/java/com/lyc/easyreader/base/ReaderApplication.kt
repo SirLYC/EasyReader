@@ -13,7 +13,7 @@ import com.lyc.easyreader.base.utils.LogUtils
 class ReaderApplication : Application() {
     companion object {
 
-        const val TAG = "ReaderApplication"
+        private const val TAG = "ReaderApplication"
 
         private lateinit var context: Context
 

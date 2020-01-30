@@ -21,16 +21,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
 
     public static final String TABLENAME = "BOOK_FILE";
 
-    private final StatusConverter statusConverter = new StatusConverter();
-
-    public BookFileDao(DaoConfig config) {
-        super(config);
-    }
-
-    public BookFileDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
     /**
      * Creates the underlying database table.
      */
@@ -54,10 +44,14 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 " (\"LAST_ACCESS_TIME\" DESC);");
     }
 
-    /** Drops the underlying database table. */
-    public static void dropTable(Database db, boolean ifExists) {
-        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
-        db.execSQL(sql);
+    private final StatusConverter statusConverter = new StatusConverter();
+
+    public BookFileDao(DaoConfig config) {
+        super(config);
+    }
+
+    public BookFileDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
     }
 
     @Override
@@ -91,6 +85,14 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         if (status != null) {
             stmt.bindString(8, statusConverter.convertToDatabaseValue(status));
         }
+    }
+
+    /**
+     * Drops the underlying database table.
+     */
+    public static void dropTable(Database db, boolean ifExists) {
+        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
+        db.execSQL(sql);
     }
 
     @Override
@@ -146,18 +148,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         return entity;
     }
 
-    @Override
-    public void readEntity(Cursor cursor, BookFile entity, int offset) {
-        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
-        entity.setRealPath(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
-        entity.setFilename(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
-        entity.setFileExt(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
-        entity.setImportTime(cursor.getLong(offset + 4));
-        entity.setLastAccessTime(cursor.getLong(offset + 5));
-        entity.setDeleteTime(cursor.getLong(offset + 6));
-        entity.setStatus(cursor.isNull(offset + 7) ? null : statusConverter.convertToEntityProperty(cursor.getString(offset + 7)));
-     }
-     
     /**
      * Properties of entity BookFile.<br/>
      * Can be used for QueryBuilder and for referencing column names.
@@ -171,6 +161,18 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         public final static Property LastAccessTime = new Property(5, long.class, "lastAccessTime", false, "LAST_ACCESS_TIME");
         public final static Property DeleteTime = new Property(6, long.class, "deleteTime", false, "DELETE_TIME");
         public final static Property Status = new Property(7, String.class, "status", false, "STATUS");
+    }
+
+    @Override
+    public void readEntity(Cursor cursor, BookFile entity, int offset) {
+        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setRealPath(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
+        entity.setFilename(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
+        entity.setFileExt(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
+        entity.setImportTime(cursor.getLong(offset + 4));
+        entity.setLastAccessTime(cursor.getLong(offset + 5));
+        entity.setDeleteTime(cursor.getLong(offset + 6));
+        entity.setStatus(cursor.isNull(offset + 7) ? null : statusConverter.convertToEntityProperty(cursor.getString(offset + 7)));
     }
     
     @Override

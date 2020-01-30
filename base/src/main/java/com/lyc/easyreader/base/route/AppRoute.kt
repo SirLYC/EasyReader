@@ -13,7 +13,7 @@ import com.lyc.easyreader.base.utils.LogUtils
  */
 object AppRoute {
 
-    const val TAG = "AppRoute"
+    private const val TAG = "AppRoute"
 
     fun jumpToUrl(urlParams: UrlParams, activityFrom: BaseActivity? = null) {
         LogUtils.i(TAG, "start jumpToUrl: $urlParams")
@@ -36,7 +36,7 @@ object AppRoute {
                 LogUtils.i(TAG, "$urlParams open activity from application context.")
                 return
             } catch (e: Exception) {
-                LogUtils.e(IUrlInterceptor.TAG, "Cannot open activity for $urlParams", e)
+                LogUtils.e(TAG, "Cannot open activity for $urlParams", e)
             }
         }
 
@@ -53,7 +53,7 @@ object AppRoute {
                 return
             } catch (e: Exception) {
                 LogUtils.e(
-                    IUrlInterceptor.TAG,
+                    TAG,
                     "Cannot open activity for $urlParams, fromActivity=${activityFrom}",
                     e
                 )

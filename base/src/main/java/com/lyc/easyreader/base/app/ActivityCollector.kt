@@ -30,7 +30,7 @@ class ActivityCollector private constructor() : IApplicationOnCreateListener,
             ActivityCollector()
         }
 
-        const val TAG = "ActivityCollector"
+        private const val TAG = "ActivityCollector"
     }
 
     override fun onAppCreate(application: Application) {

@@ -1,4 +1,4 @@
-package com.lyc.easyreader.base.arch.vm
+package com.lyc.easyreader.base.arch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

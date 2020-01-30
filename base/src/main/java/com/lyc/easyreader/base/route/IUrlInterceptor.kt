@@ -9,10 +9,6 @@ import com.lyc.appinject.annotations.Extension
 @Extension
 interface IUrlInterceptor {
 
-    companion object {
-        const val TAG = "IUrlHandler"
-    }
-
     fun acceptUrl(url: String): Boolean
 
     fun handleUrl(urlParams: UrlParams, activityFrom: Activity? = null): Boolean

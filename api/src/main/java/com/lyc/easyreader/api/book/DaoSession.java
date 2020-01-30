@@ -18,8 +18,10 @@ import java.util.Map;
 public class DaoSession extends AbstractDaoSession {
 
     private final DaoConfig bookFileDaoConfig;
+    private final DaoConfig bookChapterDaoConfig;
 
     private final BookFileDao bookFileDao;
+    private final BookChapterDao bookChapterDao;
 
     public DaoSession(Database db, IdentityScopeType type, Map<Class<? extends AbstractDao<?, ?>>, DaoConfig>
             daoConfigMap) {
@@ -28,17 +30,27 @@ public class DaoSession extends AbstractDaoSession {
         bookFileDaoConfig = daoConfigMap.get(BookFileDao.class).clone();
         bookFileDaoConfig.initIdentityScope(type);
 
+        bookChapterDaoConfig = daoConfigMap.get(BookChapterDao.class).clone();
+        bookChapterDaoConfig.initIdentityScope(type);
+
         bookFileDao = new BookFileDao(bookFileDaoConfig, this);
+        bookChapterDao = new BookChapterDao(bookChapterDaoConfig, this);
 
         registerDao(BookFile.class, bookFileDao);
+        registerDao(BookChapter.class, bookChapterDao);
     }
 
     public void clear() {
         bookFileDaoConfig.clearIdentityScope();
+        bookChapterDaoConfig.clearIdentityScope();
     }
 
     public BookFileDao getBookFileDao() {
         return bookFileDao;
+    }
+
+    public BookChapterDao getBookChapterDao() {
+        return bookChapterDao;
     }
 
 }

@@ -6,6 +6,7 @@ import androidx.documentfile.provider.DocumentFile
 import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.utils.LogUtils
+import java.io.RandomAccessFile
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
@@ -86,6 +87,53 @@ fun Uri?.detectCharset(): Charset {
                         break
                     }
                 }
+            }
+        }
+    }
+
+    return APP_DEFAULT_CHARSET
+}
+
+fun RandomAccessFile?.detectCharset(): Charset {
+    if (this == null) {
+        return APP_DEFAULT_CHARSET
+    }
+
+    val byte3 = ByteArray(3)
+    var read = read(byte3, 0, 3)
+    if (read == -1) {
+        return APP_DEFAULT_CHARSET
+    }
+
+    if (byte3[0] == 0xEF.toByte() && byte3[1] == 0xBB.toByte() && byte3[2] == 0xBF.toByte()) {
+        return Charsets.UTF_8
+    }
+
+    while (read().also { read = it } != -1) {
+        if (read >= 0xF0) break
+        if (read in 0x80..0xBF) // 单独出现BF以下的，也算是GBK
+            break
+        if (read in 0xC0..0xDF) {
+            // 双字节 (0xC0 - 0xDF)
+            read = read()
+            if (read in 0x80..0xBF) {
+                // (0x80 - 0xBF),也可能在GB编码内
+                continue
+            } else {
+                break
+            }
+        } else if (read in 0xE0..0xEF) {
+            // 也有可能出错，但是几率较小
+            read = read()
+            if (read in 0x80..0xBF) {
+                read = read()
+                if (read in 0x80..0xBF) {
+                    return Charsets.UTF_8
+                } else {
+                    break
+                }
+            } else {
+                break
             }
         }
     }
