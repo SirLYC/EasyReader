@@ -2,13 +2,13 @@ package com.lyc.easyreader
 
 import android.util.SparseArray
 import androidx.core.util.contains
-import com.lyc.api.main.IMainActivityDelegate
-import com.lyc.api.main.IMainTabDelegate
-import com.lyc.api.main.ITabChangeListener
 import com.lyc.appinject.CreateMethod
 import com.lyc.appinject.annotations.ServiceImpl
-import com.lyc.base.getAppExtensions
 import com.lyc.common.EventHubFactory
+import com.lyc.easyreader.api.main.IMainActivityDelegate
+import com.lyc.easyreader.api.main.IMainTabDelegate
+import com.lyc.easyreader.api.main.ITabChangeListener
+import com.lyc.easyreader.base.getAppExtensions
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.

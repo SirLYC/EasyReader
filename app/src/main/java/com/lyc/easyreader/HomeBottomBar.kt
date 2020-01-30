@@ -13,14 +13,14 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.setPadding
-import com.lyc.api.main.IMainTabDelegate
-import com.lyc.base.getAppExtensions
-import com.lyc.base.ui.getDrawableAttrRes
-import com.lyc.base.ui.getDrawableRes
-import com.lyc.base.ui.theme.color_gray
-import com.lyc.base.ui.theme.color_orange
-import com.lyc.base.utils.dp2px
-import com.lyc.base.utils.dp2pxf
+import com.lyc.easyreader.api.main.IMainTabDelegate
+import com.lyc.easyreader.base.getAppExtensions
+import com.lyc.easyreader.base.ui.getDrawableAttrRes
+import com.lyc.easyreader.base.ui.getDrawableRes
+import com.lyc.easyreader.base.ui.theme.color_gray
+import com.lyc.easyreader.base.ui.theme.color_orange
+import com.lyc.easyreader.base.utils.dp2px
+import com.lyc.easyreader.base.utils.dp2pxf
 import java.util.*
 
 /**

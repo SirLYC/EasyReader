@@ -12,20 +12,20 @@ import android.widget.FrameLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.util.forEach
-import com.lyc.api.book.IBookManager
-import com.lyc.api.main.IMainActivityDelegate
-import com.lyc.api.main.IMainTabDelegate
-import com.lyc.api.main.ITabChangeListener
-import com.lyc.api.main.Schema
-import com.lyc.base.getAppExtensions
-import com.lyc.base.getAppService
-import com.lyc.base.ui.BaseActivity
-import com.lyc.base.ui.BaseFragment
-import com.lyc.base.ui.ReaderToast
-import com.lyc.base.utils.LogUtils
-import com.lyc.base.utils.dp2px
-import com.lyc.base.utils.generateNewRequestCode
-import com.lyc.base.utils.generateNewViewId
+import com.lyc.easyreader.api.book.IBookManager
+import com.lyc.easyreader.api.main.IMainActivityDelegate
+import com.lyc.easyreader.api.main.IMainTabDelegate
+import com.lyc.easyreader.api.main.ITabChangeListener
+import com.lyc.easyreader.api.main.Schema
+import com.lyc.easyreader.base.getAppExtensions
+import com.lyc.easyreader.base.getAppService
+import com.lyc.easyreader.base.ui.BaseActivity
+import com.lyc.easyreader.base.ui.BaseFragment
+import com.lyc.easyreader.base.ui.ReaderToast
+import com.lyc.easyreader.base.utils.LogUtils
+import com.lyc.easyreader.base.utils.dp2px
+import com.lyc.easyreader.base.utils.generateNewRequestCode
+import com.lyc.easyreader.base.utils.generateNewViewId
 
 class MainActivity : BaseActivity(), ITabChangeListener {
 
