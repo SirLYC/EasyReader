@@ -7,6 +7,7 @@ import com.lyc.appinject.CreateMethod
 import com.lyc.appinject.annotations.ExtensionImpl
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.utils.LogUtils
+import com.lyc.easyreader.base.utils.notch.NotchTools
 
 /**
  * Created by Liu Yuchuan on 2020/1/16.
@@ -80,6 +81,22 @@ class ActivityCollector private constructor() : IApplicationOnCreateListener,
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         doIfIsBaseActivity(activity, "onActivityCreated") {
+            NotchCompat.instance.run {
+                if (!notchDeviceConvinced && !postSetNotchDevice) {
+                    postSetNotchDevice = true
+                    activity.window.decorView.post {
+                        notchDeviceConvinced = true
+                        notchDevice =
+                            NotchTools.getFullScreenTools().isNotchScreen(activity.window)
+                        runPendingCommands()
+                        LogUtils.i(
+                            TAG,
+                            "IsNotchDevice convinced! IsNotchDevice=${notchDevice}"
+                        )
+                    }
+                }
+            }
+
             createdActivity.add(it)
         }
     }

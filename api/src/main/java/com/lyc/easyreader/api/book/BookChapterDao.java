@@ -18,20 +18,11 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
 
     public static final String TABLENAME = "BOOK_CHAPTER";
 
-    public BookChapterDao(DaoConfig config) {
-        super(config);
-    }
-
-
-    public BookChapterDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
     /**
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"BOOK_CHAPTER\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY ," + // 0: id
                 "\"ORDER\" INTEGER NOT NULL ," + // 1: order
@@ -47,9 +38,16 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
                 " (\"BOOK_ID\" ASC);");
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+
+    public BookChapterDao(DaoConfig config) {
+        super(config);
+    }
+
+    public BookChapterDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_CHAPTER\"";
         db.execSQL(sql);
@@ -123,14 +121,8 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         entity.setTitle(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
         entity.setStart(cursor.getLong(offset + 5));
         entity.setEnd(cursor.getLong(offset + 6));
-    }
-
-    @Override
-    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
-        entity.setId(rowId);
-        return rowId;
-    }
-
+     }
+     
     @Override
     public Long getKey(BookChapter entity) {
         if (entity != null) {
@@ -141,13 +133,9 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
     }
 
     @Override
-    public boolean hasKey(BookChapter entity) {
-        return entity.getId() != null;
-    }
-
-    @Override
-    protected final boolean isEntityUpdateable() {
-        return true;
+    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
 
     /**
@@ -164,4 +152,14 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         public final static Property End = new Property(6, long.class, "end", false, "END");
     }
 
+    @Override
+    public boolean hasKey(BookChapter entity) {
+        return entity.getId() != null;
+    }
+
+    @Override
+    protected final boolean isEntityUpdateable() {
+        return true;
+    }
+    
 }

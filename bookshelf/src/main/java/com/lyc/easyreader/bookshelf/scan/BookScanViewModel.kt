@@ -9,8 +9,6 @@ import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.ui.ReaderHeadsUp
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.rv.ObservableList
-import com.lyc.easyreader.bookshelf.VIEW_TYPE_EMPTY_ITEM
-import com.lyc.easyreader.bookshelf.VIEW_TYPE_SCAN_ITEM
 import com.lyc.easyreader.bookshelf.utils.forEach
 import com.lyc.easyreader.bookshelf.utils.getExt
 import com.lyc.easyreader.bookshelf.utils.treeDocumentFile
@@ -27,7 +25,7 @@ class BookScanViewModel : ViewModel() {
     private val scanFinishLiveData = NonNullLiveData(false)
     val scanningLiveData = NonNullLiveData(false)
     private val idle = AtomicBoolean(true)
-    val list = ObservableList<Pair<Int, Any>>(arrayListOf())
+    val list = ObservableList<Any>(arrayListOf())
     val selectController = PositionSelectController()
 
     companion object {
@@ -49,7 +47,7 @@ class BookScanViewModel : ViewModel() {
         val uriLocal = uri
         if (uriLocal == null) {
             scanFinishLiveData.value = true
-            list.add(Pair(VIEW_TYPE_EMPTY_ITEM, EmptyItem))
+            list.add(EmptyItem)
             scanningLiveData.value = false
             return
         }
@@ -79,7 +77,7 @@ class BookScanViewModel : ViewModel() {
             ExecutorFactory.MAIN_EXECUTOR.execute {
                 if (list.isEmpty()) {
                     ReaderHeadsUp.showHeadsUp("没有扫描到相关文件")
-                    list.add(Pair(VIEW_TYPE_EMPTY_ITEM, EmptyItem))
+                    list.add(EmptyItem)
                 } else {
                     ReaderHeadsUp.showHeadsUp("扫描到${list.size}本书，可多选导入")
                 }
@@ -94,7 +92,7 @@ class BookScanViewModel : ViewModel() {
         val copiedValues = newItems.toArray()
         newItems.clear()
         ExecutorFactory.MAIN_EXECUTOR.execute {
-            list.addAll(copiedValues.map { Pair(VIEW_TYPE_SCAN_ITEM, it) })
+            list.addAll(copiedValues)
         }
     }
 
@@ -118,7 +116,7 @@ class BookScanViewModel : ViewModel() {
         }
 
         if (list.size == 1) {
-            return list[0].second !== EmptyItem
+            return list[0] !== EmptyItem
         }
 
         return true

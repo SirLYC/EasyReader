@@ -24,7 +24,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
 
     val hasDataLiveData = MutableLiveData<Boolean>()
     val isLoadingLiveData = NonNullLiveData(false)
-    val list = ObservableList(arrayListOf<Pair<Int, Any>>())
+    val list = ObservableList(arrayListOf<BookFile>())
     var firstLoadFinish = false
         private set
 
@@ -45,17 +45,16 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
             return
         }
         isLoadingLiveData.value = true
-        val currentList = list.map { it.second as BookFile }
+        val currentList = list.toList()
         ExecutorFactory.IO_EXECUTOR.execute {
             val shelfBooks = BookShelfOpenHelper.instance.loadBookShelfList()
             val diffResultRef = AtomicReference<DiffUtil.DiffResult>(null)
             val hasChange = AtomicBoolean(true)
             val mainTask = Runnable {
                 val diffResult: DiffUtil.DiffResult? = diffResultRef.get()
-                val resultList = shelfBooks.map { Pair<Int, Any>(0, it) }
                 if (diffResult == null) {
                     if (hasChange.get()) {
-                        list.replaceAll(resultList)
+                        list.replaceAll(shelfBooks)
                         if (firstLoadFinish && !fromCallback) {
                             ReaderHeadsUp.showHeadsUp("刷新完成")
                         }
@@ -65,7 +64,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
                 } else {
                     list.withoutCallback {
                         list.clear()
-                        list.addAll(resultList)
+                        list.addAll(shelfBooks)
                     }
                     diffResult.dispatchUpdatesTo(list)
                     if (firstLoadFinish && !fromCallback) {

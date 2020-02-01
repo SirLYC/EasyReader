@@ -16,6 +16,20 @@ import kotlin.math.roundToInt
  */
 private const val TAG = "DeviceUtils"
 
+fun vibrate(millis: Long) {
+    (ReaderApplication.appContext().getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.run {
+        if (Build.VERSION.SDK_INT < 26) {
+            vibrate(millis)
+        } else {
+            val effect =
+                VibrationEffect.createOneShot(millis, VibrationEffect.DEFAULT_AMPLITUDE)
+            vibrate(effect)
+        }
+    }
+}
+
+// -------------------------------------------- status bar -------------------------------------------- //
+
 private val statusBarHeightLock = ReentrantLock()
 @Volatile
 private var statusBarHeightCache = -1
@@ -40,18 +54,6 @@ fun statusBarHeight(forceRetrieve: Boolean = false): Int {
     return result
 }
 
-fun vibrate(millis: Long) {
-    (ReaderApplication.appContext().getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.run {
-        if (Build.VERSION.SDK_INT < 26) {
-            vibrate(millis)
-        } else {
-            val effect =
-                VibrationEffect.createOneShot(millis, VibrationEffect.DEFAULT_AMPLITUDE)
-            vibrate(effect)
-        }
-    }
-}
-
 fun Window?.statusBarBlackText(isBlack: Boolean) {
     if (Build.VERSION.SDK_INT >= 23) {
         this?.let { window ->
@@ -60,6 +62,8 @@ fun Window?.statusBarBlackText(isBlack: Boolean) {
         }
     }
 }
+
+// -------------------------------------------- dimens -------------------------------------------- //
 
 fun dp2px(dpVal: Int): Int {
     val resources = ReaderApplication.appContext().resources
@@ -90,3 +94,6 @@ fun sp2pxf(spVal: Float): Float {
     val resources = ReaderApplication.appContext().resources
     return spVal * resources.displayMetrics.scaledDensity
 }
+
+var isNotchDevice = false
+    internal set

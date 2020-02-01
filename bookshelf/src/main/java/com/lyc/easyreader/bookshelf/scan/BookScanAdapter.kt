@@ -15,6 +15,7 @@ import com.lyc.easyreader.base.ui.theme.color_gray
 import com.lyc.easyreader.base.utils.changeToColor
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
+import com.lyc.easyreader.base.utils.rv.ObservableList
 import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 import com.lyc.easyreader.bookshelf.VIEW_TYPE_EMPTY_ITEM
 import com.lyc.easyreader.bookshelf.VIEW_TYPE_SCAN_ITEM
@@ -23,15 +24,15 @@ import com.lyc.easyreader.bookshelf.VIEW_TYPE_SCAN_ITEM
  * Created by Liu Yuchuan on 2020/1/24.
  */
 class BookScanAdapter(
-    viewModel: BookScanViewModel,
+    list: ObservableList<Any>,
     private val positionSelectController: PositionSelectController
-) : ReactiveAdapter(viewModel.list) {
+) : ReactiveAdapter(list) {
 
     override fun onBindViewHolder(
         holder: ViewHolder,
         position: Int,
         viewType: Int,
-        data: Any,
+        data: Any?,
         payloads: MutableList<Any>
     ) {
         if (viewType == VIEW_TYPE_SCAN_ITEM) {
@@ -39,6 +40,16 @@ class BookScanAdapter(
                 (holder.itemView as? BookScanItemView)?.bindData(itemData, position)
             }
         }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        if (position >= 0 && position < list.size) {
+            if (list[position] is BookScanItem) {
+                return VIEW_TYPE_SCAN_ITEM
+            }
+        }
+
+        return VIEW_TYPE_EMPTY_ITEM
     }
 
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {

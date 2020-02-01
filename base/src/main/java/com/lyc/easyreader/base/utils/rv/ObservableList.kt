@@ -1,10 +1,14 @@
 package com.lyc.easyreader.base.utils.rv
 
+import com.lyc.easyreader.base.arch.NonNullLiveData
+
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
 class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableList<T>(),
     ListUpdateCallbackExt {
+
+    val sizeLiveData = NonNullLiveData(realList.size)
 
     private val callbacks = mutableListOf<ListUpdateCallbackExt>()
 
@@ -81,13 +85,22 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
 
     /* ============================== ListUpdateCallback ============================== */
 
+    private fun applySizeChange() {
+        val currentSize = realList.size
+        if (sizeLiveData.value != currentSize) {
+            sizeLiveData.value = currentSize
+        }
+    }
+
     override fun onInserted(position: Int, count: Int) {
+        applySizeChange()
         if (enable) {
             callbacks.forEach { it.onInserted(position, count) }
         }
     }
 
     override fun onRemoved(position: Int, count: Int) {
+        applySizeChange()
         if (enable) {
             callbacks.forEach { it.onRemoved(position, count) }
         }
@@ -100,6 +113,7 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
     }
 
     override fun onRefresh() {
+        applySizeChange()
         if (enable) {
             callbacks.forEach { it.onRefresh() }
         }

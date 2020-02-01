@@ -1,5 +1,8 @@
 package com.lyc.easyreader.api.book;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.greenrobot.greendao.annotation.Convert;
 import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Generated;
@@ -15,7 +18,7 @@ import org.greenrobot.greendao.converter.PropertyConverter;
         @Index(value = "importTime desc"),
         @Index(value = "lastAccessTime desc")
 }, generateGettersSetters = false)
-public class BookFile {
+public class BookFile implements Parcelable {
 
     @Id
     private Long id;
@@ -43,6 +46,32 @@ public class BookFile {
         this.lastAccessTime = lastAccessTime;
         this.deleteTime = deleteTime;
         this.status = status;
+    }
+
+    public static final Creator<BookFile> CREATOR = new Creator<BookFile>() {
+        @Override
+        public BookFile createFromParcel(Parcel in) {
+            return new BookFile(in);
+        }
+
+        @Override
+        public BookFile[] newArray(int size) {
+            return new BookFile[size];
+        }
+    };
+
+    protected BookFile(Parcel in) {
+        if (in.readByte() == 0) {
+            id = null;
+        } else {
+            id = in.readLong();
+        }
+        realPath = in.readString();
+        filename = in.readString();
+        fileExt = in.readString();
+        importTime = in.readLong();
+        lastAccessTime = in.readLong();
+        deleteTime = in.readLong();
     }
 
     public Long getId() {
@@ -107,6 +136,27 @@ public class BookFile {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (id == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeLong(id);
+        }
+        dest.writeString(realPath);
+        dest.writeString(filename);
+        dest.writeString(fileExt);
+        dest.writeLong(importTime);
+        dest.writeLong(lastAccessTime);
+        dest.writeLong(deleteTime);
     }
 
     public enum Status {

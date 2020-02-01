@@ -1,6 +1,7 @@
 package com.lyc.easyreader.base.ui
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -8,11 +9,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
+import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.lyc.easyreader.base.BuildConfig
 import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.NightModeManager.NIGHT_MODE_MASK_COLOR
 import com.lyc.easyreader.base.ui.theme.color_bg
+import com.lyc.easyreader.base.utils.notch.NotchTools
 
 /**
  * Created by Liu Yuchuan on 2020/1/8.
@@ -46,13 +50,26 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         }
     }
 
+    fun enterFullScreen() {
+        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+    }
+
+    fun exitFullScreen() {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+    }
+
     final override fun onCreate(savedInstanceState: Bundle?) {
         isCreateFromConfigChange = savedInstanceState?.getBoolean(KEY_CONFIG_CHANGE, false) == true
         beforeOnCreate(savedInstanceState)
         super.onCreate(savedInstanceState)
         beforeBaseOnCreate(savedInstanceState)
+        if (BuildConfig.FORCE_PORTRAIT) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
         NightModeManager.addNightModeChangeListener(this)
         window.let { window ->
+            NotchTools.getFullScreenTools().fullScreenUseStatus(this)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
             if (Build.VERSION.SDK_INT >= 23) {
                 // 21就可以设置这个flag了
                 // 但是23才能改变文字颜色
@@ -73,6 +90,7 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         setContentView(rootView)
     }
 
+    @CallSuper
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_CONFIG_CHANGE, isChangingConfigurations)

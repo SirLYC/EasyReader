@@ -1,5 +1,8 @@
 package com.lyc.easyreader.api.book;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
@@ -9,7 +12,7 @@ import org.greenrobot.greendao.annotation.Index;
  * Created by Liu Yuchuan on 2020/1/30.
  */
 @Entity(indexes = {@Index(value = "bookId")})
-public class BookChapter {
+public class BookChapter implements Parcelable {
     @Id
     private Long id;
     private int order;
@@ -35,6 +38,32 @@ public class BookChapter {
         this.title = title;
         this.start = start;
         this.end = end;
+    }
+
+    public static final Creator<BookChapter> CREATOR = new Creator<BookChapter>() {
+        @Override
+        public BookChapter createFromParcel(Parcel in) {
+            return new BookChapter(in);
+        }
+
+        @Override
+        public BookChapter[] newArray(int size) {
+            return new BookChapter[size];
+        }
+    };
+
+    protected BookChapter(Parcel in) {
+        if (in.readByte() == 0) {
+            id = null;
+        } else {
+            id = in.readLong();
+        }
+        order = in.readInt();
+        lastModified = in.readLong();
+        bookId = in.readLong();
+        title = in.readString();
+        start = in.readLong();
+        end = in.readLong();
     }
 
     public String getTitle() {
@@ -93,4 +122,24 @@ public class BookChapter {
         this.order = order;
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (id == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeLong(id);
+        }
+        dest.writeInt(order);
+        dest.writeLong(lastModified);
+        dest.writeLong(bookId);
+        dest.writeString(title);
+        dest.writeLong(start);
+        dest.writeLong(end);
+    }
 }

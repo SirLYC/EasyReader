@@ -13,14 +13,14 @@ import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
  * Created by Liu Yuchuan on 2020/1/28.
  */
 class BookShelfListAdapter(
-    list: ObservableList<Pair<Int, Any>>,
+    list: ObservableList<BookFile>,
     private val onItemClickListener: OnItemClickListener
 ) : ReactiveAdapter(list) {
     override fun onBindViewHolder(
         holder: ViewHolder,
         position: Int,
         viewType: Int,
-        data: Any,
+        data: Any?,
         payloads: MutableList<Any>
     ) {
         (holder.itemView as? BookShelfItemView)?.bindData(data as? BookFile, position)

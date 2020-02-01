@@ -24,13 +24,12 @@ import com.lyc.easyreader.base.ui.theme.color_light_blue
 import com.lyc.easyreader.base.ui.theme.color_primary_text
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.utils.*
-import com.lyc.easyreader.base.utils.rv.ListUpdateCallbackExt
 import com.lyc.easyreader.bookshelf.KEY_SELECT_SCAN_FILES
 
 /**
  * Created by Liu Yuchuan on 2020/1/24.
  */
-class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbackExt,
+class BookScanActivity : BaseActivity(), View.OnClickListener,
     PositionSelectController.PositionSelectListener {
     private lateinit var viewModel: BookScanViewModel
     private lateinit var scanningBottomBar: View
@@ -95,7 +94,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
         val recyclerView = RecyclerView(this)
         recyclerView.setBackgroundColor(Color.WHITE)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = BookScanAdapter(viewModel, selectController).also {
+        recyclerView.adapter = BookScanAdapter(viewModel.list, selectController).also {
             it.observe(this)
         }
         recyclerView.id = VIEW_ID_RV
@@ -188,8 +187,9 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
 
         selectController.addListener(this)
 
-        viewModel.list.addCallback(this)
-        applyFileCountChange()
+        viewModel.list.sizeLiveData.observe(this, Observer { size ->
+            scanningTv.text = SCANNING_TEXT_FORMAT.format(size)
+        })
 
         viewModel.scanningLiveData.observe(this, Observer { scanning ->
             refreshLayout.isRefreshing = scanning
@@ -231,7 +231,7 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
 
             VIEW_ID_IMPORT -> {
                 val uris = viewModel.list.map {
-                    (it.second as BookScanItem).uri!!
+                    (it as BookScanItem).uri!!
                 }.filterIndexed { index, _ -> selectController.selectContains(index) }
                     .toTypedArray()
                 if (uris.isNotEmpty()) {
@@ -245,10 +245,6 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
     }
 
 
-    private fun applyFileCountChange() {
-        scanningTv.text = SCANNING_TEXT_FORMAT.format(viewModel.list.size)
-    }
-
     private fun applySelectChange() {
         val cnt = selectController.selectCount()
         importButton.text = IMPORT_BUTTON_TEXT_FORMAT.format(cnt)
@@ -258,25 +254,6 @@ class BookScanActivity : BaseActivity(), View.OnClickListener, ListUpdateCallbac
             if (selectController.isSelectAll(viewModel.list.size)) "取消全选" else "全选"
     }
 
-    override fun onRefresh() {
-        applyFileCountChange()
-    }
-
-    override fun onChanged(position: Int, count: Int, payload: Any?) {
-
-    }
-
-    override fun onMoved(fromPosition: Int, toPosition: Int) {
-
-    }
-
-    override fun onInserted(position: Int, count: Int) {
-        applyFileCountChange()
-    }
-
-    override fun onRemoved(position: Int, count: Int) {
-        applyFileCountChange()
-    }
 
     override fun onPositionSelect(position: Int, select: Boolean) {
         applySelectChange()

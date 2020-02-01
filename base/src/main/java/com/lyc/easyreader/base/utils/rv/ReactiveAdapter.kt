@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 /**
  * Created by Liu Yuchuan on 2019/5/20.
  */
-abstract class ReactiveAdapter(protected val list: ObservableList<Pair<Int, Any>>) :
+abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
     RecyclerView.Adapter<ReactiveAdapter.ViewHolder>(),
     ListUpdateCallbackExt {
 
@@ -91,19 +91,11 @@ abstract class ReactiveAdapter(protected val list: ObservableList<Pair<Int, Any>
 
     override fun getItemCount() = list.size
 
-    override fun getItemViewType(position: Int): Int {
-        if (position < 0 || position >= list.size) {
-            return -1
-        }
-
-        return list[position].first
-    }
-
     abstract fun onBindViewHolder(
         holder: ViewHolder,
         position: Int,
         viewType: Int,
-        data: Any,
+        data: Any?,
         payloads: MutableList<Any>
     )
 
@@ -126,8 +118,8 @@ abstract class ReactiveAdapter(protected val list: ObservableList<Pair<Int, Any>
         if (position < 0 || position >= list.size) {
             return
         }
-        val pair = list[position]
-        onBindViewHolder(holder, position, pair.first, pair.second, payloads)
+        val data = list[position]
+        onBindViewHolder(holder, position, getItemViewType(position), data, payloads)
     }
 
     final override fun onBindViewHolder(holder: ViewHolder, position: Int) {
