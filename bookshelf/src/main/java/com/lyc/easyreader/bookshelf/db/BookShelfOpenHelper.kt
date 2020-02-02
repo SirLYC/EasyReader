@@ -60,8 +60,16 @@ class BookShelfOpenHelper private constructor() :
             return null
         }
 
+        if (bookFile.handleChapterLastModified <= 0 || bookFile.charset == null) {
+            return null
+        }
+
         val file = File(bookFile.realPath)
         val lastModified = file.lastModified()
+        if (lastModified != bookFile.lastAccessTime) {
+            return null
+        }
+
         return daoSession.bookChapterDao.queryBuilder()
             .where(
                 BookChapterDao.Properties.BookId.eq(bookFile.id),
@@ -73,7 +81,10 @@ class BookShelfOpenHelper private constructor() :
 
     fun saveBookChapters(bookFile: BookFile, lastModified: Long, list: List<BookChapter>) {
         dbRunner.awaitRun(Runnable {
-            daoSession.bookChapterDao.saveInTx(list)
+            daoSession.runInTx {
+                daoSession.bookFileDao.insertOrReplace(bookFile)
+                daoSession.bookChapterDao.saveInTx(list)
+            }
         })
         // 异步删除无用记录
         dbRunner.asyncRun(Runnable {

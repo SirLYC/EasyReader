@@ -10,6 +10,8 @@ import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
 import org.greenrobot.greendao.converter.PropertyConverter;
 
+import java.nio.charset.Charset;
+
 /**
  * Created by Liu Yuchuan on 2020/1/26.
  */
@@ -17,7 +19,7 @@ import org.greenrobot.greendao.converter.PropertyConverter;
         @Index(value = "filename"),
         @Index(value = "importTime desc"),
         @Index(value = "lastAccessTime desc")
-}, generateGettersSetters = false)
+})
 public class BookFile implements Parcelable {
 
     @Id
@@ -28,26 +30,6 @@ public class BookFile implements Parcelable {
     private long importTime;
     private long lastAccessTime;
     private long deleteTime;
-    @Convert(converter = StatusConverter.class, columnType = String.class)
-    private Status status;
-
-    @Generated(hash = 1858747483)
-    public BookFile() {
-    }
-
-    @Generated(hash = 2001899060)
-    public BookFile(Long id, String realPath, String filename, String fileExt,
-                    long importTime, long lastAccessTime, long deleteTime, Status status) {
-        this.id = id;
-        this.realPath = realPath;
-        this.filename = filename;
-        this.fileExt = fileExt;
-        this.importTime = importTime;
-        this.lastAccessTime = lastAccessTime;
-        this.deleteTime = deleteTime;
-        this.status = status;
-    }
-
     public static final Creator<BookFile> CREATOR = new Creator<BookFile>() {
         @Override
         public BookFile createFromParcel(Parcel in) {
@@ -59,6 +41,34 @@ public class BookFile implements Parcelable {
             return new BookFile[size];
         }
     };
+    private long handleChapterLastModified;
+    @Convert(converter = StatusConverter.class, columnType = String.class)
+    private Status status;
+    @Convert(converter = CharsetConverter.class, columnType = String.class)
+    private Charset charset;
+
+
+    @Generated(hash = 453179158)
+    public BookFile(Long id, String realPath, String filename, String fileExt,
+                    long importTime, long lastAccessTime, long deleteTime,
+                    long handleChapterLastModified, Status status, Charset charset) {
+        this.id = id;
+        this.realPath = realPath;
+        this.filename = filename;
+        this.fileExt = fileExt;
+        this.importTime = importTime;
+        this.lastAccessTime = lastAccessTime;
+        this.deleteTime = deleteTime;
+        this.handleChapterLastModified = handleChapterLastModified;
+        this.status = status;
+        this.charset = charset;
+    }
+
+
+    @Generated(hash = 1858747483)
+    public BookFile() {
+    }
+
 
     protected BookFile(Parcel in) {
         if (in.readByte() == 0) {
@@ -72,6 +82,33 @@ public class BookFile implements Parcelable {
         importTime = in.readLong();
         lastAccessTime = in.readLong();
         deleteTime = in.readLong();
+        handleChapterLastModified = in.readLong();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (id == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeLong(id);
+        }
+        dest.writeString(realPath);
+        dest.writeString(filename);
+        dest.writeString(fileExt);
+        dest.writeLong(importTime);
+        dest.writeLong(lastAccessTime);
+        dest.writeLong(deleteTime);
+        dest.writeLong(handleChapterLastModified);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public long getHandleChapterLastModified() {
+        return handleChapterLastModified;
     }
 
     public Long getId() {
@@ -122,6 +159,37 @@ public class BookFile implements Parcelable {
         this.lastAccessTime = lastAccessTime;
     }
 
+    public void setHandleChapterLastModified(long handleChapterLastModified) {
+        this.handleChapterLastModified = handleChapterLastModified;
+    }
+
+    public Charset getCharset() {
+        return charset;
+    }
+
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
+
+    public static class CharsetConverter implements PropertyConverter<Charset, String> {
+
+        @Override
+        public Charset convertToEntityProperty(String databaseValue) {
+            if (databaseValue == null) {
+                return null;
+            }
+            return Charset.forName(databaseValue);
+        }
+
+        @Override
+        public String convertToDatabaseValue(Charset entityProperty) {
+            if (entityProperty == null) {
+                return null;
+            }
+            return entityProperty.name();
+        }
+    }
+
     public long getDeleteTime() {
         return deleteTime;
     }
@@ -136,27 +204,6 @@ public class BookFile implements Parcelable {
 
     public void setStatus(Status status) {
         this.status = status;
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        if (id == null) {
-            dest.writeByte((byte) 0);
-        } else {
-            dest.writeByte((byte) 1);
-            dest.writeLong(id);
-        }
-        dest.writeString(realPath);
-        dest.writeString(filename);
-        dest.writeString(fileExt);
-        dest.writeLong(importTime);
-        dest.writeLong(lastAccessTime);
-        dest.writeLong(deleteTime);
     }
 
     public enum Status {

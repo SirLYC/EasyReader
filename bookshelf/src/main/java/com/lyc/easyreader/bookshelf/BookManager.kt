@@ -132,7 +132,9 @@ class BookManager private constructor() : IBookManager {
                     currentTime,
                     0,
                     0,
-                    BookFile.Status.TMP
+                    0,
+                    BookFile.Status.TMP,
+                    null
                 )
             BookShelfOpenHelper.instance.insertBookFile(newBookFile)
             val bookId = newBookFile.id

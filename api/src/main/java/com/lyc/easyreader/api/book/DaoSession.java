@@ -17,40 +17,40 @@ import java.util.Map;
  */
 public class DaoSession extends AbstractDaoSession {
 
-    private final DaoConfig bookFileDaoConfig;
     private final DaoConfig bookChapterDaoConfig;
+    private final DaoConfig bookFileDaoConfig;
 
-    private final BookFileDao bookFileDao;
     private final BookChapterDao bookChapterDao;
+    private final BookFileDao bookFileDao;
 
     public DaoSession(Database db, IdentityScopeType type, Map<Class<? extends AbstractDao<?, ?>>, DaoConfig>
             daoConfigMap) {
         super(db);
 
-        bookFileDaoConfig = daoConfigMap.get(BookFileDao.class).clone();
-        bookFileDaoConfig.initIdentityScope(type);
-
         bookChapterDaoConfig = daoConfigMap.get(BookChapterDao.class).clone();
         bookChapterDaoConfig.initIdentityScope(type);
 
-        bookFileDao = new BookFileDao(bookFileDaoConfig, this);
-        bookChapterDao = new BookChapterDao(bookChapterDaoConfig, this);
+        bookFileDaoConfig = daoConfigMap.get(BookFileDao.class).clone();
+        bookFileDaoConfig.initIdentityScope(type);
 
-        registerDao(BookFile.class, bookFileDao);
+        bookChapterDao = new BookChapterDao(bookChapterDaoConfig, this);
+        bookFileDao = new BookFileDao(bookFileDaoConfig, this);
+
         registerDao(BookChapter.class, bookChapterDao);
+        registerDao(BookFile.class, bookFileDao);
     }
 
     public void clear() {
-        bookFileDaoConfig.clearIdentityScope();
         bookChapterDaoConfig.clearIdentityScope();
-    }
-
-    public BookFileDao getBookFileDao() {
-        return bookFileDao;
+        bookFileDaoConfig.clearIdentityScope();
     }
 
     public BookChapterDao getBookChapterDao() {
         return bookChapterDao;
+    }
+
+    public BookFileDao getBookFileDao() {
+        return bookFileDao;
     }
 
 }

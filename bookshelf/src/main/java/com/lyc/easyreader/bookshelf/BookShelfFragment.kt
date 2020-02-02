@@ -190,25 +190,9 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         activity?.window.statusBarBlackText(true)
     }
 
-    var full = false
-
     override fun onClick(v: View?) {
         when (v?.id) {
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
-
-                if (true) {
-                    (activity as? BaseActivity)?.run {
-                        if (full) {
-                            full = false
-                            exitFullScreen()
-                        } else {
-                            full = true
-                            enterFullScreen()
-                        }
-                    }
-                    return
-                }
-
                 menu?.dismiss()
 
                 menu = ReaderPopupMenu(v.context, v, Gravity.LEFT or Gravity.BOTTOM).also {

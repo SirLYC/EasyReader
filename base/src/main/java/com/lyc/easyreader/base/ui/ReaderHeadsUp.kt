@@ -18,9 +18,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.MainThread
 import androidx.annotation.StringRes
+import androidx.cardview.widget.CardView
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.ui.theme.NightModeManager
-import com.lyc.easyreader.base.ui.theme.color_light_blue
+import com.lyc.easyreader.base.ui.theme.color_primary_text
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
 
@@ -57,8 +58,8 @@ object ReaderHeadsUp : Handler.Callback {
 
     fun showHeadsUp(
         @StringRes textResId: Int, duration: Int = Toast.LENGTH_SHORT,
-        bgColor: Int = color_light_blue,
-        textColor: Int = Color.WHITE
+        bgColor: Int = Color.WHITE,
+        textColor: Int = color_primary_text
     ) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             showHeadsUpInternal(
@@ -84,8 +85,8 @@ object ReaderHeadsUp : Handler.Callback {
     fun showHeadsUp(
         text: String,
         duration: Int = Toast.LENGTH_SHORT,
-        bgColor: Int = color_light_blue,
-        textColor: Int = Color.WHITE
+        bgColor: Int = Color.WHITE,
+        textColor: Int = color_primary_text
     ) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             showHeadsUpInternal(
@@ -182,17 +183,21 @@ object ReaderHeadsUp : Handler.Callback {
 
     private class HeadsUpWrapperView(context: Context, private val bgColor: Int) :
         FrameLayout(context) {
-        private val content: View?
-            get() = if (childCount > 0) getChildAt(0) else null
-        private val bgDrawable: Drawable = createContentWrapDrawable(bgColor)
+
+        private var content: View? = null
         private val foregroundDrawable by lazy { createContentWrapDrawable(NightModeManager.NIGHT_MODE_MASK_COLOR) }
 
         fun setContentView(view: View) {
             removeAllViews()
-            addView(view, LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
-                val dp32 = dp2px(32)
-                leftMargin = dp32
-                rightMargin = dp32
+            val cardView = CardView(context)
+            cardView.addView(view, LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+            cardView.setCardBackgroundColor(bgColor)
+            cardView.setContentPadding(0, 0, 0, 0)
+            cardView.cardElevation = dp2pxf(4f)
+            cardView.radius = dp2pxf(8f)
+            content = cardView
+            addView(cardView, LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                setMargins(dp2px(24), dp2px(4), dp2px(24), dp2px(4))
             })
         }
 
@@ -200,12 +205,6 @@ object ReaderHeadsUp : Handler.Callback {
             super.onLayout(changed, left, top, right, bottom)
             if (changed) {
                 content?.let { content ->
-                    bgDrawable.bounds.run {
-                        this.left = content.left
-                        this.top = content.top
-                        this.right = content.right
-                        this.bottom = content.bottom
-                    }
                     if (NightModeManager.nightModeEnable) {
                         foregroundDrawable.bounds.run {
                             this.left = content.left
@@ -219,7 +218,7 @@ object ReaderHeadsUp : Handler.Callback {
         }
 
         override fun dispatchDraw(canvas: Canvas) {
-            bgDrawable.draw(canvas)
+//            bgDrawable.draw(canvas)
             super.dispatchDraw(canvas)
             if (NightModeManager.nightModeEnable) {
                 foregroundDrawable.draw(canvas)

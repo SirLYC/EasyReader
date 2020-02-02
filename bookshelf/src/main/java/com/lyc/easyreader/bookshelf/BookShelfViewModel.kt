@@ -58,7 +58,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
                         if (firstLoadFinish && !fromCallback) {
                             ReaderHeadsUp.showHeadsUp("刷新完成")
                         }
-                    } else {
+                    } else if (firstLoadFinish) {
                         ReaderHeadsUp.showHeadsUp("没有更新")
                     }
                 } else {

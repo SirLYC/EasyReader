@@ -109,12 +109,6 @@ object ExecutorFactory {
             })
     }
 
-    val INSTANT_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
-        Executor {
-            it.run()
-        }
-    }
-
     val MAIN_EXECUTOR: Executor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
         Executor {
             MAIN_HANDLER.post(it)

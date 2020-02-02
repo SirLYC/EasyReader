@@ -19,7 +19,6 @@ class ReaderViewModel : ViewModel() {
     companion object {
         const val TAG = "ReaderViewModel"
         const val KEY_BOOK_FILE = "${TAG}_KEY_BOOK_FILE"
-        const val KEY_BOOK_CHAPTERS = "${TAG}_KEY_BOOK_CHAPTERS"
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -43,7 +42,7 @@ class ReaderViewModel : ViewModel() {
         }
         loadingChapterListLiveDate.value = true
         bookFile?.let { bookFile ->
-            ExecutorFactory.IO_EXECUTOR.execute {
+            ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
                 var chapterList = BookShelfOpenHelper.instance.queryBookChapters(bookFile)
                 if (chapterList == null || chapterList.isEmpty()) {
                     val parser = BookParser(bookFile)
@@ -52,7 +51,7 @@ class ReaderViewModel : ViewModel() {
                         ReaderToast.showToast(result.msg)
                         return@execute
                     }
-                    chapterList = BookShelfOpenHelper.instance.queryBookChapters(bookFile)
+                    chapterList = result.list
                 }
                 handler.post {
                     bookChapterList.addAll(chapterList!!)
@@ -64,14 +63,10 @@ class ReaderViewModel : ViewModel() {
 
     fun saveState(bundle: Bundle) {
         bundle.putParcelable(KEY_BOOK_FILE, bookFile)
-        bundle.putParcelableArrayList(KEY_BOOK_CHAPTERS, ArrayList(bookChapterList))
     }
 
     fun restoreState(bundle: Bundle) {
         bookFile = bundle.getParcelable(KEY_BOOK_FILE)
-        bundle.getParcelableArrayList<BookChapter>(KEY_BOOK_CHAPTERS)?.let {
-            bookChapterList.addAll(it)
-        }
         loadChapterIfNeeded()
     }
 

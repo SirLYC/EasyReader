@@ -34,8 +34,6 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         // Add Indexes
         db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_CHAPTER_BOOK_ID ON \"BOOK_CHAPTER\"" +
                 " (\"BOOK_ID\" ASC);");
-        db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_CHAPTER_BOOK_ID ON \"BOOK_CHAPTER\"" +
-                " (\"BOOK_ID\" ASC);");
     }
 
 
@@ -47,7 +45,9 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         super(config, daoSession);
     }
 
-    /** Drops the underlying database table. */
+    /**
+     * Drops the underlying database table.
+     */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_CHAPTER\"";
         db.execSQL(sql);
@@ -113,6 +113,12 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
     }
 
     @Override
+    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
+    }
+     
+    @Override
     public void readEntity(Cursor cursor, BookChapter entity, int offset) {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setOrder(cursor.getInt(offset + 1));
@@ -121,21 +127,6 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         entity.setTitle(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
         entity.setStart(cursor.getLong(offset + 5));
         entity.setEnd(cursor.getLong(offset + 6));
-     }
-     
-    @Override
-    public Long getKey(BookChapter entity) {
-        if (entity != null) {
-            return entity.getId();
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
-        entity.setId(rowId);
-        return rowId;
     }
 
     /**
@@ -150,6 +141,15 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         public final static Property Title = new Property(4, String.class, "title", false, "TITLE");
         public final static Property Start = new Property(5, long.class, "start", false, "START");
         public final static Property End = new Property(6, long.class, "end", false, "END");
+    }
+    
+    @Override
+    public Long getKey(BookChapter entity) {
+        if(entity != null) {
+            return entity.getId();
+        } else {
+            return null;
+        }
     }
 
     @Override
