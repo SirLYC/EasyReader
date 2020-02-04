@@ -18,6 +18,15 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
 
     public static final String TABLENAME = "BOOK_CHAPTER";
 
+    public BookChapterDao(DaoConfig config) {
+        super(config);
+    }
+
+
+    public BookChapterDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
     /**
      * Creates the underlying database table.
      */
@@ -36,18 +45,7 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
                 " (\"BOOK_ID\" ASC);");
     }
 
-
-    public BookChapterDao(DaoConfig config) {
-        super(config);
-    }
-
-    public BookChapterDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
-    /**
-     * Drops the underlying database table.
-     */
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_CHAPTER\"";
         db.execSQL(sql);
@@ -113,12 +111,6 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
     }
 
     @Override
-    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
-        entity.setId(rowId);
-        return rowId;
-    }
-     
-    @Override
     public void readEntity(Cursor cursor, BookChapter entity, int offset) {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setOrder(cursor.getInt(offset + 1));
@@ -127,6 +119,12 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         entity.setTitle(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
         entity.setStart(cursor.getLong(offset + 5));
         entity.setEnd(cursor.getLong(offset + 6));
+    }
+
+    @Override
+    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
 
     /**

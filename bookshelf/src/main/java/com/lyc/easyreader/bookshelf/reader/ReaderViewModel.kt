@@ -29,7 +29,7 @@ class ReaderViewModel : ViewModel() {
     var bookFile: BookFile? = null
         private set
     val bookChapterList = ObservableList<BookChapter>(arrayListOf())
-    val loadingChapterListLiveDate = NonNullLiveData(true)
+    val loadingChapterListLiveData = NonNullLiveData(true)
 
     fun init(bookFile: BookFile) {
         this.bookFile = bookFile
@@ -40,7 +40,7 @@ class ReaderViewModel : ViewModel() {
         if (bookChapterList.isNotEmpty()) {
             return
         }
-        loadingChapterListLiveDate.value = true
+        loadingChapterListLiveData.value = true
         bookFile?.let { bookFile ->
             ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
                 var chapterList = BookShelfOpenHelper.instance.queryBookChapters(bookFile)
@@ -55,7 +55,7 @@ class ReaderViewModel : ViewModel() {
                 }
                 handler.post {
                     bookChapterList.addAll(chapterList!!)
-                    loadingChapterListLiveDate.value = false
+                    loadingChapterListLiveData.value = false
                 }
             }
         }

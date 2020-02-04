@@ -3,5 +3,6 @@
 
     <application>
         <activity android:name=".scan.BookScanActivity" />
+        <activity android:name=".reader.ReaderActivity" />
     </application>
 </manifest>

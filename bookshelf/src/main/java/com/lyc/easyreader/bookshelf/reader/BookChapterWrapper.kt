@@ -67,6 +67,12 @@ class BookChapterWrapper(
 
     fun openBufferedReader(): BufferedReader? {
         val bytes = getLoadedContent() ?: return null
-        return bytes.inputStream().bufferedReader(bookFile.charset ?: APP_DEFAULT_CHARSET)
+        try {
+            return bytes.inputStream().bufferedReader(bookFile.charset ?: APP_DEFAULT_CHARSET)
+        } catch (e: Exception) {
+            LogUtils.e(TAG, ex = e)
+        }
+
+        return null
     }
 }

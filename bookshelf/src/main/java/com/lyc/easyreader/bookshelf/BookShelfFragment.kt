@@ -35,6 +35,7 @@ import com.lyc.easyreader.base.ui.theme.color_secondary_text
 import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
+import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
 import com.lyc.easyreader.bookshelf.utils.detectCharset
 import com.lyc.easyreader.bookshelf.utils.singleUriDocumentFile
@@ -322,5 +323,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
 
     override fun onBookShelfItemClick(pos: Int, data: BookFile, view: BookShelfItemView) {
         LogUtils.d(TAG, "Click book item [position=${pos}] [data=${data}].")
+        ReaderActivity.openBookFile(data)
     }
 }

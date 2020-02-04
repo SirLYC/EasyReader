@@ -8,6 +8,7 @@ import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
+import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.converter.PropertyConverter;
 
 import java.nio.charset.Charset;
@@ -30,6 +31,7 @@ public class BookFile implements Parcelable {
     private long importTime;
     private long lastAccessTime;
     private long deleteTime;
+    private long handleChapterLastModified;
     public static final Creator<BookFile> CREATOR = new Creator<BookFile>() {
         @Override
         public BookFile createFromParcel(Parcel in) {
@@ -41,17 +43,22 @@ public class BookFile implements Parcelable {
             return new BookFile[size];
         }
     };
-    private long handleChapterLastModified;
-    @Convert(converter = StatusConverter.class, columnType = String.class)
-    private Status status;
     @Convert(converter = CharsetConverter.class, columnType = String.class)
     private Charset charset;
+    @Convert(converter = StatusConverter.class, columnType = String.class)
+    @NotNull
+    private Status status;
 
 
-    @Generated(hash = 453179158)
+    @Generated(hash = 1858747483)
+    public BookFile() {
+    }
+
+
+    @Generated(hash = 146963861)
     public BookFile(Long id, String realPath, String filename, String fileExt,
                     long importTime, long lastAccessTime, long deleteTime,
-                    long handleChapterLastModified, Status status, Charset charset) {
+                    long handleChapterLastModified, @NotNull Status status, Charset charset) {
         this.id = id;
         this.realPath = realPath;
         this.filename = filename;
@@ -63,12 +70,6 @@ public class BookFile implements Parcelable {
         this.status = status;
         this.charset = charset;
     }
-
-
-    @Generated(hash = 1858747483)
-    public BookFile() {
-    }
-
 
     protected BookFile(Parcel in) {
         if (in.readByte() == 0) {
@@ -83,6 +84,17 @@ public class BookFile implements Parcelable {
         lastAccessTime = in.readLong();
         deleteTime = in.readLong();
         handleChapterLastModified = in.readLong();
+        status = Status.valueOf(in.readString());
+        if (in.readByte() == 0) {
+            charset = null;
+        } else {
+            charset = Charset.forName(in.readString());
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
     }
 
     @Override
@@ -100,11 +112,13 @@ public class BookFile implements Parcelable {
         dest.writeLong(lastAccessTime);
         dest.writeLong(deleteTime);
         dest.writeLong(handleChapterLastModified);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
+        dest.writeString(status.name());
+        if (charset == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeString(charset.name());
+        }
     }
 
     public long getHandleChapterLastModified() {

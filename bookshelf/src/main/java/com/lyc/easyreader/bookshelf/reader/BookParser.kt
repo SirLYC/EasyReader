@@ -70,155 +70,159 @@ class BookParser(private val bookFile: BookFile) {
 
         val lastModified = file.lastModified()
 
-        //获取文件流
-        val bookStream = try {
-            RandomAccessFile(file, "r")
+        try {
+            RandomAccessFile(file, "r").use { bookStream ->
+                val charset = bookStream.detectCharset()
+
+                // 判断是否有符合预设的章节
+                val chapterPattern = checkChapterType(bookStream, charset)
+                val buffer = ByteArray(BUFFER_SIZE)
+                // 当前buffer在文件中的起始偏移
+                var curOffset: Long = 0
+                // block的个数
+                var blockCount = 0
+                // 读取的长度
+                var readLen: Int
+                while (bookStream.read(buffer, 0, buffer.size).also { readLen = it } > 0) {
+                    ++blockCount
+                    if (chapterPattern != null) {
+                        val blockContent = String(buffer, 0, readLen, charset)
+                        var seekPos = 0
+                        val matcher: Matcher = chapterPattern.matcher(blockContent)
+                        while (matcher.find()) { //获取匹配到的字符在字符串中的起始位置
+                            val chapterStart = matcher.start()
+                            //如果 seekPos == 0 && nextChapterPos != 0 表示当前block处前面有一段内容
+                            // 第一种情况一定是序章 第二种情况可能是上一个章节的内容
+                            if (seekPos == 0 && chapterStart != 0) { //获取当前章节的内容
+                                val chapterContent = blockContent.substring(seekPos, chapterStart)
+                                //设置指针偏移
+                                seekPos += chapterContent.length
+                                //如果当前对整个文件的偏移位置为0的话，那么就是序章
+                                if (curOffset == 0L) {
+                                    // 序章
+                                    val preChapter = BookChapter()
+                                    preChapter.title = "序章"
+                                    preChapter.start = 0
+                                    preChapter.end =
+                                        chapterContent.toByteArray(charset).size.toLong()
+                                    if (preChapter.end - preChapter.start > 0) {
+                                        chapters.add(preChapter)
+                                    }
+                                    val curChapter = BookChapter()
+                                    curChapter.title = matcher.group()
+                                    curChapter.start = preChapter.end
+                                    chapters.add(curChapter)
+                                } else {
+                                    //获取上一章节
+                                    val lastChapter: BookChapter = chapters[chapters.size - 1]
+                                    //将当前段落添加上一章去
+                                    lastChapter.end += chapterContent.toByteArray(charset)
+                                        .size.toLong()
+                                    //如果章节内容太小，则移除
+                                    if (lastChapter.end - lastChapter.start <= 0) {
+                                        chapters.remove(lastChapter)
+                                    }
+                                    //创建当前章节
+                                    val curChapter = BookChapter()
+                                    curChapter.title = matcher.group()
+                                    curChapter.start = lastChapter.end
+                                    chapters.add(curChapter)
+                                }
+                            } else {
+                                if (chapters.size != 0) {
+                                    //获取章节内容
+                                    val chapterContent =
+                                        blockContent.substring(seekPos, matcher.start())
+                                    seekPos += chapterContent.length
+                                    //获取上一章节
+                                    val lastChapter: BookChapter = chapters[chapters.size - 1]
+                                    lastChapter.end =
+                                        lastChapter.start + chapterContent.toByteArray(charset).size.toLong()
+                                    //如果章节内容太小，则移除
+                                    if (lastChapter.end - lastChapter.start <= 0) {
+                                        chapters.remove(lastChapter)
+                                    }
+                                    //创建当前章节
+                                    val curChapter = BookChapter()
+                                    curChapter.title = matcher.group()
+                                    curChapter.start = lastChapter.end
+                                    chapters.add(curChapter)
+                                } else {
+                                    val curChapter =
+                                        BookChapter()
+                                    curChapter.title = matcher.group()
+                                    curChapter.start = 0
+                                    chapters.add(curChapter)
+                                }
+                            }
+                        }
+                    } else {
+                        //章节在buffer的偏移量
+                        var chapterOffset = 0
+                        //当前剩余可分配的长度
+                        var strLength = readLen
+                        //分章的位置
+                        var chapterPos = 0
+                        while (strLength > 0) {
+                            ++chapterPos
+                            //是否长度超过一章
+                            if (strLength > MAX_LENGTH_WITH_NO_CHAPTER) {
+                                //在buffer中一章的终止点
+                                var end = readLen
+                                //寻找换行符作为终止点
+                                for (i in chapterOffset + MAX_LENGTH_WITH_NO_CHAPTER until readLen) {
+                                    if (buffer[i] == BLANK_BYTE) {
+                                        end = i
+                                        break
+                                    }
+                                }
+                                val chapter =
+                                    BookChapter()
+                                chapter.title = "第" + blockCount + "章" + "(" + chapterPos + ")"
+                                chapter.start = curOffset + chapterOffset + 1
+                                chapter.end = curOffset + end
+                                chapters.add(chapter)
+                                //减去已经被分配的长度
+                                strLength -= (end - chapterOffset)
+                                //设置偏移的位置
+                                chapterOffset = end
+                            } else {
+                                val chapter =
+                                    BookChapter()
+                                chapter.title = "第" + blockCount + "章" + "(" + chapterPos + ")"
+                                chapter.start = curOffset + chapterOffset + 1
+                                chapter.end = curOffset + readLen
+                                chapters.add(chapter)
+                                strLength = 0
+                            }
+                        }
+                    }
+                    curOffset += readLen.toLong()
+                    if (chapterPattern != null) {
+                        val lastChapter: BookChapter = chapters[chapters.size - 1]
+                        lastChapter.end = curOffset
+                    }
+                }
+
+                chapters.forEachIndexed { index, bookChapter ->
+                    bookChapter.order = index
+                    bookChapter.lastModified = lastModified
+                    if ("序章" != bookChapter.title) {
+                        bookChapter.start += bookChapter.title.toByteArray(charset).size.toLong()
+                    }
+                }
+
+                bookFile.charset = charset
+                bookFile.handleChapterLastModified = lastModified
+
+                BookShelfOpenHelper.instance.saveBookChapters(bookFile, lastModified, chapters)
+            }
+
         } catch (e: IOException) {
             LogUtils.e(TAG, "Cannot open stream! File=${file}", e)
             return ParseChapterResult.FileOpenFail(e)
         }
 
-        val charset = bookStream.detectCharset()
-
-        // 判断是否有符合预设的章节
-        val chapterPattern = checkChapterType(bookStream, charset)
-        val buffer = ByteArray(BUFFER_SIZE)
-        // 当前buffer在文件中的起始偏移
-        var curOffset: Long = 0
-        // block的个数
-        var blockCount = 0
-        // 读取的长度
-        var readLen: Int
-        while (bookStream.read(buffer, 0, buffer.size).also { readLen = it } > 0) {
-            ++blockCount
-            if (chapterPattern != null) {
-                val blockContent = String(buffer, 0, readLen, charset)
-                var seekPos = 0
-                val matcher: Matcher = chapterPattern.matcher(blockContent)
-                while (matcher.find()) { //获取匹配到的字符在字符串中的起始位置
-                    val chapterStart = matcher.start()
-                    //如果 seekPos == 0 && nextChapterPos != 0 表示当前block处前面有一段内容
-                    // 第一种情况一定是序章 第二种情况可能是上一个章节的内容
-                    if (seekPos == 0 && chapterStart != 0) { //获取当前章节的内容
-                        val chapterContent = blockContent.substring(seekPos, chapterStart)
-                        //设置指针偏移
-                        seekPos += chapterContent.length
-                        //如果当前对整个文件的偏移位置为0的话，那么就是序章
-                        if (curOffset == 0L) {
-                            // 序章
-                            val preChapter = BookChapter()
-                            preChapter.title = "序章"
-                            preChapter.start = 0
-                            preChapter.end = chapterContent.toByteArray(charset).size.toLong()
-                            if (preChapter.end - preChapter.start > 0) {
-                                chapters.add(preChapter)
-                            }
-                            val curChapter = BookChapter()
-                            curChapter.title = matcher.group()
-                            curChapter.start = preChapter.end
-                            chapters.add(curChapter)
-                        } else {
-                            //获取上一章节
-                            val lastChapter: BookChapter = chapters[chapters.size - 1]
-                            //将当前段落添加上一章去
-                            lastChapter.end += chapterContent.toByteArray(charset).size.toLong()
-                            //如果章节内容太小，则移除
-                            if (lastChapter.end - lastChapter.start <= 0) {
-                                chapters.remove(lastChapter)
-                            }
-                            //创建当前章节
-                            val curChapter = BookChapter()
-                            curChapter.title = matcher.group()
-                            curChapter.start = lastChapter.end
-                            chapters.add(curChapter)
-                        }
-                    } else {
-                        if (chapters.size != 0) {
-                            //获取章节内容
-                            val chapterContent = blockContent.substring(seekPos, matcher.start())
-                            seekPos += chapterContent.length
-                            //获取上一章节
-                            val lastChapter: BookChapter = chapters[chapters.size - 1]
-                            lastChapter.end =
-                                lastChapter.start + chapterContent.toByteArray(charset).size.toLong()
-                            //如果章节内容太小，则移除
-                            if (lastChapter.end - lastChapter.start <= 0) {
-                                chapters.remove(lastChapter)
-                            }
-                            //创建当前章节
-                            val curChapter = BookChapter()
-                            curChapter.title = matcher.group()
-                            curChapter.start = lastChapter.end
-                            chapters.add(curChapter)
-                        } else {
-                            val curChapter =
-                                BookChapter()
-                            curChapter.title = matcher.group()
-                            curChapter.start = 0
-                            chapters.add(curChapter)
-                        }
-                    }
-                }
-            } else {
-                //章节在buffer的偏移量
-                var chapterOffset = 0
-                //当前剩余可分配的长度
-                var strLength = readLen
-                //分章的位置
-                var chapterPos = 0
-                while (strLength > 0) {
-                    ++chapterPos
-                    //是否长度超过一章
-                    if (strLength > MAX_LENGTH_WITH_NO_CHAPTER) {
-                        //在buffer中一章的终止点
-                        var end = readLen
-                        //寻找换行符作为终止点
-                        for (i in chapterOffset + MAX_LENGTH_WITH_NO_CHAPTER until readLen) {
-                            if (buffer[i] == BLANK_BYTE) {
-                                end = i
-                                break
-                            }
-                        }
-                        val chapter =
-                            BookChapter()
-                        chapter.title = "第" + blockCount + "章" + "(" + chapterPos + ")"
-                        chapter.start = curOffset + chapterOffset + 1
-                        chapter.end = curOffset + end
-                        chapters.add(chapter)
-                        //减去已经被分配的长度
-                        strLength -= (end - chapterOffset)
-                        //设置偏移的位置
-                        chapterOffset = end
-                    } else {
-                        val chapter =
-                            BookChapter()
-                        chapter.title = "第" + blockCount + "章" + "(" + chapterPos + ")"
-                        chapter.start = curOffset + chapterOffset + 1
-                        chapter.end = curOffset + readLen
-                        chapters.add(chapter)
-                        strLength = 0
-                    }
-                }
-            }
-            curOffset += readLen.toLong()
-            if (chapterPattern != null) {
-                val lastChapter: BookChapter = chapters[chapters.size - 1]
-                lastChapter.end = curOffset
-            }
-        }
-
-        chapters.forEachIndexed { index, bookChapter ->
-            bookChapter.order = index
-            bookChapter.lastModified = lastModified
-            if ("序章" != bookChapter.title) {
-                bookChapter.start += bookChapter.title.toByteArray(charset).size.toLong()
-            }
-        }
-
-        bookFile.charset = charset
-        bookFile.handleChapterLastModified = lastModified
-
-        BookShelfOpenHelper.instance.saveBookChapters(bookFile, lastModified, chapters)
         return ParseChapterResult.Success(chapters)
     }
 

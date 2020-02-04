@@ -23,18 +23,20 @@ public class DaoMaster extends AbstractDaoMaster {
         this(new StandardDatabase(db));
     }
 
-    /**
-     * Drops underlying database table using DAOs.
-     */
-    public static void dropAllTables(Database db, boolean ifExists) {
-        BookChapterDao.dropTable(db, ifExists);
-        BookFileDao.dropTable(db, ifExists);
-    }
-
     public DaoMaster(Database db) {
         super(db, SCHEMA_VERSION);
         registerDaoClass(BookChapterDao.class);
         registerDaoClass(BookFileDao.class);
+    }
+
+    /**
+     * WARNING: Drops all table on Upgrade! Use only during development.
+     * Convenience method using a {@link DevOpenHelper}.
+     */
+    public static DaoSession newDevSession(Context context, String name) {
+        Database db = new DevOpenHelper(context, name).getWritableDb();
+        DaoMaster daoMaster = new DaoMaster(db);
+        return daoMaster.newSession();
     }
 
     /**
@@ -46,13 +48,11 @@ public class DaoMaster extends AbstractDaoMaster {
     }
 
     /**
-     * WARNING: Drops all table on Upgrade! Use only during development.
-     * Convenience method using a {@link DevOpenHelper}.
+     * Drops underlying database table using DAOs.
      */
-    public static DaoSession newDevSession(Context context, String name) {
-        Database db = new DevOpenHelper(context, name).getWritableDb();
-        DaoMaster daoMaster = new DaoMaster(db);
-        return daoMaster.newSession();
+    public static void dropAllTables(Database db, boolean ifExists) {
+        BookChapterDao.dropTable(db, ifExists);
+        BookFileDao.dropTable(db, ifExists);
     }
 
     public DaoSession newSession() {

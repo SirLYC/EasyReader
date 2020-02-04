@@ -4,7 +4,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
 
 import com.lyc.easyreader.api.book.BookFile.CharsetConverter;
-import com.lyc.easyreader.api.book.BookFile.Status;
 import com.lyc.easyreader.api.book.BookFile.StatusConverter;
 
 import org.greenrobot.greendao.AbstractDao;
@@ -24,16 +23,9 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
 
     public static final String TABLENAME = "BOOK_FILE";
 
-    private final StatusConverter statusConverter = new StatusConverter();
-
-    public BookFileDao(DaoConfig config) {
-        super(config);
-    }
     private final CharsetConverter charsetConverter = new CharsetConverter();
 
-    public BookFileDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
+    private final StatusConverter statusConverter = new StatusConverter();
 
     /**
      * Creates the underlying database table.
@@ -49,7 +41,7 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 "\"LAST_ACCESS_TIME\" INTEGER NOT NULL ," + // 5: lastAccessTime
                 "\"DELETE_TIME\" INTEGER NOT NULL ," + // 6: deleteTime
                 "\"HANDLE_CHAPTER_LAST_MODIFIED\" INTEGER NOT NULL ," + // 7: handleChapterLastModified
-                "\"STATUS\" TEXT," + // 8: status
+                "\"STATUS\" TEXT NOT NULL ," + // 8: status
                 "\"CHARSET\" TEXT);"); // 9: charset
         // Add Indexes
         db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_FILE_FILENAME ON \"BOOK_FILE\"" +
@@ -58,6 +50,22 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 " (\"IMPORT_TIME\" DESC);");
         db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_FILE_LAST_ACCESS_TIME_DESC ON \"BOOK_FILE\"" +
                 " (\"LAST_ACCESS_TIME\" DESC);");
+    }
+
+    public BookFileDao(DaoConfig config) {
+        super(config);
+    }
+
+    public BookFileDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /**
+     * Drops the underlying database table.
+     */
+    public static void dropTable(Database db, boolean ifExists) {
+        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
+        db.execSQL(sql);
     }
 
     @Override
@@ -87,24 +95,12 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         stmt.bindLong(6, entity.getLastAccessTime());
         stmt.bindLong(7, entity.getDeleteTime());
         stmt.bindLong(8, entity.getHandleChapterLastModified());
-
-        Status status = entity.getStatus();
-        if (status != null) {
-            stmt.bindString(9, statusConverter.convertToDatabaseValue(status));
-        }
+        stmt.bindString(9, statusConverter.convertToDatabaseValue(entity.getStatus()));
 
         Charset charset = entity.getCharset();
         if (charset != null) {
             stmt.bindString(10, charsetConverter.convertToDatabaseValue(charset));
         }
-    }
-
-    /**
-     * Drops the underlying database table.
-     */
-    public static void dropTable(Database db, boolean ifExists) {
-        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
-        db.execSQL(sql);
     }
 
     @Override
@@ -134,11 +130,7 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         stmt.bindLong(6, entity.getLastAccessTime());
         stmt.bindLong(7, entity.getDeleteTime());
         stmt.bindLong(8, entity.getHandleChapterLastModified());
-
-        Status status = entity.getStatus();
-        if (status != null) {
-            stmt.bindString(9, statusConverter.convertToDatabaseValue(status));
-        }
+        stmt.bindString(9, statusConverter.convertToDatabaseValue(entity.getStatus()));
 
         Charset charset = entity.getCharset();
         if (charset != null) {
@@ -162,7 +154,7 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 cursor.getLong(offset + 5), // lastAccessTime
                 cursor.getLong(offset + 6), // deleteTime
                 cursor.getLong(offset + 7), // handleChapterLastModified
-                cursor.isNull(offset + 8) ? null : statusConverter.convertToEntityProperty(cursor.getString(offset + 8)), // status
+                statusConverter.convertToEntityProperty(cursor.getString(offset + 8)), // status
                 cursor.isNull(offset + 9) ? null : charsetConverter.convertToEntityProperty(cursor.getString(offset + 9)) // charset
         );
         return entity;
@@ -178,7 +170,7 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         entity.setLastAccessTime(cursor.getLong(offset + 5));
         entity.setDeleteTime(cursor.getLong(offset + 6));
         entity.setHandleChapterLastModified(cursor.getLong(offset + 7));
-        entity.setStatus(cursor.isNull(offset + 8) ? null : statusConverter.convertToEntityProperty(cursor.getString(offset + 8)));
+        entity.setStatus(statusConverter.convertToEntityProperty(cursor.getString(offset + 8)));
         entity.setCharset(cursor.isNull(offset + 9) ? null : charsetConverter.convertToEntityProperty(cursor.getString(offset + 9)));
      }
      
