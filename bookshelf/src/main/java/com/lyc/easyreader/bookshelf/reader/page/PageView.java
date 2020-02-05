@@ -10,14 +10,9 @@ import android.view.View;
 import android.view.ViewConfiguration;
 
 import com.lyc.easyreader.api.book.BookFile;
-import com.lyc.easyreader.base.utils.LogUtils;
-import com.lyc.easyreader.bookshelf.reader.page.anim.CoverPageAnim;
-import com.lyc.easyreader.bookshelf.reader.page.anim.HorizonPageAnim;
-import com.lyc.easyreader.bookshelf.reader.page.anim.NonePageAnim;
+import com.lyc.easyreader.bookshelf.reader.page.anim.AnimFactory;
+import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode;
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimation;
-import com.lyc.easyreader.bookshelf.reader.page.anim.ScrollPageAnim;
-import com.lyc.easyreader.bookshelf.reader.page.anim.SimulationPageAnim;
-import com.lyc.easyreader.bookshelf.reader.page.anim.SlidePageAnim;
 
 /**
  * Created by Administrator on 2016/8/29 0029.
@@ -36,14 +31,14 @@ public class PageView extends View {
     private boolean isMove = false;
     // 初始化参数
     private int mBgColor = 0xFFCEC29C;
-    private PageMode mPageMode = PageMode.SIMULATION;
+    private PageAnimMode pageAnimMode = PageAnimMode.SIMULATION;
     // 是否允许点击
     private boolean canTouch = true;
     // 唤醒菜单的区域
     private RectF mCenterRect = null;
     private boolean isPrepare;
     // 动画类
-    private PageAnimation mPageAnim;
+    private PageAnimation pageAnim;
     //点击监听
     private TouchListener mTouchListener;
     //内容加载器
@@ -92,60 +87,34 @@ public class PageView extends View {
     }
 
     //设置翻页的模式
-    void setPageMode(PageMode pageMode) {
-        mPageMode = pageMode;
-        //视图未初始化的时候，禁止调用
-        if (mViewWidth == 0 || mViewHeight == 0) return;
-
-        switch (mPageMode) {
-            case SIMULATION:
-                mPageAnim = new SimulationPageAnim(mViewWidth, mViewHeight, this, mPageAnimListener);
-                break;
-            case COVER:
-                mPageAnim = new CoverPageAnim(mViewWidth, mViewHeight, this, mPageAnimListener);
-                break;
-            case SLIDE:
-                mPageAnim = new SlidePageAnim(mViewWidth, mViewHeight, this, mPageAnimListener);
-                break;
-            case NONE:
-                mPageAnim = new NonePageAnim(mViewWidth, mViewHeight, this, mPageAnimListener);
-                break;
-            case SCROLL:
-                mPageAnim = new ScrollPageAnim(mViewWidth, mViewHeight, 0,
-                        mPageLoader.getMarginHeight(), this, mPageAnimListener);
-                break;
-            default:
-                mPageAnim = new SimulationPageAnim(mViewWidth, mViewHeight, this, mPageAnimListener);
+    void setPageMode(PageAnimMode pageAnimMode) {
+        if (this.pageAnimMode == pageAnimMode && pageAnim != null) {
+            return;
+        }
+        this.pageAnimMode = pageAnimMode;
+        if (mPageLoader != null) {
+            pageAnim = AnimFactory.INSTANCE.createAnim(pageAnimMode, mViewWidth, mViewHeight, this, mPageAnimListener);
         }
     }
 
     public Bitmap getNextBitmap() {
-        if (mPageAnim == null) return null;
-        return mPageAnim.getNextBitmap();
+        if (pageAnim == null) return null;
+        return pageAnim.getNextBitmap();
     }
 
     public Bitmap getBgBitmap() {
-        if (mPageAnim == null) return null;
-        return mPageAnim.getBgBitmap();
+        if (pageAnim == null) return null;
+        return pageAnim.getBgBitmap();
     }
 
     public boolean autoPrevPage() {
-        //滚动暂时不支持自动翻页
-        if (mPageAnim instanceof ScrollPageAnim) {
-            return false;
-        } else {
-            startPageAnim(PageAnimation.Direction.PRE);
-            return true;
-        }
+        startPageAnim(PageAnimation.Direction.PRE);
+        return true;
     }
 
     public boolean autoNextPage() {
-        if (mPageAnim instanceof ScrollPageAnim) {
-            return false;
-        } else {
-            startPageAnim(PageAnimation.Direction.NEXT);
-            return true;
-        }
+        startPageAnim(PageAnimation.Direction.NEXT);
+        return true;
     }
 
     private void startPageAnim(PageAnimation.Direction direction) {
@@ -156,13 +125,13 @@ public class PageView extends View {
             int x = mViewWidth;
             int y = mViewHeight;
             //初始化动画
-            mPageAnim.setStartPoint(x, y);
+            pageAnim.setStartPoint(x, y);
             //设置点击点
-            mPageAnim.setTouchPoint(x, y);
+            pageAnim.setTouchPoint(x, y);
             //设置方向
             Boolean hasNext = hasNextPage();
 
-            mPageAnim.setDirection(direction);
+            pageAnim.setDirection(direction);
             if (!hasNext) {
                 return;
             }
@@ -170,17 +139,17 @@ public class PageView extends View {
             int x = 0;
             int y = mViewHeight;
             //初始化动画
-            mPageAnim.setStartPoint(x, y);
+            pageAnim.setStartPoint(x, y);
             //设置点击点
-            mPageAnim.setTouchPoint(x, y);
-            mPageAnim.setDirection(direction);
+            pageAnim.setTouchPoint(x, y);
+            pageAnim.setDirection(direction);
             //设置方向方向
             Boolean hashPrev = hasPrevPage();
             if (!hashPrev) {
                 return;
             }
         }
-        mPageAnim.startAnim();
+        pageAnim.startAnim();
         this.postInvalidate();
     }
 
@@ -195,7 +164,7 @@ public class PageView extends View {
         canvas.drawColor(mBgColor);
 
         //绘制动画
-        mPageAnim.draw(canvas);
+        pageAnim.draw(canvas);
     }
 
     @Override
@@ -206,14 +175,13 @@ public class PageView extends View {
 
         int x = (int) event.getX();
         int y = (int) event.getY();
-        LogUtils.Companion.d(TAG, "Event=" + event, null, true, false);
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mStartX = x;
                 mStartY = y;
                 isMove = false;
                 canTouch = mTouchListener.onTouch();
-                mPageAnim.onTouchEvent(event);
+                pageAnim.handleTouchEvent(event);
                 break;
             case MotionEvent.ACTION_MOVE:
                 // 判断是否大于最小滑动值。
@@ -224,7 +192,7 @@ public class PageView extends View {
 
                 // 如果滑动了，则进行翻页。
                 if (isMove) {
-                    mPageAnim.onTouchEvent(event);
+                    pageAnim.handleTouchEvent(event);
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -243,7 +211,7 @@ public class PageView extends View {
                         return true;
                     }
                 }
-                mPageAnim.onTouchEvent(event);
+                pageAnim.handleTouchEvent(event);
                 break;
         }
         return true;
@@ -277,20 +245,17 @@ public class PageView extends View {
     @Override
     public void computeScroll() {
         //进行滑动
-        mPageAnim.scrollAnim();
+        pageAnim.scrollAnim();
         super.computeScroll();
     }
 
     //如果滑动状态没有停止就取消状态，重新设置Anim的触碰点
     public void abortAnimation() {
-        mPageAnim.abortAnim();
+        pageAnim.abortAnim();
     }
 
     public boolean isRunning() {
-        if (mPageAnim == null) {
-            return false;
-        }
-        return mPageAnim.isRunning();
+        return pageAnimMode != null && pageAnim.isRunning;
     }
 
     public boolean isPrepare() {
@@ -304,9 +269,7 @@ public class PageView extends View {
     public void drawNextPage() {
         if (!isPrepare) return;
 
-        if (mPageAnim instanceof HorizonPageAnim) {
-            ((HorizonPageAnim) mPageAnim).changePage();
-        }
+        pageAnim.changePage();
         mPageLoader.drawPage(getNextBitmap(), false);
     }
 
@@ -317,24 +280,17 @@ public class PageView extends View {
      */
     public void drawCurPage(boolean isUpdate) {
         if (!isPrepare) return;
-
-        if (!isUpdate) {
-            if (mPageAnim instanceof ScrollPageAnim) {
-                ((ScrollPageAnim) mPageAnim).resetBitmap();
-            }
-        }
-
         mPageLoader.drawPage(getNextBitmap(), isUpdate);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        mPageAnim.abortAnim();
-        mPageAnim.clear();
+        pageAnim.abortAnim();
+        pageAnim.clear();
 
         mPageLoader = null;
-        mPageAnim = null;
+        pageAnim = null;
     }
 
     /**

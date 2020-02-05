@@ -45,7 +45,9 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
                 " (\"BOOK_ID\" ASC);");
     }
 
-    /** Drops the underlying database table. */
+    /**
+     * Drops the underlying database table.
+     */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_CHAPTER\"";
         db.execSQL(sql);
@@ -119,14 +121,8 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         entity.setTitle(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
         entity.setStart(cursor.getLong(offset + 5));
         entity.setEnd(cursor.getLong(offset + 6));
-    }
-
-    @Override
-    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
-        entity.setId(rowId);
-        return rowId;
-    }
-
+     }
+     
     /**
      * Properties of entity BookChapter.<br/>
      * Can be used for QueryBuilder and for referencing column names.
@@ -139,6 +135,12 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         public final static Property Title = new Property(4, String.class, "title", false, "TITLE");
         public final static Property Start = new Property(5, long.class, "start", false, "START");
         public final static Property End = new Property(6, long.class, "end", false, "END");
+    }
+    
+    @Override
+    protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
     
     @Override

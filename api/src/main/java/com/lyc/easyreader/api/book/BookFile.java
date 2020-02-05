@@ -55,10 +55,10 @@ public class BookFile implements Parcelable {
     }
 
 
-    @Generated(hash = 146963861)
+    @Generated(hash = 503286811)
     public BookFile(Long id, String realPath, String filename, String fileExt,
                     long importTime, long lastAccessTime, long deleteTime,
-                    long handleChapterLastModified, @NotNull Status status, Charset charset) {
+                    long handleChapterLastModified, Charset charset, @NotNull Status status) {
         this.id = id;
         this.realPath = realPath;
         this.filename = filename;
@@ -67,9 +67,10 @@ public class BookFile implements Parcelable {
         this.lastAccessTime = lastAccessTime;
         this.deleteTime = deleteTime;
         this.handleChapterLastModified = handleChapterLastModified;
-        this.status = status;
         this.charset = charset;
+        this.status = status;
     }
+
 
     protected BookFile(Parcel in) {
         if (in.readByte() == 0) {
