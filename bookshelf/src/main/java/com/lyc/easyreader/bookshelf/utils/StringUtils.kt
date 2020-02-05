@@ -1,5 +1,9 @@
 package com.lyc.easyreader.bookshelf.utils
 
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.concurrent.getOrSet
+
 /**
  * Created by Liu Yuchuan on 2020/2/4.
  */
@@ -15,4 +19,11 @@ fun halfToFull(input: String): String? {
             c[i] = (c[i] + 65248)
     }
     return String(c)
+}
+
+private val readerTimeFormatThreadLocal = ThreadLocal<SimpleDateFormat>()
+
+fun Long.formatReaderTime(): String {
+    return readerTimeFormatThreadLocal.getOrSet { SimpleDateFormat("HH:mm", Locale.ENGLISH) }
+        .format(this)
 }

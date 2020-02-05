@@ -209,6 +209,7 @@ class BookParser(private val bookFile: BookFile) {
                     bookChapter.lastModified = lastModified
                     if ("序章" != bookChapter.title) {
                         bookChapter.start += bookChapter.title.toByteArray(charset).size.toLong()
+                        bookChapter.title = bookChapter.title.trim()
                     }
                 }
 

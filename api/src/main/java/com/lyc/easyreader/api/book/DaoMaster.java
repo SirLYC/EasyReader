@@ -39,18 +39,18 @@ public class DaoMaster extends AbstractDaoMaster {
         return daoMaster.newSession();
     }
 
-    public DaoMaster(Database db) {
-        super(db, SCHEMA_VERSION);
-        registerDaoClass(BookChapterDao.class);
-        registerDaoClass(BookFileDao.class);
-    }
-
     /**
      * Creates underlying database table using DAOs.
      */
     public static void createAllTables(Database db, boolean ifNotExists) {
         BookChapterDao.createTable(db, ifNotExists);
         BookFileDao.createTable(db, ifNotExists);
+    }
+
+    public DaoMaster(Database db) {
+        super(db, SCHEMA_VERSION);
+        registerDaoClass(BookChapterDao.class);
+        registerDaoClass(BookFileDao.class);
     }
 
     public DaoSession newSession() {

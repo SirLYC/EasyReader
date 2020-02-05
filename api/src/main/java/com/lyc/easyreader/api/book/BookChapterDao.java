@@ -18,15 +18,6 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
 
     public static final String TABLENAME = "BOOK_CHAPTER";
 
-    public BookChapterDao(DaoConfig config) {
-        super(config);
-    }
-
-
-    public BookChapterDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
     /**
      * Creates the underlying database table.
      */
@@ -45,9 +36,16 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
                 " (\"BOOK_ID\" ASC);");
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+
+    public BookChapterDao(DaoConfig config) {
+        super(config);
+    }
+
+    public BookChapterDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_CHAPTER\"";
         db.execSQL(sql);
@@ -112,17 +110,6 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         return entity;
     }
 
-    @Override
-    public void readEntity(Cursor cursor, BookChapter entity, int offset) {
-        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
-        entity.setOrder(cursor.getInt(offset + 1));
-        entity.setLastModified(cursor.getLong(offset + 2));
-        entity.setBookId(cursor.getLong(offset + 3));
-        entity.setTitle(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
-        entity.setStart(cursor.getLong(offset + 5));
-        entity.setEnd(cursor.getLong(offset + 6));
-     }
-     
     /**
      * Properties of entity BookChapter.<br/>
      * Can be used for QueryBuilder and for referencing column names.
@@ -136,6 +123,17 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
         public final static Property Start = new Property(5, long.class, "start", false, "START");
         public final static Property End = new Property(6, long.class, "end", false, "END");
     }
+     
+    @Override
+    public void readEntity(Cursor cursor, BookChapter entity, int offset) {
+        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setOrder(cursor.getInt(offset + 1));
+        entity.setLastModified(cursor.getLong(offset + 2));
+        entity.setBookId(cursor.getLong(offset + 3));
+        entity.setTitle(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
+        entity.setStart(cursor.getLong(offset + 5));
+        entity.setEnd(cursor.getLong(offset + 6));
+     }
     
     @Override
     protected final Long updateKeyAfterInsert(BookChapter entity, long rowId) {
