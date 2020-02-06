@@ -17,6 +17,15 @@ public class BookChapterDao extends AbstractDao<BookChapter, Long> {
 
     public static final String TABLENAME = "BOOK_CHAPTER";
 
+    public BookChapterDao(DaoConfig config) {
+        super(config);
+    }
+
+
+    public BookChapterDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
     /**
      * Properties of entity BookChapter.<br/>
      * Can be used for QueryBuilder and for referencing column names.
