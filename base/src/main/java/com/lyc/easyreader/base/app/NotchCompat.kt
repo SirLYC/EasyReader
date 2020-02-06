@@ -9,10 +9,11 @@ import java.util.*
 class NotchCompat private constructor() {
     var notchDevice = false
         internal set
-    var notchDeviceConvinced = false
+    var notchInfoConvinced = false
         internal set
+    var notchHeight: Int = 0
     internal var postSetNotchDevice = false
-    private val pendingCommands = LinkedList<(isNotchDevice: Boolean) -> Unit>()
+    private val pendingCommands = LinkedList<(isNotchDevice: Boolean, notchHeight: Int) -> Unit>()
 
     companion object {
         @JvmStatic
@@ -21,9 +22,9 @@ class NotchCompat private constructor() {
         }
     }
 
-    fun doOnIsNotchDeviceConvinced(func: (isNotchDevice: Boolean) -> Unit) {
-        if (notchDeviceConvinced) {
-            func(notchDevice)
+    fun doOnIsNotchInfoConvinced(func: (isNotchDevice: Boolean, notchHeight: Int) -> Unit) {
+        if (notchInfoConvinced) {
+            func(notchDevice, notchHeight)
         } else {
             pendingCommands.add(func)
         }
@@ -32,7 +33,7 @@ class NotchCompat private constructor() {
     @MainThread
     internal fun runPendingCommands() {
         pendingCommands.forEach {
-            it.invoke(notchDevice)
+            it.invoke(notchDevice, notchHeight)
         }
         pendingCommands.clear()
     }

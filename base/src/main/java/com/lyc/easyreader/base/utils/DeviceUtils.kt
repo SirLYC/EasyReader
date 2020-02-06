@@ -4,8 +4,10 @@ import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.view.Surface
 import android.view.View
 import android.view.Window
+import android.view.WindowManager
 import com.lyc.easyreader.base.ReaderApplication
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -24,6 +26,21 @@ fun vibrate(millis: Long) {
             val effect =
                 VibrationEffect.createOneShot(millis, VibrationEffect.DEFAULT_AMPLITUDE)
             vibrate(effect)
+        }
+    }
+}
+
+fun getScreenOrientation(): Int {
+    val appContext = ReaderApplication.appContext()
+    return (appContext.getSystemService(Context.WINDOW_SERVICE) as? WindowManager)?.run {
+        defaultDisplay.rotation
+    }.let {
+        return@let when (it) {
+            Surface.ROTATION_0 -> 0
+            Surface.ROTATION_90 -> 90
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 270
+            else -> 0
         }
     }
 }

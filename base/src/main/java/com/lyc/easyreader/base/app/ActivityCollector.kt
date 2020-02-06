@@ -82,16 +82,18 @@ class ActivityCollector private constructor() : IApplicationOnCreateListener,
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         doIfIsBaseActivity(activity, "onActivityCreated") {
             NotchCompat.instance.run {
-                if (!notchDeviceConvinced && !postSetNotchDevice) {
+                if (!notchInfoConvinced && !postSetNotchDevice) {
                     postSetNotchDevice = true
                     activity.window.decorView.post {
-                        notchDeviceConvinced = true
+                        notchInfoConvinced = true
                         notchDevice =
                             NotchTools.getFullScreenTools().isNotchScreen(activity.window)
+                        notchHeight =
+                            NotchTools.getFullScreenTools().getNotchHeight(activity.window)
                         runPendingCommands()
                         LogUtils.i(
                             TAG,
-                            "IsNotchDevice convinced! IsNotchDevice=${notchDevice}"
+                            "IsNotchDevice convinced! IsNotchDevice=${notchDevice}, notchHeight=${notchHeight}"
                         )
                     }
                 }

@@ -14,6 +14,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
+        buildConfigField("Boolean", "FORCE_READER_PORTRAIT", commonProp['forceReaderPortrait'])
     }
 
     buildTypes {
