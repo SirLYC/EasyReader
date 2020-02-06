@@ -30,10 +30,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
     private final CharsetConverter charsetConverter = new CharsetConverter();
     private final StatusConverter statusConverter = new StatusConverter();
 
-    public BookFileDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
     /**
      * Creates the underlying database table.
      */
@@ -57,6 +53,18 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 " (\"IMPORT_TIME\" DESC);");
         db.execSQL("CREATE INDEX " + constraint + "IDX_BOOK_FILE_LAST_ACCESS_TIME_DESC ON \"BOOK_FILE\"" +
                 " (\"LAST_ACCESS_TIME\" DESC);");
+    }
+
+    public BookFileDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /**
+     * Drops the underlying database table.
+     */
+    public static void dropTable(Database db, boolean ifExists) {
+        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
+        db.execSQL(sql);
     }
 
     @Override
@@ -92,14 +100,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
             stmt.bindString(9, charsetConverter.convertToDatabaseValue(charset));
         }
         stmt.bindString(10, statusConverter.convertToDatabaseValue(entity.getStatus()));
-    }
-
-    /**
-     * Drops the underlying database table.
-     */
-    public static void dropTable(Database db, boolean ifExists) {
-        String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
-        db.execSQL(sql);
     }
 
     @Override
@@ -159,6 +159,20 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         return entity;
     }
 
+    @Override
+    public void readEntity(Cursor cursor, BookFile entity, int offset) {
+        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setRealPath(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
+        entity.setFilename(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
+        entity.setFileExt(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
+        entity.setImportTime(cursor.getLong(offset + 4));
+        entity.setLastAccessTime(cursor.getLong(offset + 5));
+        entity.setDeleteTime(cursor.getLong(offset + 6));
+        entity.setHandleChapterLastModified(cursor.getLong(offset + 7));
+        entity.setCharset(cursor.isNull(offset + 8) ? null : charsetConverter.convertToEntityProperty(cursor.getString(offset + 8)));
+        entity.setStatus(statusConverter.convertToEntityProperty(cursor.getString(offset + 9)));
+    }
+     
     /**
      * Properties of entity BookFile.<br/>
      * Can be used for QueryBuilder and for referencing column names.
@@ -174,20 +188,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         public final static Property HandleChapterLastModified = new Property(7, long.class, "handleChapterLastModified", false, "HANDLE_CHAPTER_LAST_MODIFIED");
         public final static Property Charset = new Property(8, String.class, "charset", false, "CHARSET");
         public final static Property Status = new Property(9, String.class, "status", false, "STATUS");
-    }
-
-    @Override
-    public void readEntity(Cursor cursor, BookFile entity, int offset) {
-        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
-        entity.setRealPath(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
-        entity.setFilename(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
-        entity.setFileExt(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
-        entity.setImportTime(cursor.getLong(offset + 4));
-        entity.setLastAccessTime(cursor.getLong(offset + 5));
-        entity.setDeleteTime(cursor.getLong(offset + 6));
-        entity.setHandleChapterLastModified(cursor.getLong(offset + 7));
-        entity.setCharset(cursor.isNull(offset + 8) ? null : charsetConverter.convertToEntityProperty(cursor.getString(offset + 8)));
-        entity.setStatus(statusConverter.convertToEntityProperty(cursor.getString(offset + 9)));
     }
     
     @Override

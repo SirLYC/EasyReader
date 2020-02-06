@@ -50,11 +50,11 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         }
     }
 
-    fun enterFullScreen() {
+    fun enterFullscreen() {
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
     }
 
-    fun exitFullScreen() {
+    fun exitFullscreen() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
     }
 
@@ -68,7 +68,9 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         }
         NightModeManager.addNightModeChangeListener(this)
         window.let { window ->
+            val visibility = window.decorView.systemUiVisibility
             NotchTools.getFullScreenTools().fullScreenUseStatus(this)
+            window.decorView.systemUiVisibility = visibility
             window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
             if (Build.VERSION.SDK_INT >= 23) {
                 // 21就可以设置这个flag了
