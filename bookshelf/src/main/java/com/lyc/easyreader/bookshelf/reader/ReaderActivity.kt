@@ -6,11 +6,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Bundle
-import android.view.Gravity
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.widget.Button
+import android.view.LayoutInflater
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.ReaderApplication
@@ -22,10 +19,12 @@ import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.getScreenOrientation
 import com.lyc.easyreader.base.utils.statusBarHeight
 import com.lyc.easyreader.bookshelf.BuildConfig
+import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageView
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import com.lyc.easyreader.bookshelf.reader.settings.ScreenOrientation
+import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -88,7 +87,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         }
         val loader = page.getPageLoader(viewModel.bookFile)
         pageLoader = loader
-        autoFitPageViewMargin(ReaderSettings.fullscreen.value)
         viewModel.loadingChapterListLiveData.observe(this, Observer { loading ->
             if (!loading) {
                 loader.setChapterListIfEmpty(viewModel.bookChapterList)
@@ -112,20 +110,25 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
     }
 
     private fun registerSettings() {
-        ReaderSettings.screenOrientation.observe(this, Observer {
+        val settings = ReaderSettings.instance
+        settings.screenOrientation.observe(this, Observer {
             if (it.orientationValue != requestedOrientation) {
                 requestedOrientation = it.orientationValue
             }
         })
 
-        ReaderSettings.fullscreen.observe(this, Observer { fullscreen ->
+        settings.fullscreen.observe(this, Observer { fullscreen ->
             applyFullscreen(fullscreen)
+        })
+
+        settings.fontSizeInDp.observe(this, Observer { sizeInDp ->
+            pageLoader?.setContentTextSize(dp2px(sizeInDp))
         })
     }
 
     override fun onResume() {
         super.onResume()
-        applyFullscreen(ReaderSettings.fullscreen.value)
+        applyFullscreen(ReaderSettings.instance.fullscreen.value)
     }
 
     private fun applyFullscreen(fullscreen: Boolean) {
@@ -206,6 +209,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
     }
 
     override fun onDestroy() {
+        pageLoader?.destroy()
         broadcastReceiver?.let { unregisterReceiver(it) }
         super.onDestroy()
     }
@@ -245,29 +249,36 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
     }
 
     private fun testControlPanel(rootView: FrameLayout) {
-        val controlPanel = LinearLayout(this)
-        controlPanel.orientation = LinearLayout.VERTICAL
-        rootView.addView(controlPanel, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-            gravity = Gravity.CENTER
-        })
-        val screenButton = Button(this)
-        screenButton.setOnClickListener {
-            val screenOrientation = ReaderSettings.screenOrientation.value
-            ReaderSettings.screenOrientation.value =
+        LayoutInflater.from(this).inflate(R.layout.layout_reader_test_panel, rootView, true)
+
+        val settings = ReaderSettings.instance
+
+        // 第一行
+        rootView.bt_screen_orientation.setOnClickListener {
+            val screenOrientation = settings.screenOrientation.value
+            settings.screenOrientation.value =
                 ScreenOrientation.values()[(screenOrientation.ordinal + 1) % ScreenOrientation.values().size]
         }
-        controlPanel.addView(screenButton)
-        ReaderSettings.screenOrientation.observe(this, Observer {
-            screenButton.text = ReaderSettings.screenOrientation.value.displayName
+        settings.screenOrientation.observe(this@ReaderActivity, Observer {
+            rootView.bt_screen_orientation.text = settings.screenOrientation.value.displayName
         })
 
-        val fullScreenButton = Button(this)
-        fullScreenButton.setOnClickListener {
-            ReaderSettings.fullscreen.value = !ReaderSettings.fullscreen.value
+        rootView.bt_fullscreen.setOnClickListener {
+            settings.fullscreen.value = !settings.fullscreen.value
         }
-        ReaderSettings.fullscreen.observe(this, Observer {
-            fullScreenButton.text = if (it) "全屏" else "非全屏"
+        settings.fullscreen.observe(this@ReaderActivity, Observer {
+            rootView.bt_fullscreen.text = if (it) "全屏" else "非全屏"
         })
-        controlPanel.addView(fullScreenButton)
+
+        // 第二行
+        rootView.bt_decrease_font.setOnClickListener {
+            settings.fontSizeInDp.value -= 1
+        }
+        settings.fontSizeInDp.observe(this@ReaderActivity, Observer {
+            rootView.tv_font_size.text = ("$it")
+        })
+        rootView.bt_increase_font.setOnClickListener {
+            settings.fontSizeInDp.value += 1
+        }
     }
 }

@@ -7,8 +7,12 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextPaint;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
 
 import com.lyc.common.thread.ExecutorFactory;
 import com.lyc.easyreader.api.book.BookChapter;
@@ -28,21 +32,21 @@ import java.util.List;
  * Created by newbiechen on 17-7-1.
  */
 
-public abstract class PageLoader {
+public abstract class PageLoader implements Handler.Callback {
+    public static final int TEXT_SIZE_MIN_VALUE_DP = 12;
+    public static final int TEXT_SIZE_MAX_VALUE_DP = 32;
     // 当前页面的状态
-    public static final int STATUS_LOADING = 1;         // 正在加载
-    public static final int STATUS_FINISH = 2;          // 加载完成
-    public static final int STATUS_ERROR = 3;           // 加载错误 (一般是网络加载情况)
-    public static final int STATUS_EMPTY = 4;           // 空数据
-    public static final int STATUS_PARING = 5;          // 正在解析 (装载本地数据)
-    public static final int STATUS_PARSE_ERROR = 6;     // 本地文件解析错误(暂未被使用)
-    public static final int STATUS_CATEGORY_EMPTY = 7;  // 获取到的目录为空
+    protected static final int STATUS_LOADING = 1;         // 正在加载
+    protected static final int STATUS_FINISH = 2;          // 加载完成
+    protected static final int STATUS_ERROR = 3;           // 加载错误 (一般是网络加载情况)
+    protected static final int STATUS_EMPTY = 4;           // 空数据
+    protected static final int STATUS_PARING = 5;          // 正在解析 (装载本地数据)
     private static final String TAG = "PageLoader";
-    // 默认的显示参数配置
-    private static final int DEFAULT_MARGIN_HEIGHT = 28;
-    private static final int DEFAULT_MARGIN_WIDTH = 15;
-    private static final int DEFAULT_TIP_SIZE = 12;
-    private static final int EXTRA_TITLE_SIZE = 4;
+    protected static final int STATUS_PARSE_ERROR = 6;     // 本地文件解析错误(暂未被使用)
+    protected static final int STATUS_CATEGORY_EMPTY = 7;  // 获取到的目录为空
+    private static final int MSG_RELOAD_PAGES = 1;
+    private static final int TEXT_SIZE_MIN_VALUE = DeviceUtilsKt.dp2px(TEXT_SIZE_MIN_VALUE_DP);
+    private static final int TEXT_SIZE_MAX_VALUE = DeviceUtilsKt.dp2px(TEXT_SIZE_MAX_VALUE_DP);
 
     // 下方小部件
     private static final int WIDGET_MARGIN_BOTTOM = DeviceUtilsKt.dp2px(4);
@@ -88,7 +92,7 @@ public abstract class PageLoader {
     // 绘制背景颜色的画笔(用来擦除需要重绘的部分)
     private Paint mBgPaint;
     // 绘制小说内容的画笔
-    private TextPaint mTextPaint;
+    private TextPaint mContentTextPaint;
     // 阅读器的配置选项
 //    private ReadSettingManager mSettingManager;
     // 被遮盖的页，或者认为被取消显示的页
@@ -117,9 +121,11 @@ public abstract class PageLoader {
     //字体的颜色
     private int mTextColor;
     //标题的大小
-    private int mTitleSize;
-    //字体的大小
-    private int mTextSize;
+    private int titleTextSize;
+    // 字体的大小
+    private int contentTextSize;
+    // 下方小字大小
+    private int tipTextSize;
     //行间距
     private int mTextInterval;
     //标题的行间距
@@ -133,6 +139,8 @@ public abstract class PageLoader {
     private int mBgColor;
     //上一章的记录
     private int mLastChapterPos = 0;
+
+    private Handler handler = new Handler(this);
 
     /*****************************init params*******************************/
     public PageLoader(PageView pageView, BookFile bookFile) {
@@ -157,14 +165,15 @@ public abstract class PageLoader {
      */
     private void setUpTextParams(int textSize) {
         // 文字大小
-        mTextSize = textSize;
-        mTitleSize = Math.round(mTextSize * 1.2f);
+        this.contentTextSize = textSize;
+        tipTextSize = Math.round(textSize * 0.75f);
+        titleTextSize = Math.round(this.contentTextSize * 1.2f);
         // 行间距(大小为字体的一半)
-        mTextInterval = mTextSize / 2;
-        mTitleInterval = mTitleSize / 2;
+        mTextInterval = this.contentTextSize / 2;
+        mTitleInterval = titleTextSize / 2;
         // 段落间距(大小为字体的高度)
-        mTextPara = mTextSize;
-        mTitlePara = mTitleSize;
+        mTextPara = this.contentTextSize;
+        mTitlePara = titleTextSize;
     }
 
     private void initPaint() {
@@ -172,22 +181,22 @@ public abstract class PageLoader {
         mTipPaint = new Paint();
         mTipPaint.setColor(mTextColor);
         mTipPaint.setTextAlign(Paint.Align.LEFT); // 绘制的起始点
-        mTipPaint.setTextSize(DeviceUtilsKt.dp2pxf(DEFAULT_TIP_SIZE)); // Tip默认的字体大小
+        mTipPaint.setTextSize(tipTextSize); // Tip默认的字体大小
         Paint.FontMetrics fontMetrics = mTipPaint.getFontMetrics();
         widgetMaxHeight = fontMetrics.bottom - fontMetrics.top;
         mTipPaint.setAntiAlias(true);
         mTipPaint.setSubpixelText(true);
 
         // 绘制页面内容的画笔
-        mTextPaint = new TextPaint();
-        mTextPaint.setColor(mTextColor);
-        mTextPaint.setTextSize(mTextSize);
-        mTextPaint.setAntiAlias(true);
+        mContentTextPaint = new TextPaint();
+        mContentTextPaint.setColor(mTextColor);
+        mContentTextPaint.setTextSize(contentTextSize);
+        mContentTextPaint.setAntiAlias(true);
 
         // 绘制标题的画笔
         mTitlePaint = new TextPaint();
         mTitlePaint.setColor(mTextColor);
-        mTitlePaint.setTextSize(mTitleSize);
+        mTitlePaint.setTextSize(titleTextSize);
         mTitlePaint.setStyle(Paint.Style.FILL_AND_STROKE);
         mTitlePaint.setTypeface(Typeface.DEFAULT_BOLD);
         mTitlePaint.setAntiAlias(true);
@@ -362,22 +371,7 @@ public abstract class PageLoader {
             return;
         }
         applyVisibleSizeChange();
-        reloadPagesIfNeeded();
-    }
-
-    /**
-     * 设置提示的文字大小
-     *
-     * @param textSize:单位为 px。
-     */
-    public void setTipTextSize(float textSize) {
-        if (mTipPaint.getTextSize() != textSize) {
-            mTipPaint.setTextSize(textSize);
-            Paint.FontMetrics fontMetrics = mTipPaint.getFontMetrics();
-            widgetMaxHeight = fontMetrics.bottom - fontMetrics.top;
-            applyVisibleSizeChange();
-            reloadPagesIfNeeded();
-        }
+        postReloadPages();
     }
 
     private void applyVisibleSizeChange() {
@@ -390,18 +384,36 @@ public abstract class PageLoader {
 
     /**
      * 设置文字相关参数
-     *
-     * @param textSize
      */
-    public void setTextSize(int textSize) {
-        // 设置文字相关参数
-        setUpTextParams(textSize);
+    public void setContentTextSize(int textSize) {
+        if (textSize < TEXT_SIZE_MIN_VALUE) {
+            textSize = TEXT_SIZE_MIN_VALUE;
+        } else if (textSize > TEXT_SIZE_MAX_VALUE) {
+            textSize = TEXT_SIZE_MAX_VALUE;
+        }
+        if (textSize != contentTextSize) {
+            // 设置文字相关参数
+            setUpTextParams(textSize);
+            mTipPaint.setTextSize(tipTextSize);
+            mContentTextPaint.setTextSize(contentTextSize);
+            mTitlePaint.setTextSize(titleTextSize);
+            postReloadPages();
+        }
+    }
 
-        // 设置画笔的字体大小
-        mTextPaint.setTextSize(mTextSize);
-        // 设置标题的字体大小
-        mTitlePaint.setTextSize(mTitleSize);
-        reloadPagesIfNeeded();
+    private void postReloadPages() {
+        handler.removeMessages(MSG_RELOAD_PAGES);
+        handler.sendEmptyMessage(MSG_RELOAD_PAGES);
+    }
+
+    @Override
+    public boolean handleMessage(@NonNull Message msg) {
+        if (msg.what == MSG_RELOAD_PAGES) {
+            reloadPagesIfNeeded();
+            return true;
+        }
+
+        return false;
     }
 
     private void reloadPagesIfNeeded() {
@@ -466,7 +478,7 @@ public abstract class PageLoader {
 
         mTipPaint.setColor(mTextColor);
         mTitlePaint.setColor(mTextColor);
-        mTextPaint.setColor(mTextColor);
+        mContentTextPaint.setColor(mTextColor);
 
         mBgPaint.setColor(mBgColor);
 
@@ -794,7 +806,7 @@ public abstract class PageLoader {
                 }
 
                 if (pendingTitle != null) {
-                    float maxWidth = mDisplayWidth - Math.max(leftDis, rightDis);
+                    float maxWidth = mDisplayWidth - Math.max(leftDis, rightDis) * 2;
                     if (maxWidth > 0) {
                         int count = mTipPaint.breakText(pendingTitle, true, maxWidth, null);
                         if (count > 0) {
@@ -841,20 +853,20 @@ public abstract class PageLoader {
             }
 
             //将提示语句放到正中间
-            Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
+            Paint.FontMetrics fontMetrics = mContentTextPaint.getFontMetrics();
             float textHeight = fontMetrics.top - fontMetrics.bottom;
-            float textWidth = mTextPaint.measureText(tip);
+            float textWidth = mContentTextPaint.measureText(tip);
             float pivotX = (mDisplayWidth - textWidth) / 2;
             float pivotY = (mDisplayHeight - textHeight) / 2;
-            canvas.drawText(tip, pivotX, pivotY, mTextPaint);
+            canvas.drawText(tip, pivotX, pivotY, mContentTextPaint);
         } else {
-            float top = marginTop - mTextPaint.getFontMetrics().top;
+            float top = marginTop - mContentTextPaint.getFontMetrics().top;
 
             //设置总距离
-            int interval = mTextInterval + (int) mTextPaint.getTextSize();
-            int para = mTextPara + (int) mTextPaint.getTextSize();
+            int interval = mTextInterval + (int) mContentTextPaint.getTextSize();
+            int para = mTextPara + (int) mContentTextPaint.getTextSize();
             int titleInterval = mTitleInterval + (int) mTitlePaint.getTextSize();
-            int titlePara = mTitlePara + (int) mTextPaint.getTextSize();
+            int titlePara = mTitlePara + (int) mContentTextPaint.getTextSize();
             String str;
 
             //对标题进行绘制
@@ -884,7 +896,7 @@ public abstract class PageLoader {
             for (int i = mCurPage.titleLines; i < mCurPage.lines.size(); ++i) {
                 str = mCurPage.lines.get(i);
 
-                canvas.drawText(str, marginLeft, top, mTextPaint);
+                canvas.drawText(str, marginLeft, top, mContentTextPaint);
                 if (str.endsWith("\n")) {
                     top += para;
                 } else {
@@ -1223,7 +1235,7 @@ public abstract class PageLoader {
                     if (showTitle) {
                         rHeight -= mTitlePaint.getTextSize();
                     } else {
-                        rHeight -= mTextPaint.getTextSize();
+                        rHeight -= mContentTextPaint.getTextSize();
                     }
                     // 一页已经填充满了，创建 TextPage
                     if (rHeight <= 0) {
@@ -1247,7 +1259,7 @@ public abstract class PageLoader {
                         wordCount = mTitlePaint.breakText(paragraph,
                                 true, mVisibleWidth, null);
                     } else {
-                        wordCount = mTextPaint.breakText(paragraph,
+                        wordCount = mContentTextPaint.breakText(paragraph,
                                 true, mVisibleWidth, null);
                     }
 
@@ -1357,6 +1369,10 @@ public abstract class PageLoader {
             mStatus = STATUS_LOADING;
         }
         return true;
+    }
+
+    public void destroy() {
+        handler.removeCallbacksAndMessages(null);
     }
 
     /*****************************************interface*****************************************/
