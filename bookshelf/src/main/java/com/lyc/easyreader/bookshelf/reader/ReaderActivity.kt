@@ -22,6 +22,7 @@ import com.lyc.easyreader.bookshelf.BuildConfig
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageView
+import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import com.lyc.easyreader.bookshelf.reader.settings.ScreenOrientation
 import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
@@ -123,6 +124,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
 
         settings.fontSizeInDp.observe(this, Observer { sizeInDp ->
             pageLoader?.setContentTextSize(dp2px(sizeInDp))
+        })
+
+        settings.pageAnimMode.observe(this, Observer { animMode ->
+            pageLoader?.setPageAnimMode(animMode)
         })
     }
 
@@ -268,6 +273,15 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         }
         settings.fullscreen.observe(this@ReaderActivity, Observer {
             rootView.bt_fullscreen.text = if (it) "全屏" else "非全屏"
+        })
+
+        rootView.bt_anim_mode.setOnClickListener {
+            val pageAnimMode = settings.pageAnimMode.value
+            settings.pageAnimMode.value =
+                PageAnimMode.values()[(pageAnimMode.ordinal + 1) % PageAnimMode.values().size]
+        }
+        settings.pageAnimMode.observe(this@ReaderActivity, Observer {
+            rootView.bt_anim_mode.text = it.displayName
         })
 
         // 第二行

@@ -491,11 +491,10 @@ public abstract class PageLoader implements Handler.Callback {
      * @param pageAnimMode:翻页模式
      * @see PageAnimMode
      */
-    public void setPageMode(PageAnimMode pageAnimMode) {
+    public void setPageAnimMode(PageAnimMode pageAnimMode) {
         pageMode = pageAnimMode;
 
         mPageView.setPageMode(pageMode);
-//        mSettingManager.setPageMode(mPageMode);
 
         // 重新绘制当前页
         mPageView.drawCurPage(false);

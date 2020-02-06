@@ -6,6 +6,7 @@ import com.lyc.easyreader.api.settings.ISettings
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.preference.PreferenceManager
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
+import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 
 /**
  * Created by Liu Yuchuan on 2020/2/6.
@@ -24,6 +25,9 @@ class ReaderSettings private constructor() : ISettings {
         private const val KEY_FONT_SIZE_IN_DP = "font_size_in_dp"
         private const val DEFAULT_FONT_SIZE_IN_DP = 16
 
+        private const val KEY_PAGE_ANIM_MODE = "page_anim_mode"
+        private val DEFAULT_PAGE_ANIM_MODE = PageAnimMode.SIMULATION
+
         @JvmStatic
         val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { ReaderSettings() }
     }
@@ -32,7 +36,7 @@ class ReaderSettings private constructor() : ISettings {
 
 
     val screenOrientation by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
-        val value = preference.getString(KEY_SCREEN_ORIENTATION, "")?.let {
+        val value = preference.getString(KEY_SCREEN_ORIENTATION)?.let {
             try {
                 ScreenOrientation.valueOf(it)
             } catch (e: Exception) {
@@ -69,6 +73,21 @@ class ReaderSettings private constructor() : ISettings {
                     return@observeForever
                 }
                 preference.putInt(KEY_FONT_SIZE_IN_DP, it)
+            }
+        }
+    }
+
+    val pageAnimMode by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value = preference.getString(KEY_PAGE_ANIM_MODE)?.let {
+            try {
+                PageAnimMode.valueOf(it)
+            } catch (e: Exception) {
+                null
+            }
+        } ?: DEFAULT_PAGE_ANIM_MODE
+        NonNullLiveData(value).apply {
+            observeForever {
+                preference.putString(KEY_PAGE_ANIM_MODE, it.name)
             }
         }
     }
