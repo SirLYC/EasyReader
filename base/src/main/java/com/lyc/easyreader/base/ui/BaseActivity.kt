@@ -51,12 +51,25 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
     }
 
     fun enterFullscreen() {
-        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        window.run {
+            addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            decorView.run {
+                systemUiVisibility =
+                    systemUiVisibility or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            }
+        }
     }
 
     fun exitFullscreen() {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        window.run {
+            clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            decorView.run {
+                systemUiVisibility =
+                    systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION.inv() and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY.inv()
+            }
+        }
     }
+
 
     final override fun onCreate(savedInstanceState: Bundle?) {
         isCreateFromConfigChange = savedInstanceState?.getBoolean(KEY_CONFIG_CHANGE, false) == true
@@ -72,17 +85,18 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
             NotchTools.getFullScreenTools().fullScreenUseStatus(this)
             window.decorView.systemUiVisibility = visibility
             window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             if (Build.VERSION.SDK_INT >= 23) {
                 // 21就可以设置这个flag了
                 // 但是23才能改变文字颜色
                 // 如果21、22的设备设置了这个flag，但是无法改变文字颜色，状态栏会看不见的
                 window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-                window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+//                window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
                 window.statusBarColor = Color.TRANSPARENT
             } else {
                 window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             }
-            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+//            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
         }
         rootView = FrameLayout(this)
         rootView.setBackgroundColor(color_bg)

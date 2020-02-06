@@ -122,6 +122,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             applyFullscreen(fullscreen)
         })
 
+        settings.screenOrientation.observe(this, Observer {
+            autoFitPageViewMargin(settings.fullscreen.value)
+        })
+
         settings.fontSizeInDp.observe(this, Observer { sizeInDp ->
             pageLoader?.setContentTextSize(dp2px(sizeInDp))
         })
@@ -169,7 +173,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
                     marginExtra[2] = NotchCompat.instance.notchHeight
                 }
 
-                360 -> {
+                else -> {
                     // 刘海在上面
                     marginExtra[1] = NotchCompat.instance.notchHeight
                 }
