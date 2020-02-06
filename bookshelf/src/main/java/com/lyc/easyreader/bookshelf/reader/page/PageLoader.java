@@ -745,6 +745,7 @@ public abstract class PageLoader {
         float y = mDisplayHeight - mTipPaint.getFontMetrics().bottom - WIDGET_MARGIN_BOTTOM;
         String time = StringUtilsKt.formatReaderTime(System.currentTimeMillis());
         float x = outFrameLeft - mTipPaint.measureText(time) - DeviceUtilsKt.dp2px(4);
+        lastTimeTextX = x;
         canvas.drawText(time, x, y, mTipPaint);
         float rightDis = mDisplayWidth - (x - TINY_CHAPTER_MARGIN - marginWidth);
 

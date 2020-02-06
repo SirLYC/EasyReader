@@ -30,10 +30,6 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
     private final CharsetConverter charsetConverter = new CharsetConverter();
     private final StatusConverter statusConverter = new StatusConverter();
 
-    public BookFileDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
     /**
      * Creates the underlying database table.
      */
@@ -59,9 +55,11 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
                 " (\"LAST_ACCESS_TIME\" DESC);");
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+    public BookFileDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"BOOK_FILE\"";
         db.execSQL(sql);
@@ -171,7 +169,7 @@ public class BookFileDao extends AbstractDao<BookFile, Long> {
         entity.setHandleChapterLastModified(cursor.getLong(offset + 7));
         entity.setCharset(cursor.isNull(offset + 8) ? null : charsetConverter.convertToEntityProperty(cursor.getString(offset + 8)));
         entity.setStatus(statusConverter.convertToEntityProperty(cursor.getString(offset + 9)));
-    }
+     }
      
     /**
      * Properties of entity BookFile.<br/>

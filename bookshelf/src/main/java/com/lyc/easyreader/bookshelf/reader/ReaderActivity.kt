@@ -1,6 +1,10 @@
 package com.lyc.easyreader.bookshelf.reader
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Bundle
 import android.widget.FrameLayout
 import androidx.lifecycle.Observer
@@ -36,6 +40,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
     private lateinit var viewModel: ReaderViewModel
     private var pageLoader: PageLoader? = null
     private var pageView: PageView? = null
+    private var broadcastReceiver: BroadcastReceiver? = null
 
     override fun beforeBaseOnCreate(savedInstanceState: Bundle?) {
         viewModel = provideViewModel()
@@ -67,11 +72,25 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         page.setTouchListener(this)
         rootView.addView(page)
         val loader = page.getPageLoader(viewModel.bookFile)
+        pageLoader = loader
         viewModel.loadingChapterListLiveData.observe(this, Observer { loading ->
             if (!loading) {
                 loader.setChapterListIfEmpty(viewModel.bookChapterList)
             }
         })
+
+        BatteryAndTimeReceiver().let {
+            broadcastReceiver = it
+            registerReceiver(it, IntentFilter().apply {
+                addAction(Intent.ACTION_BATTERY_CHANGED)
+                addAction(Intent.ACTION_TIME_TICK)
+            })
+        }
+    }
+
+    override fun onDestroy() {
+        broadcastReceiver?.let { unregisterReceiver(it) }
+        super.onDestroy()
     }
 
     override fun prePage() {
@@ -90,6 +109,21 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
     }
 
     override fun nextPage() {
-        pageLoader?.skipToNextPage()
+
+    }
+
+    private inner class BatteryAndTimeReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_BATTERY_CHANGED -> {
+                    val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+                    pageLoader?.updateBattery(level)
+                }
+
+                Intent.ACTION_TIME_TICK -> {
+                    pageLoader?.updateTime()
+                }
+            }
+        }
     }
 }
