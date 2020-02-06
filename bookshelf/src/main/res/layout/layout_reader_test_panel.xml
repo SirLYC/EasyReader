@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_panel"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
     android:background="#7F000000"
     android:gravity="center"
+    android:padding="8dp"
     android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:text="测试按钮，点击关闭"
+        android:textColor="#fff" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -35,7 +45,7 @@
             android:id="@+id/bt_decrease_font"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A-" />
+            android:text="Aa-" />
 
         <TextView
             android:id="@+id/tv_font_size"
@@ -48,7 +58,7 @@
             android:id="@+id/bt_increase_font"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A+" />
+            android:text="Aa+" />
     </LinearLayout>
 
 </LinearLayout>

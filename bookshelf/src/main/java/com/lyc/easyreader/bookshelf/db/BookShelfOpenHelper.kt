@@ -61,12 +61,20 @@ class BookShelfOpenHelper private constructor() :
         }
 
         if (bookFile.handleChapterLastModified <= 0 || bookFile.charset == null) {
-            return null
+
+            // 传入的entity可能不是数据库中最新的，要用id查一下
+            val bookFileInDb = daoSession.bookFileDao.load(bookFile.id)
+            bookFile.handleChapterLastModified = bookFileInDb.handleChapterLastModified
+            bookFile.charset = bookFileInDb.charset
+
+            if (bookFile.handleChapterLastModified <= 0 || bookFile.charset == null) {
+                return null
+            }
         }
 
         val file = File(bookFile.realPath)
         val lastModified = file.lastModified()
-        if (lastModified != bookFile.lastAccessTime) {
+        if (lastModified != bookFile.handleChapterLastModified) {
             return null
         }
 
@@ -79,23 +87,17 @@ class BookShelfOpenHelper private constructor() :
             .list()
     }
 
-    fun saveBookChapters(bookFile: BookFile, lastModified: Long, list: List<BookChapter>) {
+    fun saveBookChapters(bookFile: BookFile, list: List<BookChapter>) {
         dbRunner.awaitRun(Runnable {
             daoSession.runInTx {
+                daoSession.bookChapterDao.queryBuilder()
+                    .where(BookChapterDao.Properties.BookId.eq(bookFile.id))
+                    .buildDelete()
+                    .forCurrentThread()
+                    .executeDeleteWithoutDetachingEntities()
                 daoSession.bookFileDao.insertOrReplace(bookFile)
                 daoSession.bookChapterDao.saveInTx(list)
             }
         })
-        // 异步删除无用记录
-        dbRunner.asyncRun(Runnable {
-            daoSession.bookChapterDao.queryBuilder()
-                .where(
-                    BookChapterDao.Properties.BookId.eq(bookFile.id),
-                    BookChapterDao.Properties.LastModified.notEq(lastModified)
-                )
-                .buildDelete()
-                .forCurrentThread()
-                .executeDeleteWithoutDetachingEntities()
-        }, true)
     }
 }

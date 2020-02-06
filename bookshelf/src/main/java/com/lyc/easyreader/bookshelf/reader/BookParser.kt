@@ -207,6 +207,7 @@ class BookParser(private val bookFile: BookFile) {
                 chapters.forEachIndexed { index, bookChapter ->
                     bookChapter.order = index
                     bookChapter.lastModified = lastModified
+                    bookChapter.bookId = bookFile.id
                     if ("序章" != bookChapter.title) {
                         bookChapter.start += bookChapter.title.toByteArray(charset).size.toLong()
                         bookChapter.title = bookChapter.title.trim()
@@ -216,7 +217,7 @@ class BookParser(private val bookFile: BookFile) {
                 bookFile.charset = charset
                 bookFile.handleChapterLastModified = lastModified
 
-                BookShelfOpenHelper.instance.saveBookChapters(bookFile, lastModified, chapters)
+                BookShelfOpenHelper.instance.saveBookChapters(bookFile, chapters)
             }
 
         } catch (e: IOException) {

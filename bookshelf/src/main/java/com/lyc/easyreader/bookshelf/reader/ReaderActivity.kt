@@ -8,6 +8,7 @@ import android.os.BatteryManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.FrameLayout
+import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.ReaderApplication
@@ -25,6 +26,7 @@ import com.lyc.easyreader.bookshelf.reader.page.PageView
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import com.lyc.easyreader.bookshelf.reader.settings.ScreenOrientation
+import kotlinx.android.synthetic.main.layout_reader_test_panel.*
 import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
 
 /**
@@ -261,6 +263,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         LayoutInflater.from(this).inflate(R.layout.layout_reader_test_panel, rootView, true)
 
         val settings = ReaderSettings.instance
+
+        rootView.tv_title.setOnClickListener {
+            layout_panel.isVisible = false
+        }
 
         // 第一行
         rootView.bt_screen_orientation.setOnClickListener {
