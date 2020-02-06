@@ -42,11 +42,11 @@ object PreferenceManager : SharedPreferences.OnSharedPreferenceChangeListener {
         }
     }
 
-    fun addPreferenceChangeListener(key: String, listener: IPreferenceChangeListener) {
+    fun addPreferenceChangeListener(listener: IPreferenceChangeListener) {
         eventHub.addEventListener(listener)
     }
 
-    fun removePreferenceChangeListener(prefKey: String, listener: IPreferenceChangeListener) {
+    fun removePreferenceChangeListener(listener: IPreferenceChangeListener) {
         eventHub.removeEventListener(listener)
     }
 }

@@ -24,11 +24,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    sourceSets {
+        main.java.srcDirs += 'build/generated/source/greendao'
+    }
 }
 
-greendao {
-    targetGenDir 'src/main/java'
-}
+greendao {}
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])

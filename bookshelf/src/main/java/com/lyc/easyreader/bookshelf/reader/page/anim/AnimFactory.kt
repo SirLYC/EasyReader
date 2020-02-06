@@ -24,7 +24,6 @@ object AnimFactory {
             PageAnimMode.NONE ->
                 NonePageAnim(screenWidth, screenHeight, view, listener)
             PageAnimMode.SIMULATION -> SimulationPageAnim(screenWidth, screenHeight, view, listener)
-            else -> null
         }
     }
 }
