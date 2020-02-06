@@ -12,14 +12,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
         android:theme="@style/AppTheme">
-        <activity
-            android:name="com.lyc.easyreader.MainActivity"
-            android:launchMode="singleTask">
+        <activity android:name=".lauch.SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
 
+        <activity
+            android:name="com.lyc.easyreader.MainActivity"
+            android:launchMode="singleTask">
             <!--主页-->
             <intent-filter>
                 <data

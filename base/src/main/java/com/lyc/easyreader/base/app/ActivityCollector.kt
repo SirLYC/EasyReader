@@ -34,6 +34,12 @@ class ActivityCollector private constructor() : IApplicationOnCreateListener,
         private const val TAG = "ActivityCollector"
     }
 
+    fun hasCreatedActivityExcept(activity: BaseActivity): Boolean {
+        return createdActivity.count {
+            it != activity
+        } > 0
+    }
+
     override fun onAppCreate(application: Application) {
         application.registerActivityLifecycleCallbacks(this)
     }
