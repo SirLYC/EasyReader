@@ -322,7 +322,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     }
 
     override fun onBookShelfItemClick(pos: Int, data: BookFile, view: BookShelfItemView) {
-        LogUtils.d(TAG, "Click book item [position=${pos}] [data=${data}].")
         ReaderActivity.openBookFile(data)
     }
 }

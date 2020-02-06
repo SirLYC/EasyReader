@@ -6,9 +6,9 @@ import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.util.Log;
 
 import org.greenrobot.greendao.AbstractDaoMaster;
+import org.greenrobot.greendao.database.StandardDatabase;
 import org.greenrobot.greendao.database.Database;
 import org.greenrobot.greendao.database.DatabaseOpenHelper;
-import org.greenrobot.greendao.database.StandardDatabase;
 import org.greenrobot.greendao.identityscope.IdentityScopeType;
 
 
@@ -19,8 +19,10 @@ import org.greenrobot.greendao.identityscope.IdentityScopeType;
 public class DaoMaster extends AbstractDaoMaster {
     public static final int SCHEMA_VERSION = 1;
 
-    public DaoMaster(SQLiteDatabase db) {
-        this(new StandardDatabase(db));
+    /** Creates underlying database table using DAOs. */
+    public static void createAllTables(Database db, boolean ifNotExists) {
+        BookChapterDao.createTable(db, ifNotExists);
+        BookFileDao.createTable(db, ifNotExists);
     }
 
     /** Drops underlying database table using DAOs. */
@@ -39,12 +41,8 @@ public class DaoMaster extends AbstractDaoMaster {
         return daoMaster.newSession();
     }
 
-    /**
-     * Creates underlying database table using DAOs.
-     */
-    public static void createAllTables(Database db, boolean ifNotExists) {
-        BookChapterDao.createTable(db, ifNotExists);
-        BookFileDao.createTable(db, ifNotExists);
+    public DaoMaster(SQLiteDatabase db) {
+        this(new StandardDatabase(db));
     }
 
     public DaoMaster(Database db) {
