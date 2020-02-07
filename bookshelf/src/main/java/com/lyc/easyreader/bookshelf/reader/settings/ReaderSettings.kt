@@ -43,6 +43,12 @@ class ReaderSettings private constructor() : ISettings {
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         private const val DEFAULT_KEEP_SCREEN_ON = true
 
+        private const val KEY_LINE_SPACE_FACTOR = "line_space_factor"
+        private const val DEFAULT_LINE_SPACE_FACTOR = 0.5f
+
+        private const val KEY_PARA_SPACE_FACTOR = "para_space_factor"
+        private const val DEFAULT_PARA_SPACE_FACTOR = 0.5f
+
         @JvmStatic
         val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { ReaderSettings() }
     }
@@ -161,6 +167,42 @@ class ReaderSettings private constructor() : ISettings {
             observeForever {
                 preference.putBoolean(
                     KEY_KEEP_SCREEN_ON,
+                    it
+                )
+            }
+        }
+    }
+
+    val lineSpaceFactor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value =
+            preference.getFloat(KEY_LINE_SPACE_FACTOR, DEFAULT_LINE_SPACE_FACTOR).coerceIn(0f, 3f)
+        NonNullLiveData(value).apply {
+            observeForever {
+                val clampedVal = it.coerceIn(0f, 3f)
+                if (clampedVal != it) {
+                    this.value = it
+                    return@observeForever
+                }
+                preference.putFloat(
+                    KEY_LINE_SPACE_FACTOR,
+                    it
+                )
+            }
+        }
+    }
+
+    val paraSpaceFactor by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value =
+            preference.getFloat(KEY_PARA_SPACE_FACTOR, DEFAULT_PARA_SPACE_FACTOR).coerceIn(0f, 3f)
+        NonNullLiveData(value).apply {
+            observeForever {
+                val clampedVal = it.coerceIn(0f, 3f)
+                if (clampedVal != it) {
+                    this.value = it
+                    return@observeForever
+                }
+                preference.putFloat(
+                    KEY_PARA_SPACE_FACTOR,
                     it
                 )
             }

@@ -34,6 +34,7 @@ import kotlinx.android.synthetic.main.layout_reader_test_panel.*
 import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -200,6 +201,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
 
         settings.keepScreenOn.observe(this, Observer {
             applyKeepScreenOnChange()
+        })
+
+        settings.lineSpaceFactor.observe(this, Observer {
+            pageLoader?.lineSpaceFactor = it
+        })
+
+        settings.paraSpaceFactor.observe(this, Observer {
+            pageLoader?.paraSpaceFactor = it
         })
     }
 
@@ -401,6 +410,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             rootView.bt_anim_mode.text = it.displayName
         })
 
+        rootView.bt_keep_screen_on.setOnClickListener {
+            settings.keepScreenOn.value = !settings.keepScreenOn.value
+        }
+
+        settings.keepScreenOn.observe(this, Observer {
+            rootView.bt_keep_screen_on.text = if (it) "屏幕常亮：开" else "屏幕常亮：关"
+        })
+
         // 第二行
         rootView.bt_decrease_font.setOnClickListener {
             settings.fontSizeInDp.value -= 1
@@ -467,12 +484,52 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
 
 
         // 第五行
-        rootView.bt_keep_screen_on.setOnClickListener {
-            settings.keepScreenOn.value = !settings.keepScreenOn.value
-        }
+        var isLineSpaceTracking = false
+        var inLineSpaceListener = false
+        rootView.sb_line_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                inLineSpaceListener = true
+                settings.lineSpaceFactor.value = progress * 3.0f * 0.01f
+                inLineSpaceListener = false
+            }
 
-        settings.keepScreenOn.observe(this, Observer {
-            rootView.bt_keep_screen_on.text = if (it) "屏幕常亮：开" else "屏幕常亮：关"
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                isLineSpaceTracking = true
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                isLineSpaceTracking = false
+            }
+        })
+        settings.lineSpaceFactor.observe(this, Observer {
+            if (inLineSpaceListener || isLineSpaceTracking) {
+                return@Observer
+            }
+            rootView.sb_line_space.progress = (it * 100 / 3.0f).roundToInt()
+        })
+
+        var isParaSpaceTracking = false
+        var inParaSpaceListener = false
+        rootView.sb_para_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                inParaSpaceListener = true
+                settings.paraSpaceFactor.value = progress * 3.0f * 0.01f
+                inParaSpaceListener = false
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                isParaSpaceTracking = true
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                isParaSpaceTracking = false
+            }
+        })
+        settings.paraSpaceFactor.observe(this, Observer {
+            if (inParaSpaceListener || isParaSpaceTracking) {
+                return@Observer
+            }
+            rootView.sb_para_space.progress = (it * 100 / 3.0f).roundToInt()
         })
 
     }

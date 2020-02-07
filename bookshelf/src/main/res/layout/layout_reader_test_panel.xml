@@ -39,6 +39,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:minWidth="0dp" />
+
+        <Button
+            android:id="@+id/bt_keep_screen_on"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp" />
     </LinearLayout>
 
     <LinearLayout
@@ -131,7 +137,7 @@
 
         <SeekBar
             android:id="@+id/sb_brightness"
-            android:layout_width="100dp"
+            android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:max="255" />
 
@@ -147,10 +153,37 @@
         android:layout_height="wrap_content"
         android:gravity="center">
 
-        <Button
-            android:id="@+id/bt_keep_screen_on"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:minWidth="0dp" />
+            android:text="行间距："
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/sb_line_space"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:max="100" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="段间距："
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/sb_para_space"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:max="100" />
     </LinearLayout>
 </LinearLayout>

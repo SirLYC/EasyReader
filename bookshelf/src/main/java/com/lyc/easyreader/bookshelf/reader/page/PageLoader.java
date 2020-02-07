@@ -41,10 +41,12 @@ public abstract class PageLoader implements Handler.Callback {
     protected static final int STATUS_ERROR = 3;           // 加载错误 (一般是网络加载情况)
     protected static final int STATUS_EMPTY = 4;           // 空数据
     protected static final int STATUS_PARING = 5;          // 正在解析 (装载本地数据)
-    private static final String TAG = "PageLoader";
     protected static final int STATUS_PARSE_ERROR = 6;     // 本地文件解析错误(暂未被使用)
     protected static final int STATUS_CATEGORY_EMPTY = 7;  // 获取到的目录为空
     private static final int MSG_RELOAD_PAGES = 1;
+
+    private static final String TAG = "PageLoader";
+
     private static final int TEXT_SIZE_MIN_VALUE = DeviceUtilsKt.dp2px(TEXT_SIZE_MIN_VALUE_DP);
     private static final int TEXT_SIZE_MAX_VALUE = DeviceUtilsKt.dp2px(TEXT_SIZE_MAX_VALUE_DP);
 
@@ -87,14 +89,11 @@ public abstract class PageLoader implements Handler.Callback {
     private Paint mTitlePaint;
     // 存储阅读记录类
 //    private BookRecordBean mBookRecord;
-
-    //    private Disposable mPreLoadDisp;
     // 绘制背景颜色的画笔(用来擦除需要重绘的部分)
     private Paint mBgPaint;
     // 绘制小说内容的画笔
     private TextPaint mContentTextPaint;
     // 阅读器的配置选项
-//    private ReadSettingManager mSettingManager;
     // 被遮盖的页，或者认为被取消显示的页
     private BookPage mCancelPage;
     // 是否打开过章节
@@ -105,54 +104,59 @@ public abstract class PageLoader implements Handler.Callback {
     private PageAnimMode pageMode = PageAnimMode.SIMULATION;
     // 加载器的颜色主题
     private PageStyle pageStyle = PageStyle.BG_0;
-    //当前是否是夜间模式
+    // 当前是否是夜间模式
     private boolean isNightMode;
-    //书籍绘制区域的宽高
+    // 书籍绘制区域的宽高
     private int mVisibleWidth;
     private int mVisibleHeight;
-    //应用的宽高
+    // 应用的宽高
     private int mDisplayWidth;
     private int mDisplayHeight;
-    //间距
+    // 间距
     private int marginLeft = DeviceUtilsKt.dp2px(16);
     private int marginRight = DeviceUtilsKt.dp2px(16);
     private int marginTop = DeviceUtilsKt.dp2px(16);
     private int marginBottom = DeviceUtilsKt.dp2px(8);
-    //字体的颜色
+    // 字体的颜色
     private int mTextColor;
-    //标题的大小
+    // 标题的大小
     private int titleTextSize;
     // 字体的大小
     private int contentTextSize;
     // 下方小字大小
     private int tipTextSize;
-    //行间距
+    // 行间距系数
+    private float lineSpaceFactor;
+    // 行间距
     private int mTextInterval;
-    //标题的行间距
+    // 标题的行间距
     private int mTitleInterval;
-    //段落距离(基于行间距的额外距离)
+    // 段间距系数
+    private float paraSpaceFactor;
+    // 段落距离(基于行间距的额外距离)
     private int mTextPara;
     private int mTitlePara;
-    //电池的百分比
+    // 电池的百分比
     private int mBatteryLevel;
-    //当前页面的背景
+    // 当前页面的背景
     private int mBgColor;
-    //上一章的记录
+    // 上一章的记录
     private int mLastChapterPos = 0;
-
+    // 缩进
     private int indentCount;
     private boolean indentFull;
     private String indentString;
 
     private Handler handler = new Handler(this);
 
-    /*****************************init params*******************************/
     public PageLoader(PageView pageView, BookFile bookFile) {
         mPageView = pageView;
         mCollBook = bookFile;
         mChapterList = new ArrayList<>(1);
 
         setIndent(2, true);
+        lineSpaceFactor = 0.5f;
+        paraSpaceFactor = 1.0f;
         // 初始化数据
         setUpTextParams(DeviceUtilsKt.dp2px(16));
         // 初始化画笔
@@ -172,13 +176,13 @@ public abstract class PageLoader implements Handler.Callback {
         // 文字大小
         this.contentTextSize = textSize;
         tipTextSize = Math.round(textSize * 0.75f);
-        titleTextSize = Math.round(this.contentTextSize * 1.2f);
+        titleTextSize = Math.round(contentTextSize * 1.2f);
         // 行间距(大小为字体的一半)
-        mTextInterval = this.contentTextSize / 2;
-        mTitleInterval = titleTextSize / 2;
+        mTextInterval = Math.round(contentTextSize * lineSpaceFactor);
+        mTitleInterval = Math.round(titleTextSize * lineSpaceFactor);
         // 段落间距(大小为字体的高度)
-        mTextPara = this.contentTextSize;
-        mTitlePara = titleTextSize;
+        mTextPara = Math.round(contentTextSize * paraSpaceFactor);
+        mTitlePara = Math.round(titleTextSize * paraSpaceFactor);
     }
 
     private void initPaint() {
@@ -416,6 +420,30 @@ public abstract class PageLoader implements Handler.Callback {
             mTipPaint.setTextSize(tipTextSize);
             mContentTextPaint.setTextSize(contentTextSize);
             mTitlePaint.setTextSize(titleTextSize);
+            postReloadPages();
+        }
+    }
+
+    public float getLineSpaceFactor() {
+        return lineSpaceFactor;
+    }
+
+    public void setLineSpaceFactor(float lineSpaceFactor) {
+        if (lineSpaceFactor != this.lineSpaceFactor) {
+            this.lineSpaceFactor = lineSpaceFactor;
+            setUpTextParams(contentTextSize);
+            postReloadPages();
+        }
+    }
+
+    public float getParaSpaceFactor() {
+        return paraSpaceFactor;
+    }
+
+    public void setParaSpaceFactor(float paraSpaceFactor) {
+        if (paraSpaceFactor != this.paraSpaceFactor) {
+            this.paraSpaceFactor = paraSpaceFactor;
+            setUpTextParams(contentTextSize);
             postReloadPages();
         }
     }
