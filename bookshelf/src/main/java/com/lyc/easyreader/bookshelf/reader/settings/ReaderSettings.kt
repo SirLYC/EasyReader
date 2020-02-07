@@ -34,6 +34,15 @@ class ReaderSettings private constructor() : ISettings {
         private const val KEY_INDENT_FULL = "indent_full"
         private const val DEFAULT_INDENT_FULL = true
 
+        private const val KEY_BRIGHTNESS_FOLLOW_SYSTEM = "brightness_follow_system"
+        private const val DEFAULT_BRIGHTNESS_FOLLOW_SYSTEM = true
+
+        private const val KEY_USER_BRIGHTNESS = "user_brightness"
+        private const val DEFAULT_USER_BRIGHTNESS = 0x7f
+
+        private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
+        private const val DEFAULT_KEEP_SCREEN_ON = true
+
         @JvmStatic
         val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { ReaderSettings() }
     }
@@ -116,6 +125,44 @@ class ReaderSettings private constructor() : ISettings {
         NonNullLiveData(value).apply {
             observeForever {
                 preference.putBoolean(KEY_INDENT_FULL, it)
+            }
+        }
+    }
+
+    val brightnessFollowSystem by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value =
+            preference.getBoolean(KEY_BRIGHTNESS_FOLLOW_SYSTEM, DEFAULT_BRIGHTNESS_FOLLOW_SYSTEM)
+        NonNullLiveData(value).apply {
+            observeForever {
+                preference.putBoolean(KEY_BRIGHTNESS_FOLLOW_SYSTEM, it)
+            }
+        }
+    }
+
+    val userBrightness by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value = preference.getInt(KEY_USER_BRIGHTNESS, DEFAULT_USER_BRIGHTNESS)
+            .coerceIn(0, 255)
+        NonNullLiveData(value).apply {
+            observeForever {
+                val clampedValue = it.coerceIn(0, 255)
+                if (it != clampedValue) {
+                    this.value = clampedValue
+                    return@observeForever
+                }
+                preference.putInt(KEY_USER_BRIGHTNESS, it)
+            }
+        }
+    }
+
+    val keepScreenOn by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value =
+            preference.getBoolean(KEY_KEEP_SCREEN_ON, DEFAULT_KEEP_SCREEN_ON)
+        NonNullLiveData(value).apply {
+            observeForever {
+                preference.putBoolean(
+                    KEY_KEEP_SCREEN_ON,
+                    it
+                )
             }
         }
     }

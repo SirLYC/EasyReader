@@ -1,9 +1,12 @@
 package com.lyc.easyreader.base.utils
 
+import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
+import android.provider.Settings.SettingNotFoundException
 import android.view.Surface
 import android.view.View
 import android.view.Window
@@ -27,6 +30,73 @@ fun vibrate(millis: Long) {
                 VibrationEffect.createOneShot(millis, VibrationEffect.DEFAULT_AMPLITUDE)
             vibrate(effect)
         }
+    }
+}
+
+fun isAutoBrightness(): Boolean {
+    var isAuto = false
+    try {
+        isAuto = Settings.System.getInt(
+            ReaderApplication.appContext().contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS_MODE
+        ) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
+    } catch (e: SettingNotFoundException) {
+        e.printStackTrace()
+    }
+    return isAuto
+}
+
+fun setBrightness(activity: Activity, brightness: Int) {
+    try {
+        val lp = activity.window.attributes
+        //将 0~255 范围内的数据，转换为 0~1
+        lp.screenBrightness = brightness.toFloat() * (1f / 255f)
+        activity.window.attributes = lp
+    } catch (ex: Exception) {
+        ex.printStackTrace()
+    }
+}
+
+fun getScreenBrightness(): Int {
+    return if (isAutoBrightness()) {
+        getAutoScreenBrightness()
+    } else {
+        getManualScreenBrightness()
+    }
+}
+
+private fun getManualScreenBrightness(): Int {
+    var nowBrightnessValue = 0
+    val resolver = ReaderApplication.appContext().contentResolver
+    try {
+        nowBrightnessValue = Settings.System.getInt(resolver, Settings.System.SCREEN_BRIGHTNESS)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return nowBrightnessValue
+}
+
+private fun getAutoScreenBrightness(): Int {
+    var nowBrightnessValue = 0f
+    //获取自动调节下的亮度范围在 0~1 之间
+    val resolver = ReaderApplication.appContext().contentResolver
+    try {
+        nowBrightnessValue = Settings.System.getFloat(resolver, Settings.System.SCREEN_BRIGHTNESS)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    //转换范围为 (0~255)
+    val fValue = nowBrightnessValue * 255.0f
+    return fValue.toInt()
+}
+
+fun setDefaultBrightness(activity: Activity) {
+    try {
+        val lp = activity.window.attributes
+        lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        activity.window.attributes = lp
+    } catch (ex: java.lang.Exception) {
+        ex.printStackTrace()
     }
 }
 

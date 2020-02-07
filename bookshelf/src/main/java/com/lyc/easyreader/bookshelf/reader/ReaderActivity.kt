@@ -4,10 +4,16 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.ContentObserver
+import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.WindowManager
 import android.widget.FrameLayout
+import android.widget.SeekBar
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.book.BookFile
@@ -16,9 +22,7 @@ import com.lyc.easyreader.base.app.NotchCompat
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.ReaderToast
-import com.lyc.easyreader.base.utils.dp2px
-import com.lyc.easyreader.base.utils.getScreenOrientation
-import com.lyc.easyreader.base.utils.statusBarHeight
+import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.BuildConfig
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
@@ -52,13 +56,21 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         }
 
         const val TAG = "ReaderActivity"
+
+        private val BRIGHTNESS_MODE_URI =
+            Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE)
+        private val BRIGHTNESS_URI = Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS)
+        private val BRIGHTNESS_ADJ_URI = Settings.System.getUriFor("screen_auto_brightness_adj")
     }
 
     private lateinit var viewModel: ReaderViewModel
     private var pageLoader: PageLoader? = null
     private var broadcastReceiver: BroadcastReceiver? = null
+    private var contentObserver: ContentObserver? = null
+    private var contentObserverRegistered = false
     // left -> top -> right -> bottom
     private val marginExtra = IntArray(4)
+    private var isResume = false
 
     override fun beforeBaseOnCreate(savedInstanceState: Bundle?) {
         viewModel = provideViewModel()
@@ -107,10 +119,36 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             })
         }
 
+        contentObserver = BrightnessObserver()
+
         registerSettings()
 
         if (BuildConfig.READER_TEST_MODE) {
             testControlPanel(rootView)
+        }
+    }
+
+
+    override fun onStart() {
+        super.onStart()
+        if (!contentObserverRegistered) {
+            val cr = contentResolver
+            contentObserver?.let {
+                cr.registerContentObserver(BRIGHTNESS_MODE_URI, false, it)
+                cr.registerContentObserver(BRIGHTNESS_URI, false, it)
+                cr.registerContentObserver(BRIGHTNESS_ADJ_URI, false, it)
+            }
+            contentObserverRegistered = true
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (contentObserverRegistered) {
+            contentObserver?.let {
+                contentResolver.unregisterContentObserver(it)
+            }
+            contentObserverRegistered = false
         }
     }
 
@@ -145,11 +183,45 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         settings.indentFull.observe(this, Observer { full ->
             pageLoader?.setIndent(settings.indentCount.value, full)
         })
+
+        settings.brightnessFollowSystem.observe(this, Observer { followSystem ->
+            if (followSystem) {
+                setDefaultBrightness(this)
+            } else {
+                setBrightness(this, settings.userBrightness.value)
+            }
+        })
+
+        settings.userBrightness.observe(this, Observer {
+            if (!settings.brightnessFollowSystem.value) {
+                setBrightness(this, it)
+            }
+        })
+
+        settings.keepScreenOn.observe(this, Observer {
+            applyKeepScreenOnChange()
+        })
     }
 
     override fun onResume() {
+        isResume = true
+        applyKeepScreenOnChange()
         super.onResume()
         applyFullscreen(ReaderSettings.instance.fullscreen.value)
+    }
+
+    override fun onPause() {
+        isResume = false
+        applyKeepScreenOnChange()
+        super.onPause()
+    }
+
+    private fun applyKeepScreenOnChange() {
+        if (isResume && ReaderSettings.instance.keepScreenOn.value) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
     }
 
     private fun applyFullscreen(fullscreen: Boolean) {
@@ -269,6 +341,31 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         }
     }
 
+    private inner class BrightnessObserver : ContentObserver(null) {
+
+        override fun onChange(selfChange: Boolean) {
+            onChange(selfChange, null)
+        }
+
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            super.onChange(selfChange)
+            if (selfChange || !ReaderSettings.instance.brightnessFollowSystem.value) return
+
+            // 如果系统亮度改变，则修改当前 Activity 亮度
+            if (BRIGHTNESS_MODE_URI == uri) {
+                LogUtils.d(TAG, "亮度模式改变")
+            } else if (BRIGHTNESS_URI == uri && isAutoBrightness()) {
+                LogUtils.d(TAG, "亮度模式为手动模式 值改变")
+                setBrightness(this@ReaderActivity, getScreenBrightness())
+            } else if (BRIGHTNESS_ADJ_URI == uri && isAutoBrightness()) {
+                Log.d(TAG, "亮度模式为自动模式 值改变")
+                setDefaultBrightness(this@ReaderActivity)
+            } else {
+                LogUtils.d(TAG, "亮度调整 其他")
+            }
+        }
+    }
+
     private fun testControlPanel(rootView: FrameLayout) {
         LayoutInflater.from(this).inflate(R.layout.layout_reader_test_panel, rootView, true)
 
@@ -334,5 +431,49 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         settings.indentFull.observe(this, Observer {
             rootView.bt_indent_char.text = if (it) "全角" else "半角"
         })
+
+        var isTracking = false
+        var inListener = false
+        // 第四行
+        rootView.sb_brightness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                inListener = true
+                settings.userBrightness.value = progress
+                inListener = false
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                isTracking = true
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                isTracking = false
+            }
+        })
+        settings.userBrightness.observe(this, Observer {
+            if (inListener || isTracking) {
+                return@Observer
+            }
+            rootView.sb_brightness.progress = it
+        })
+
+        rootView.bt_brightness_mode.setOnClickListener {
+            settings.brightnessFollowSystem.value = !settings.brightnessFollowSystem.value
+        }
+
+        settings.brightnessFollowSystem.observe(this, Observer {
+            rootView.bt_brightness_mode.text = if (it) "跟随系统" else "自定义"
+        })
+
+
+        // 第五行
+        rootView.bt_keep_screen_on.setOnClickListener {
+            settings.keepScreenOn.value = !settings.keepScreenOn.value
+        }
+
+        settings.keepScreenOn.observe(this, Observer {
+            rootView.bt_keep_screen_on.text = if (it) "屏幕常亮：开" else "屏幕常亮：关"
+        })
+
     }
 }

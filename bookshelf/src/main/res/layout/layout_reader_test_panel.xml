@@ -19,7 +19,8 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center">
 
         <Button
             android:id="@+id/bt_screen_orientation"
@@ -42,7 +43,8 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center">
 
         <TextView
             android:layout_width="wrap_content"
@@ -77,7 +79,8 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center">
 
         <TextView
             android:layout_width="wrap_content"
@@ -114,4 +117,40 @@
             android:minWidth="0dp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="亮度："
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/sb_brightness"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:max="255" />
+
+        <Button
+            android:id="@+id/bt_brightness_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/bt_keep_screen_on"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp" />
+    </LinearLayout>
 </LinearLayout>
