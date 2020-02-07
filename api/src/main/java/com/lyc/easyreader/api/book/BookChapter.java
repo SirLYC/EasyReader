@@ -4,6 +4,7 @@ import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
+import org.greenrobot.greendao.annotation.NotNull;
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -15,15 +16,21 @@ public class BookChapter {
     private int order;
     private long lastModified;
     @Index
-    private long bookId;
+    @NotNull
+    private String bookId;
     private String title;
     private long start;
     private long end;
 
 
-    @Generated(hash = 1730275621)
-    public BookChapter(Long id, int order, long lastModified, long bookId,
-                       String title, long start, long end) {
+    @Generated(hash = 1481387400)
+    public BookChapter() {
+    }
+
+
+    @Generated(hash = 1851369482)
+    public BookChapter(Long id, int order, long lastModified,
+                       @NotNull String bookId, String title, long start, long end) {
         this.id = id;
         this.order = order;
         this.lastModified = lastModified;
@@ -31,11 +38,6 @@ public class BookChapter {
         this.title = title;
         this.start = start;
         this.end = end;
-    }
-
-
-    @Generated(hash = 1481387400)
-    public BookChapter() {
     }
 
 
@@ -80,15 +82,6 @@ public class BookChapter {
     }
 
 
-    public long getBookId() {
-        return this.bookId;
-    }
-
-    public void setBookId(long bookId) {
-        this.bookId = bookId;
-    }
-
-
     public long getLastModified() {
         return this.lastModified;
     }
@@ -96,5 +89,15 @@ public class BookChapter {
 
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
+    }
+
+
+    public String getBookId() {
+        return this.bookId;
+    }
+
+
+    public void setBookId(String bookId) {
+        this.bookId = bookId;
     }
 }

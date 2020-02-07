@@ -28,6 +28,12 @@ class ReaderSettings private constructor() : ISettings {
         private const val KEY_PAGE_ANIM_MODE = "page_anim_mode"
         private val DEFAULT_PAGE_ANIM_MODE = PageAnimMode.SIMULATION
 
+        private const val KEY_INDENT_COUNT = "indent_count"
+        private const val DEFAULT_INDENT_COUNT = 2
+
+        private const val KEY_INDENT_FULL = "indent_full"
+        private const val DEFAULT_INDENT_FULL = true
+
         @JvmStatic
         val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { ReaderSettings() }
     }
@@ -88,6 +94,28 @@ class ReaderSettings private constructor() : ISettings {
         NonNullLiveData(value).apply {
             observeForever {
                 preference.putString(KEY_PAGE_ANIM_MODE, it.name)
+            }
+        }
+    }
+
+    val indentCount by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value = preference.getInt(KEY_INDENT_COUNT, DEFAULT_INDENT_COUNT)
+        NonNullLiveData(value).apply {
+            observeForever {
+                if (it < 0) {
+                    this.value = 0
+                    return@observeForever
+                }
+                preference.putInt(KEY_INDENT_COUNT, it)
+            }
+        }
+    }
+
+    val indentFull by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        val value = preference.getBoolean(KEY_INDENT_FULL, DEFAULT_INDENT_FULL)
+        NonNullLiveData(value).apply {
+            observeForever {
+                preference.putBoolean(KEY_INDENT_FULL, it)
             }
         }
     }

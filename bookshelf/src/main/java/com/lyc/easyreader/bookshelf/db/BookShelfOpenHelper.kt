@@ -1,5 +1,6 @@
 package com.lyc.easyreader.bookshelf.db
 
+import android.database.sqlite.SQLiteConstraintException
 import android.util.Log
 import com.lyc.common.thread.SingleThreadRunner
 import com.lyc.easyreader.api.book.*
@@ -23,10 +24,20 @@ class BookShelfOpenHelper private constructor() :
 
     private val dbRunner = SingleThreadRunner("BookShelf-DB")
 
-    fun insertBookFile(bookFile: BookFile) {
+    /**
+     * @return false表示id重复
+     */
+    fun insertBookFile(bookFile: BookFile): Boolean {
+        var success = false
         dbRunner.awaitRun(Runnable {
-            daoSession.bookFileDao.insert(bookFile)
+            try {
+                daoSession.bookFileDao.insert(bookFile)
+                success = true
+            } catch (e: SQLiteConstraintException) {
+                // ignore
+            }
         })
+        return success
     }
 
     fun insertOrReplaceBookFile(bookFile: BookFile) {

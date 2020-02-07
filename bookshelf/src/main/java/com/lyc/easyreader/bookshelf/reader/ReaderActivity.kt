@@ -28,6 +28,8 @@ import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import com.lyc.easyreader.bookshelf.reader.settings.ScreenOrientation
 import kotlinx.android.synthetic.main.layout_reader_test_panel.*
 import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -134,6 +136,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
 
         settings.pageAnimMode.observe(this, Observer { animMode ->
             pageLoader?.setPageAnimMode(animMode)
+        })
+
+        settings.indentCount.observe(this, Observer { count ->
+            pageLoader?.setIndent(count, settings.indentFull.value)
+        })
+
+        settings.indentFull.observe(this, Observer { full ->
+            pageLoader?.setIndent(settings.indentCount.value, full)
         })
     }
 
@@ -304,5 +314,25 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         rootView.bt_increase_font.setOnClickListener {
             settings.fontSizeInDp.value += 1
         }
+
+        // 第三行
+        rootView.bt_indent_count_increase.setOnClickListener {
+            settings.indentCount.value = min(settings.indentCount.value + 1, 8)
+        }
+
+        rootView.bt_indent_count_decrease.setOnClickListener {
+            settings.indentCount.value = max(settings.indentCount.value - 1, 0)
+        }
+
+        rootView.bt_indent_char.setOnClickListener {
+            settings.indentFull.value = !settings.indentFull.value
+        }
+
+        settings.indentCount.observe(
+            this,
+            Observer { rootView.tv_indent_count.text = it.toString() })
+        settings.indentFull.observe(this, Observer {
+            rootView.bt_indent_char.text = if (it) "全角" else "半角"
+        })
     }
 }

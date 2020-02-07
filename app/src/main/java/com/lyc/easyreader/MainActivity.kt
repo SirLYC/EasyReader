@@ -86,6 +86,14 @@ class MainActivity : BaseActivity(), ITabChangeListener {
             }
         }
 
+        if (intent?.action in setOf(
+                Intent.ACTION_SEND,
+                Intent.ACTION_VIEW
+            ) && intent?.data?.let { handleImportUri(it) } == true
+        ) {
+            LogUtils.d(TAG, "onCreate handle book import.")
+        }
+
         val dataFromIntent = intent?.data
         LogUtils.d(
             TAG,

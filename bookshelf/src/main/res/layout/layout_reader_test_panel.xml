@@ -6,8 +6,8 @@
     android:layout_gravity="center"
     android:background="#7F000000"
     android:gravity="center"
-    android:padding="8dp"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="8dp">
 
     <TextView
         android:id="@+id/tv_title"
@@ -24,28 +24,40 @@
         <Button
             android:id="@+id/bt_screen_orientation"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:minWidth="0dp" />
 
         <Button
             android:id="@+id/bt_fullscreen"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:minWidth="0dp" />
 
         <Button
             android:id="@+id/bt_anim_mode"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:minWidth="0dp" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="字体大小："
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
         <Button
             android:id="@+id/bt_decrease_font"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Aa-" />
+            android:minWidth="0dp"
+            android:text="Aa-"
+            android:textAllCaps="false" />
 
         <TextView
             android:id="@+id/tv_font_size"
@@ -58,7 +70,48 @@
             android:id="@+id/bt_increase_font"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Aa+" />
+            android:minWidth="0dp"
+            android:text="Aa+"
+            android:textAllCaps="false" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="段首缩进："
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/bt_indent_count_decrease"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="-" />
+
+        <TextView
+            android:id="@+id/tv_indent_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/bt_indent_count_increase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="+" />
+
+        <Button
+            android:id="@+id/bt_indent_char"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp" />
     </LinearLayout>
 
 </LinearLayout>

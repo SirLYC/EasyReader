@@ -8,9 +8,12 @@ import java.security.MessageDigest
 fun String.getMd5(): String {
     val instance = MessageDigest.getInstance("MD5")
     instance.update(this.toByteArray())
-    val bytes = instance.digest()
+    return instance.digest().toHexString()
+}
+
+fun ByteArray.toHexString(): String {
     val sb = StringBuilder()
-    bytes.forEach { byteVal ->
+    forEach { byteVal ->
         val intVal = byteVal.toInt() and 0xff
         if (intVal < 16) {
             sb.append("0")

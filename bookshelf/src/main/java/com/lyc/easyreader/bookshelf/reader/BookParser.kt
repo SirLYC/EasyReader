@@ -73,6 +73,7 @@ class BookParser(private val bookFile: BookFile) {
         try {
             RandomAccessFile(file, "r").use { bookStream ->
                 val charset = bookStream.detectCharset()
+                bookStream.seek(0)
 
                 // 判断是否有符合预设的章节
                 val chapterPattern = checkChapterType(bookStream, charset)
@@ -235,6 +236,9 @@ class BookParser(private val bookFile: BookFile) {
         try {
             val buffer = ByteArray(BUFFER_SIZE)
             val length = bookStream.read(buffer, 0, buffer.size)
+            if (length <= 0) {
+                return null
+            }
             for (str in CHAPTER_PATTERNS) {
                 val pattern =
                     Pattern.compile(str, Pattern.MULTILINE)

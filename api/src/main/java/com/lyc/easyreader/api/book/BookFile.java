@@ -23,15 +23,6 @@ import java.nio.charset.Charset;
 })
 public class BookFile implements Parcelable {
 
-    @Id
-    private Long id;
-    private String realPath;
-    private String filename;
-    private String fileExt;
-    private long importTime;
-    private long lastAccessTime;
-    private long deleteTime;
-    private long handleChapterLastModified;
     public static final Creator<BookFile> CREATOR = new Creator<BookFile>() {
         @Override
         public BookFile createFromParcel(Parcel in) {
@@ -43,41 +34,23 @@ public class BookFile implements Parcelable {
             return new BookFile[size];
         }
     };
+    private String realPath;
+    private String filename;
+    private String fileExt;
+    private long importTime;
+    private long lastAccessTime;
+    private long deleteTime;
+    private long handleChapterLastModified;
     @Convert(converter = CharsetConverter.class, columnType = String.class)
     private Charset charset;
     @Convert(converter = StatusConverter.class, columnType = String.class)
     @NotNull
     private Status status;
-
-
-    @Generated(hash = 1858747483)
-    public BookFile() {
-    }
-
-
-    @Generated(hash = 503286811)
-    public BookFile(Long id, String realPath, String filename, String fileExt,
-                    long importTime, long lastAccessTime, long deleteTime,
-                    long handleChapterLastModified, Charset charset, @NotNull Status status) {
-        this.id = id;
-        this.realPath = realPath;
-        this.filename = filename;
-        this.fileExt = fileExt;
-        this.importTime = importTime;
-        this.lastAccessTime = lastAccessTime;
-        this.deleteTime = deleteTime;
-        this.handleChapterLastModified = handleChapterLastModified;
-        this.charset = charset;
-        this.status = status;
-    }
-
+    @Id
+    private String id;
 
     protected BookFile(Parcel in) {
-        if (in.readByte() == 0) {
-            id = null;
-        } else {
-            id = in.readLong();
-        }
+        id = in.readString();
         realPath = in.readString();
         filename = in.readString();
         fileExt = in.readString();
@@ -93,19 +66,29 @@ public class BookFile implements Parcelable {
         }
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
+    @Generated(hash = 1598142091)
+    public BookFile(String id, String realPath, String filename, String fileExt,
+                    long importTime, long lastAccessTime, long deleteTime,
+                    long handleChapterLastModified, Charset charset, @NotNull Status status) {
+        this.id = id;
+        this.realPath = realPath;
+        this.filename = filename;
+        this.fileExt = fileExt;
+        this.importTime = importTime;
+        this.lastAccessTime = lastAccessTime;
+        this.deleteTime = deleteTime;
+        this.handleChapterLastModified = handleChapterLastModified;
+        this.charset = charset;
+        this.status = status;
+    }
+
+    @Generated(hash = 1858747483)
+    public BookFile() {
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        if (id == null) {
-            dest.writeByte((byte) 0);
-        } else {
-            dest.writeByte((byte) 1);
-            dest.writeLong(id);
-        }
+        dest.writeString(id);
         dest.writeString(realPath);
         dest.writeString(filename);
         dest.writeString(fileExt);
@@ -122,17 +105,15 @@ public class BookFile implements Parcelable {
         }
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
     public long getHandleChapterLastModified() {
         return handleChapterLastModified;
     }
 
-    public Long getId() {
-        return this.id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getRealPath() {
         return this.realPath;
@@ -219,6 +200,14 @@ public class BookFile implements Parcelable {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public String getId() {
+        return this.id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public enum Status {

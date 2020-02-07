@@ -12,13 +12,17 @@ import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.base.ReaderApplication
-import com.lyc.easyreader.base.ui.ReaderToast
+import com.lyc.easyreader.base.ui.ReaderHeadsUp
 import com.lyc.easyreader.base.utils.LogUtils
+import com.lyc.easyreader.base.utils.getMd5
+import com.lyc.easyreader.base.utils.toHexString
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 import com.lyc.easyreader.bookshelf.utils.toFileSizeString
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -54,6 +58,7 @@ class BookManager private constructor() : IBookManager {
         val start = SystemClock.elapsedRealtime()
         val progressCount = AtomicInteger(uriList.size)
         val failCount = AtomicInteger(0)
+        val repeatCount = AtomicInteger(0)
         val newBooks = CopyOnWriteArrayList<BookFile>()
 
         for (uri in uriList) {
@@ -62,21 +67,34 @@ class BookManager private constructor() : IBookManager {
                     newBooks.add(bookFile)
                     if (progressCount.decrementAndGet() == 0) {
                         val faiCnt = failCount.get()
+                        val repeatCnt = repeatCount.get()
                         LogUtils.i(
                             TAG,
                             "Import ${uriList.size} books costs ${SystemClock.elapsedRealtime() - start}ms."
                         )
-                        handleImportBooksFinished(faiCnt, newBooks.toList())
+                        handleImportBooksFinished(faiCnt, repeatCnt, newBooks.toList())
                     }
                 }, { _, _ ->
                     failCount.incrementAndGet()
                     if (progressCount.decrementAndGet() == 0) {
                         val faiCnt = failCount.get()
+                        val repeatCnt = repeatCount.get()
                         LogUtils.i(
                             TAG,
                             "Import ${uriList.size} books costs ${SystemClock.elapsedRealtime() - start}ms."
                         )
-                        handleImportBooksFinished(faiCnt, newBooks.toList())
+                        handleImportBooksFinished(faiCnt, repeatCnt, newBooks.toList())
+                    }
+                }, {
+                    repeatCount.incrementAndGet()
+                    if (progressCount.decrementAndGet() == 0) {
+                        val faiCnt = failCount.get()
+                        val repeatCnt = repeatCount.get()
+                        LogUtils.i(
+                            TAG,
+                            "Import ${uriList.size} books costs ${SystemClock.elapsedRealtime() - start}ms."
+                        )
+                        handleImportBooksFinished(faiCnt, repeatCnt, newBooks.toList())
                     }
                 })
             }
@@ -85,25 +103,31 @@ class BookManager private constructor() : IBookManager {
 
     private fun handleImportBooksFinished(
         faiCnt: Int,
+        repeatCnt: Int,
         newBookList: List<BookFile>
     ) {
 
         val sucCnt = newBookList.size
-        if (sucCnt <= 0 && faiCnt <= 0) {
+        if (sucCnt <= 0 && faiCnt <= 0 && repeatCnt <= 0) {
+            return
+        }
+
+        if (sucCnt <= 0 && faiCnt <= 0 && repeatCnt > 0) {
+            ReaderHeadsUp.showHeadsUp(if (repeatCnt == 1) "文件已经在书架，无需导入" else "${repeatCnt}个文件已经在书架，无需导入")
             return
         }
 
         if (sucCnt <= 0) {
-            ReaderToast.showToast("导入失败")
+            ReaderHeadsUp.showHeadsUp("导入失败")
             return
         }
 
-        ReaderToast.showToast(
+        ReaderHeadsUp.showHeadsUp(
             if (faiCnt <= 0) {
                 if (sucCnt == 1) "导入成功" else "成功导入${sucCnt}个文件"
             } else {
                 "成功导入${sucCnt}个文件，失败${faiCnt}"
-            }
+            } + if (repeatCnt == 0) "" else "，${repeatCnt}个文件已经在书架，无需导入"
         )
         eventHub.getEventListeners().forEach {
             it.onBooksImported(newBookList)
@@ -114,7 +138,8 @@ class BookManager private constructor() : IBookManager {
     private inline fun doImportOneBook(
         uri: Uri,
         onFinish: (BookFile, Uri) -> Unit,
-        onError: (String, Uri) -> Unit
+        onError: (String, Uri) -> Unit,
+        onRepeatImport: (Uri) -> Unit
     ): Boolean {
 
         val startTime = SystemClock.elapsedRealtime()
@@ -123,26 +148,6 @@ class BookManager private constructor() : IBookManager {
         var file: File? = null
         try {
             val currentTime = System.currentTimeMillis()
-            val newBookFile =
-                BookFile(
-                    null,
-                    null,
-                    null,
-                    null,
-                    currentTime,
-                    0,
-                    0,
-                    0,
-                    null,
-                    BookFile.Status.TMP
-                )
-            BookShelfOpenHelper.instance.insertBookFile(newBookFile)
-            val bookId = newBookFile.id
-            if (bookId == null || bookId <= 0) {
-                val reason = "Insert database error, id=${bookId}(uri=${uri})."
-                onError(reason, uri)
-                LogUtils.e(TAG, reason)
-            }
             val fd = ReaderApplication.appContext().contentResolver.openFileDescriptor(uri, "r")
             if (fd == null) {
                 val reason = "Open uri(${uri}) error."
@@ -167,7 +172,8 @@ class BookManager private constructor() : IBookManager {
                     LogUtils.e(TAG, reason)
                     return false
                 }
-                val filename = ".Book_${bookId}"
+                val randomString = "${SystemClock.elapsedRealtimeNanos()}&${UUID.randomUUID()}"
+                val filename = ".Book_${randomString.getMd5()}"
                 val outputFile = File(outputDir, filename)
                 LogUtils.i(TAG, "Copy file from uri $outputDir to file $outputFile")
 
@@ -178,6 +184,10 @@ class BookManager private constructor() : IBookManager {
                 }
 
                 val buffer = ByteArray(bufferSize)
+
+                var md5Cost = SystemClock.elapsedRealtime()
+                val msgDigest = MessageDigest.getInstance("MD5")
+                md5Cost = SystemClock.elapsedRealtime() - md5Cost
                 FileInputStream(fd.fileDescriptor).buffered().use { inputStream ->
                     var readSize: Int
                     file = outputFile
@@ -185,19 +195,40 @@ class BookManager private constructor() : IBookManager {
                         while (inputStream.read(buffer, 0, bufferSize).also {
                                 readSize = it
                             } != -1) {
+                            val start = SystemClock.elapsedRealtime()
+                            msgDigest.update(buffer, 0, readSize)
+                            md5Cost += SystemClock.elapsedRealtime() - start
                             outputStream.write(buffer, 0, readSize)
                         }
                     }
                 }
 
+                val start = SystemClock.elapsedRealtime()
+                val digest = msgDigest.digest()
+                md5Cost += SystemClock.elapsedRealtime() - start
+                val md5 = digest.toHexString()
+                LogUtils.d(TAG, "File md5=$md5, calculate md5 costs ${md5Cost}ms")
+
                 val orgFilename = getFileNameFromUri(uri)
-                newBookFile.filename = orgFilename.substringBeforeLast(".")
-                newBookFile.fileExt = orgFilename.substringAfterLast(".", "txt")
-                newBookFile.realPath = outputFile.absolutePath
-                newBookFile.status = BookFile.Status.NORMAL
-                BookShelfOpenHelper.instance.insertOrReplaceBookFile(newBookFile)
-                onFinish(newBookFile, uri)
-                finish = true
+                val newBookFile =
+                    BookFile(
+                        md5,
+                        outputFile.absolutePath,
+                        orgFilename.substringBeforeLast("."),
+                        orgFilename.substringAfterLast(".", "txt"),
+                        currentTime,
+                        0,
+                        0,
+                        0,
+                        null,
+                        BookFile.Status.NORMAL
+                    )
+                if (BookShelfOpenHelper.instance.insertBookFile(newBookFile)) {
+                    onFinish(newBookFile, uri)
+                    finish = true
+                } else {
+                    onRepeatImport(uri)
+                }
             }
         } catch (e: Exception) {
             LogUtils.e(TAG, null, e)

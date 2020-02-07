@@ -140,6 +140,10 @@ public abstract class PageLoader implements Handler.Callback {
     //上一章的记录
     private int mLastChapterPos = 0;
 
+    private int indentCount;
+    private boolean indentFull;
+    private String indentString;
+
     private Handler handler = new Handler(this);
 
     /*****************************init params*******************************/
@@ -148,6 +152,7 @@ public abstract class PageLoader implements Handler.Callback {
         mCollBook = bookFile;
         mChapterList = new ArrayList<>(1);
 
+        setIndent(2, true);
         // 初始化数据
         setUpTextParams(DeviceUtilsKt.dp2px(16));
         // 初始化画笔
@@ -372,6 +377,20 @@ public abstract class PageLoader implements Handler.Callback {
         }
         applyVisibleSizeChange();
         postReloadPages();
+    }
+
+    public void setIndent(int count, boolean full) {
+        if (count != indentCount || full != indentFull) {
+            indentCount = count;
+            indentFull = full;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < count; i++) {
+                sb.append(' ');
+            }
+            String string = sb.toString();
+            indentString = full ? StringUtilsKt.halfToFull(string) : string;
+            postReloadPages();
+        }
     }
 
     private void applyVisibleSizeChange() {
@@ -1222,7 +1241,7 @@ public abstract class PageLoader implements Handler.Callback {
                     paragraph = paragraph.replaceAll("\\s", "");
                     // 如果只有换行符，那么就不执行
                     if (TextUtils.isEmpty(paragraph)) continue;
-                    paragraph = StringUtilsKt.halfToFull("  " + paragraph + "\n");
+                    paragraph = indentString == null ? "" : indentString + paragraph + "\n";
                 } else {
                     //设置 title 的顶部间距
                     rHeight -= mTitlePara;
