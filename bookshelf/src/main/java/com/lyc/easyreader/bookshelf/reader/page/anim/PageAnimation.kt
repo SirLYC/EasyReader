@@ -8,7 +8,6 @@ import android.view.ViewConfiguration
 import android.view.animation.LinearInterpolator
 import android.widget.Scroller
 import com.lyc.easyreader.base.ReaderApplication
-import com.lyc.easyreader.base.utils.LogUtils
 import kotlin.math.abs
 
 /**
@@ -201,7 +200,6 @@ abstract class PageAnimation internal constructor(
                         }
                     } else {
                         //判断是否取消翻页
-                        LogUtils.d("AAA", "x=$x, moveX=${mMoveX}")
                         val dx = x - mMoveX
                         // 当滑动到一定距离时，才可判定是否需要取消翻页
                         if (abs(dx) > slop) {

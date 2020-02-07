@@ -19,7 +19,14 @@ class CoverPageAnim(
     private val curDestRect: Rect = Rect(0, 0, viewWidth, viewHeight)
     private val nextSrcRect: Rect = Rect(0, 0, viewWidth, viewHeight)
     private val nextDestRect: Rect = Rect(0, 0, viewWidth, viewHeight)
-    private val backShadowDrawableRL: GradientDrawable
+    private val backShadowDrawableRL by lazy {
+        val colors = intArrayOf(0x00000000, 0x66000000)
+        GradientDrawable(
+            GradientDrawable.Orientation.LEFT_RIGHT, colors
+        ).apply {
+            gradientType = GradientDrawable.LINEAR_GRADIENT
+        }
+    }
 
     override fun drawMove(canvas: Canvas) {
         val dis =
@@ -34,19 +41,10 @@ class CoverPageAnim(
         curDestRect.right = curSrcRect.right
         nextSrcRect.right = dis.roundToInt()
         nextDestRect.left = curSrcRect.right
-        canvas.drawBitmap(next, nextSrcRect, nextDestRect, null)
         canvas.drawBitmap(cur, curSrcRect, curDestRect, null)
+        canvas.drawBitmap(next, nextSrcRect, nextDestRect, null)
         // 阴影
         backShadowDrawableRL.setBounds(nextDestRect.left - 30, 0, nextDestRect.left, screenHeight)
         backShadowDrawableRL.draw(canvas)
-    }
-
-
-    init {
-        val colors = intArrayOf(0x00000000, 0x66000000)
-        backShadowDrawableRL = GradientDrawable(
-            GradientDrawable.Orientation.LEFT_RIGHT, colors
-        )
-        backShadowDrawableRL.gradientType = GradientDrawable.LINEAR_GRADIENT
     }
 }

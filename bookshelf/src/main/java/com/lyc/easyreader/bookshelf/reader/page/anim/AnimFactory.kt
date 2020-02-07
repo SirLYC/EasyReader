@@ -22,6 +22,38 @@ object AnimFactory {
             PageAnimMode.NONE -> NonePageAnim(screenWidth, screenHeight, view, listener)
             PageAnimMode.SIMULATION -> SimulationPageAnim(screenWidth, screenHeight, view, listener)
             PageAnimMode.CUBIC -> CubicPageAnim(screenWidth, screenHeight, view, listener)
+            PageAnimMode.ROTATE_3D -> RotatePageAnim(
+                0.5f,
+                screenWidth,
+                screenHeight,
+                view,
+                listener
+            )
+            PageAnimMode.FADE_OUT_COVER -> FadeOutCoverPageAnim(
+                screenWidth,
+                screenHeight,
+                view,
+                listener
+            )
+            PageAnimMode.FADE_IN_FATE_OUT -> FadeInFadeOutPageAnim(
+                screenWidth,
+                screenHeight,
+                view,
+                listener
+            )
+            PageAnimMode.TURN_TABLE -> TurntableCoverPageAnim(
+                screenWidth,
+                screenHeight,
+                view,
+                listener
+            )
+            PageAnimMode.TURN_PAGE -> RotatePageAnim(
+                0f,
+                screenWidth,
+                screenHeight,
+                view,
+                listener
+            )
         }
     }
 }

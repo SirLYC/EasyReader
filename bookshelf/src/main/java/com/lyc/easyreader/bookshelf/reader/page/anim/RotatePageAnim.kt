@@ -3,21 +3,26 @@ package com.lyc.easyreader.bookshelf.reader.page.anim
 import android.graphics.Camera
 import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.view.View
+import kotlin.math.roundToInt
 
 /**
  * Created by Liu Yuchuan on 2020/2/7.
- * 3D立方翻页动画
+ * 竖直中心3D旋转动画
  */
-class CubicPageAnim(
+class RotatePageAnim(
+    rotateCenterRation: Float,
     screenWidth: Int,
     screenHeight: Int,
     view: View?,
     listener: OnPageChangeListener
 ) : PageAnimation(screenWidth, screenHeight, view, listener) {
-
     private val camera = Camera()
     private val matrix = Matrix()
+    private val bitmapPaint = Paint()
+    private val rotateCenter = viewWidth * rotateCenterRation
+
 
     override fun drawMove(canvas: Canvas) {
         val dis =
@@ -39,31 +44,34 @@ class CubicPageAnim(
             return
         }
 
-        val vwf = viewWidth.toFloat()
-
-        val curAngle = dis / vwf * 90f
+        val interpolator = dis / viewWidth
+        val curAngle = interpolator * 90f
+        val nextAlpha = (0xff * interpolator).roundToInt()
         camera.save()
         camera.setLocation(0f, 0f, -64f)
         camera.rotateY(-curAngle)
         camera.getMatrix(matrix)
         camera.restore()
-        matrix.preTranslate(-vwf, 0f)
-        matrix.postTranslate(viewWidth - dis, 0f)
+        matrix.preTranslate(-rotateCenter, 0f)
+        matrix.postTranslate(rotateCenter, 0f)
         canvas.save()
         canvas.concat(matrix)
-        canvas.drawBitmap(cur, 0f, 0f, null)
+        bitmapPaint.alpha = 0xff - nextAlpha
+        canvas.drawBitmap(cur, 0f, 0f, bitmapPaint)
         canvas.restore()
 
-        val nextAngle = 90f - curAngle
+        val nextAngle = 90 - curAngle
         camera.save()
         camera.setLocation(0f, 0f, -64f)
         camera.rotateY(nextAngle)
         camera.getMatrix(matrix)
         camera.restore()
-        matrix.postTranslate(viewWidth - dis, 0f)
+        matrix.preTranslate(-rotateCenter, 0f)
+        matrix.postTranslate(rotateCenter, 0f)
         canvas.save()
         canvas.concat(matrix)
-        canvas.drawBitmap(next, 0f, 0f, null)
+        bitmapPaint.alpha = nextAlpha
+        canvas.drawBitmap(next, 0f, 0f, bitmapPaint)
         canvas.restore()
     }
 }
