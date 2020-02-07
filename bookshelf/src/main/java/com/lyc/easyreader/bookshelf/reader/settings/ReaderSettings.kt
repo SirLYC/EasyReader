@@ -221,5 +221,33 @@ class ReaderSettings private constructor() : ISettings {
         if (fontSizeInDp.value != DEFAULT_FONT_SIZE_IN_DP) {
             fontSizeInDp.value = DEFAULT_FONT_SIZE_IN_DP
         }
+
+        if (pageAnimMode.value != DEFAULT_PAGE_ANIM_MODE) {
+            pageAnimMode.value = DEFAULT_PAGE_ANIM_MODE
+        }
+
+        if (indentCount.value != DEFAULT_INDENT_COUNT) {
+            indentCount.value = DEFAULT_INDENT_COUNT
+        }
+
+        if (indentFull.value != DEFAULT_INDENT_FULL) {
+            indentFull.value = DEFAULT_INDENT_FULL
+        }
+
+        if (brightnessFollowSystem.value != DEFAULT_BRIGHTNESS_FOLLOW_SYSTEM) {
+            brightnessFollowSystem.value = DEFAULT_BRIGHTNESS_FOLLOW_SYSTEM
+        }
+
+        if (keepScreenOn.value != DEFAULT_KEEP_SCREEN_ON) {
+            keepScreenOn.value = DEFAULT_KEEP_SCREEN_ON
+        }
+
+        if (lineSpaceFactor.value != DEFAULT_LINE_SPACE_FACTOR) {
+            lineSpaceFactor.value = DEFAULT_LINE_SPACE_FACTOR
+        }
+
+        if (paraSpaceFactor.value != DEFAULT_PARA_SPACE_FACTOR) {
+            paraSpaceFactor.value = DEFAULT_PARA_SPACE_FACTOR
+        }
     }
 }
