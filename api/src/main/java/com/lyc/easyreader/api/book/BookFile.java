@@ -66,11 +66,10 @@ public class BookFile implements Parcelable {
         }
     }
 
-    @Generated(hash = 1598142091)
-    public BookFile(String id, String realPath, String filename, String fileExt,
-                    long importTime, long lastAccessTime, long deleteTime,
-                    long handleChapterLastModified, Charset charset, @NotNull Status status) {
-        this.id = id;
+    @Generated(hash = 1818824846)
+    public BookFile(String realPath, String filename, String fileExt, long importTime,
+                    long lastAccessTime, long deleteTime, long handleChapterLastModified,
+                    Charset charset, @NotNull Status status, String id) {
         this.realPath = realPath;
         this.filename = filename;
         this.fileExt = fileExt;
@@ -80,6 +79,7 @@ public class BookFile implements Parcelable {
         this.handleChapterLastModified = handleChapterLastModified;
         this.charset = charset;
         this.status = status;
+        this.id = id;
     }
 
     @Generated(hash = 1858747483)

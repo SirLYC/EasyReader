@@ -83,17 +83,7 @@ class SimulationPageAnim(
         }
     }
 
-    override fun drawStatic(canvas: Canvas) {
-        if (isCancel) {
-            nextBitmap = curBitmap.copy(Bitmap.Config.RGB_565, true)
-            canvas.drawBitmap(curBitmap, 0f, 0f, null)
-        } else {
-            canvas.drawBitmap(nextBitmap, 0f, 0f, null)
-        }
-    }
-
-    override fun startAnim() {
-        super.startAnim()
+    override fun startAnimImp() {
         var dx: Int
         val dy: Int
         val direction =

@@ -212,7 +212,6 @@ class BookManager private constructor() : IBookManager {
                 val orgFilename = getFileNameFromUri(uri)
                 val newBookFile =
                     BookFile(
-                        md5,
                         outputFile.absolutePath,
                         orgFilename.substringBeforeLast("."),
                         orgFilename.substringAfterLast(".", "txt"),
@@ -221,7 +220,8 @@ class BookManager private constructor() : IBookManager {
                         0,
                         0,
                         null,
-                        BookFile.Status.NORMAL
+                        BookFile.Status.NORMAL,
+                        md5
                     )
                 if (BookShelfOpenHelper.instance.insertBookFile(newBookFile)) {
                     onFinish(newBookFile, uri)

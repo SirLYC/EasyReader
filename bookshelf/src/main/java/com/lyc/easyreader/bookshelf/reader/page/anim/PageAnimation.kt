@@ -8,6 +8,7 @@ import android.view.ViewConfiguration
 import android.view.animation.LinearInterpolator
 import android.widget.Scroller
 import com.lyc.easyreader.base.ReaderApplication
+import com.lyc.easyreader.base.utils.LogUtils
 import kotlin.math.abs
 
 /**
@@ -60,6 +61,8 @@ abstract class PageAnimation internal constructor(
     val bgBitmap: Bitmap
         get() = nextBitmap
 
+    private val slop = ViewConfiguration.get(ReaderApplication.appContext()).scaledTouchSlop
+
 
     //是否取消翻页
     @JvmField
@@ -100,11 +103,36 @@ abstract class PageAnimation internal constructor(
     /**
      * 开启翻页动画
      */
-    open fun startAnim() {
+    fun startAnim() {
         if (isRunning) {
             return
         }
         isRunning = true
+        startAnimImp()
+    }
+
+    open fun startAnimImp() {
+        val dx: Int
+        if (direction === Direction.NEXT) {
+            if (isCancel) {
+                var dis = (screenWidth - startX + touchX).toInt()
+                if (dis > screenWidth) {
+                    dis = screenWidth
+                }
+                dx = screenWidth - dis
+            } else {
+                dx = (-(touchX + (screenWidth - startX))).toInt()
+            }
+        } else {
+            dx = if (isCancel) {
+                (-abs(touchX - startX)).toInt()
+            } else {
+                (screenWidth - (touchX - startX)).toInt()
+            }
+        }
+        //滑动速度保持一致
+        val duration = 400 * abs(dx) / screenWidth
+        scroller.startScroll(touchX.toInt(), 0, dx, 0, duration)
     }
 
     fun clear() {
@@ -141,8 +169,7 @@ abstract class PageAnimation internal constructor(
                 abortAnim()
             }
             MotionEvent.ACTION_MOVE -> {
-                val slop = ViewConfiguration.get(ReaderApplication.appContext())
-                    .scaledTouchSlop
+
                 //判断是否移动了
                 if (!isMove) {
                     isMove = abs(startX - x) > slop || abs(startY - y) > slop
@@ -172,11 +199,17 @@ abstract class PageAnimation internal constructor(
                                 return
                             }
                         }
-                    } else { //判断是否取消翻页
-                        isCancel = if (isNext) {
-                            x - mMoveX > 0
-                        } else {
-                            x - mMoveX < 0
+                    } else {
+                        //判断是否取消翻页
+                        LogUtils.d("AAA", "x=$x, moveX=${mMoveX}")
+                        val dx = x - mMoveX
+                        // 当滑动到一定距离时，才可判定是否需要取消翻页
+                        if (abs(dx) > slop) {
+                            isCancel = if (isNext) {
+                                dx > 0
+                            } else {
+                                dx < 0
+                            }
                         }
                     }
                     mMoveX = x
@@ -211,6 +244,7 @@ abstract class PageAnimation internal constructor(
                 }
                 // 开启翻页效果
                 if (!noNext) {
+                    isRunning = false
                     startAnim()
                     view?.invalidate()
                 }
@@ -234,7 +268,13 @@ abstract class PageAnimation internal constructor(
         }
     }
 
-    abstract fun drawStatic(canvas: Canvas)
+    private fun drawStatic(canvas: Canvas) {
+        if (isCancel) {
+            canvas.drawBitmap(curBitmap, 0f, 0f, null)
+        } else {
+            canvas.drawBitmap(nextBitmap, 0f, 0f, null)
+        }
+    }
 
     abstract fun drawMove(canvas: Canvas)
 

@@ -17,13 +17,11 @@ object AnimFactory {
             return null
         }
         return when (animMode) {
-            PageAnimMode.COVER ->
-                CoverPageAnim(screenWidth, screenHeight, view, listener)
-            PageAnimMode.SLIDE ->
-                SlidePageAnim(screenWidth, screenHeight, view, listener)
-            PageAnimMode.NONE ->
-                NonePageAnim(screenWidth, screenHeight, view, listener)
+            PageAnimMode.COVER -> CoverPageAnim(screenWidth, screenHeight, view, listener)
+            PageAnimMode.SLIDE -> SlidePageAnim(screenWidth, screenHeight, view, listener)
+            PageAnimMode.NONE -> NonePageAnim(screenWidth, screenHeight, view, listener)
             PageAnimMode.SIMULATION -> SimulationPageAnim(screenWidth, screenHeight, view, listener)
+            PageAnimMode.CUBIC -> CubicPageAnim(screenWidth, screenHeight, view, listener)
         }
     }
 }

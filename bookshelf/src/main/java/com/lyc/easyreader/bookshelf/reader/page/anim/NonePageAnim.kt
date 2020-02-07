@@ -13,25 +13,11 @@ class NonePageAnim(
     listener: OnPageChangeListener
 ) : PageAnimation(w, h, view, listener) {
 
-    override fun drawStatic(canvas: Canvas) {
-        if (isCancel) {
-            canvas.drawBitmap(curBitmap, 0f, 0f, null)
-        } else {
-            bgBitmap.let {
-                canvas.drawBitmap(it, 0f, 0f, null)
-            }
-        }
-    }
-
     override fun drawMove(canvas: Canvas) {
         if (isCancel) {
             canvas.drawBitmap(curBitmap, 0f, 0f, null)
         } else {
-            bgBitmap.let {
-                canvas.drawBitmap(it, 0f, 0f, null)
-            }
+            canvas.drawBitmap(nextBitmap, 0f, 0f, null)
         }
     }
-
-    override fun startAnim() {}
 }
