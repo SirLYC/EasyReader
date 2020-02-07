@@ -384,6 +384,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             layout_panel.isVisible = false
         }
 
+        rootView.bt_default.setOnClickListener {
+            settings.applyDefaultSettings()
+        }
+
         // 第一行
         rootView.bt_screen_orientation.setOnClickListener {
             val screenOrientation = settings.screenOrientation.value
