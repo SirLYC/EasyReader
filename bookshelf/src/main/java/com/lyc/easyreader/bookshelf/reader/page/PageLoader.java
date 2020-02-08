@@ -36,13 +36,13 @@ public abstract class PageLoader implements Handler.Callback {
     public static final int TEXT_SIZE_MIN_VALUE_DP = 12;
     public static final int TEXT_SIZE_MAX_VALUE_DP = 32;
     // 当前页面的状态
-    protected static final int STATUS_LOADING = 1;         // 正在加载
-    protected static final int STATUS_FINISH = 2;          // 加载完成
-    protected static final int STATUS_ERROR = 3;           // 加载错误 (一般是网络加载情况)
-    protected static final int STATUS_EMPTY = 4;           // 空数据
-    protected static final int STATUS_PARING = 5;          // 正在解析 (装载本地数据)
-    protected static final int STATUS_PARSE_ERROR = 6;     // 本地文件解析错误(暂未被使用)
-    protected static final int STATUS_CATEGORY_EMPTY = 7;  // 获取到的目录为空
+    public static final int STATUS_LOADING = 1;         // 正在加载
+    public static final int STATUS_FINISH = 2;          // 加载完成
+    public static final int STATUS_ERROR = 3;           // 加载错误 (一般是网络加载情况)
+    public static final int STATUS_EMPTY = 4;           // 空数据
+    public static final int STATUS_PARING = 5;          // 正在解析 (装载本地数据)
+    public static final int STATUS_PARSE_ERROR = 6;     // 本地文件解析错误(暂未被使用)
+    public static final int STATUS_CATEGORY_EMPTY = 7;  // 获取到的目录为空
     private static final int MSG_RELOAD_PAGES = 1;
 
     private static final String TAG = "PageLoader";

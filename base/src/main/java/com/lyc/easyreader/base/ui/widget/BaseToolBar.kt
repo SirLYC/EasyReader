@@ -20,7 +20,7 @@ import com.lyc.easyreader.base.utils.*
 /**
  * Created by Liu Yuchuan on 2020/1/18.
  */
-open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean = true) :
+open class BaseToolBar(context: Context) :
     FrameLayout(context) {
     protected val titleTv = TextView(context)
     var leftButton: ImageView? = null
@@ -40,6 +40,23 @@ open class BaseToolBar(context: Context, private val paddingStatusBar: Boolean =
         val VIEW_ID_LEFT_BUTTON = generateNewViewId()
         val VIEW_ID_TITLE = generateNewViewId()
     }
+
+    var paddingStatusBar = true
+        set(value) {
+            if (value != field) {
+                field = value
+                if (paddingStatusBar) {
+                    setPadding(0, statusBarHeight(), 0, 0)
+                } else {
+                    setPadding(0, 0, 0, 0)
+                }
+                val lp = layoutParams
+                if (lp != null) {
+                    lp.height = getViewHeight()
+                    layoutParams = lp
+                }
+            }
+        }
 
     init {
         id = VIEW_ID_BAR

@@ -5,16 +5,26 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
+import android.graphics.Color
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
-import android.widget.FrameLayout
-import android.widget.SeekBar
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.Animation
+import android.view.animation.TranslateAnimation
+import android.widget.*
 import androidx.core.view.isVisible
+import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.ReaderApplication
@@ -22,6 +32,9 @@ import com.lyc.easyreader.base.app.NotchCompat
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.ReaderToast
+import com.lyc.easyreader.base.ui.getDrawableAttrRes
+import com.lyc.easyreader.base.ui.theme.color_primary_text
+import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.BuildConfig
 import com.lyc.easyreader.bookshelf.R
@@ -39,7 +52,7 @@ import kotlin.math.roundToInt
 /**
  * Created by Liu Yuchuan on 2020/1/30.
  */
-class ReaderActivity : BaseActivity(), PageView.TouchListener {
+class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListener {
     companion object {
         private const val KEY_BOOK_FILE = "KEY_BOOK_FILE"
 
@@ -62,9 +75,19 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE)
         private val BRIGHTNESS_URI = Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS)
         private val BRIGHTNESS_ADJ_URI = Settings.System.getUriFor("screen_auto_brightness_adj")
+
+        private const val SETTING_ANIM_TIME = 300L
+
+        private val VIEW_ID_SETTING_BLANK = generateNewViewId()
+        private val VIEW_ID_PRE_CHAP = generateNewViewId()
+        private val VIEW_ID_NEXT_CHAP = generateNewViewId()
+        private val VIEW_ID_BTN_CATEGORY = generateNewViewId()
+        private val VIEW_ID_BTN_NIGHT_MODE = generateNewViewId()
+        private val VIEW_ID_BTN_SETTINGS = generateNewViewId()
     }
 
     private lateinit var viewModel: ReaderViewModel
+    private lateinit var contentView: FrameLayout
     private var pageLoader: PageLoader? = null
     private var broadcastReceiver: BroadcastReceiver? = null
     private var contentObserver: ContentObserver? = null
@@ -72,6 +95,70 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
     // left -> top -> right -> bottom
     private val marginExtra = IntArray(4)
     private var isResume = false
+
+    private val bottomInAnim by lazy {
+        TranslateAnimation(
+            Animation.ABSOLUTE,
+            0f,
+            Animation.ABSOLUTE,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            1f,
+            Animation.RELATIVE_TO_SELF,
+            0f
+        ).apply {
+            duration = SETTING_ANIM_TIME
+            interpolator = AccelerateInterpolator()
+        }
+    }
+
+    private val bottomOutAnim by lazy {
+        TranslateAnimation(
+            Animation.ABSOLUTE,
+            0f,
+            Animation.ABSOLUTE,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            1f
+        ).apply {
+            duration = SETTING_ANIM_TIME
+            interpolator = AccelerateDecelerateInterpolator()
+        }
+    }
+
+    private val topInAnim by lazy {
+        TranslateAnimation(
+            Animation.ABSOLUTE,
+            0f,
+            Animation.ABSOLUTE,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            -1f,
+            Animation.RELATIVE_TO_SELF,
+            0f
+        ).apply {
+            duration = SETTING_ANIM_TIME
+            interpolator = AccelerateDecelerateInterpolator()
+        }
+    }
+
+    private val topOutAnim by lazy {
+        TranslateAnimation(
+            Animation.ABSOLUTE,
+            0f,
+            Animation.ABSOLUTE,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            -1f
+        ).apply {
+            duration = SETTING_ANIM_TIME
+            interpolator = AccelerateInterpolator()
+        }
+    }
 
     override fun beforeBaseOnCreate(savedInstanceState: Bundle?) {
         viewModel = provideViewModel()
@@ -98,10 +185,12 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             return
         }
 
+        contentView = FrameLayout(this)
+        rootView.addView(contentView)
 
         val page = PageView(this).apply {
             setTouchListener(this@ReaderActivity)
-            rootView.addView(this)
+            contentView.addView(this)
         }
         val loader = page.getPageLoader(viewModel.bookFile)
         pageLoader = loader
@@ -123,6 +212,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         contentObserver = BrightnessObserver()
 
         registerSettings()
+        initSettingView()
 
         if (BuildConfig.READER_TEST_MODE) {
             testControlPanel(rootView)
@@ -151,6 +241,163 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             }
             contentObserverRegistered = false
         }
+    }
+
+    private fun initSettingView() {
+        val settingContentView = LinearLayout(this)
+        settingContentView.orientation = LinearLayout.VERTICAL
+        contentView.addView(settingContentView)
+        val settingBlankView = View(this)
+        settingBlankView.setBackgroundColor(0x00000000)
+        settingContentView.addView(settingBlankView, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        settingBlankView.id = VIEW_ID_SETTING_BLANK
+        settingBlankView.setOnClickListener(this)
+
+        val bottomButtons = arrayOf(
+            Triple(VIEW_ID_BTN_CATEGORY, R.drawable.ic_format_list_bulleted_24dp, "目录"),
+            Triple(VIEW_ID_BTN_CATEGORY, R.drawable.ic_half_moon_24dp, "夜间"),
+            Triple(VIEW_ID_BTN_CATEGORY, R.drawable.ic_settings_24dp, "设置")
+        )
+
+        val bottomMenu = FrameLayout(this)
+        bottomMenu.isClickable = true
+        bottomMenu.isFocusable = true
+        bottomMenu.setBackgroundColor(Color.WHITE)
+        bottomMenu.setPadding(dp2px(16))
+        settingContentView.addView(
+            bottomMenu,
+            LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                gravity = Gravity.BOTTOM
+            })
+
+        val bottomMenuThemeColor = color_primary_text
+        val dp56 = dp2px(56)
+        val bottomButtonBar = LinearLayout(this)
+        bottomButtonBar.orientation = LinearLayout.HORIZONTAL
+        bottomMenu.addView(bottomButtonBar, FrameLayout.LayoutParams(MATCH_PARENT, dp56).apply {
+            gravity = Gravity.BOTTOM
+        })
+        bottomButtons.forEach { buttonInfo ->
+            val frameLayout = FrameLayout(this)
+            frameLayout.id = buttonInfo.first
+            bottomButtonBar.addView(frameLayout, LinearLayout.LayoutParams(0, MATCH_PARENT, 1f))
+            val tv = TextView(this)
+            tv.setTextColor(bottomMenuThemeColor)
+            tv.text = buttonInfo.third
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(12f))
+            tv.maxLines = 1
+            tv.setSingleLine()
+            tv.gravity = Gravity.CENTER or Gravity.BOTTOM
+            val textHeight = tv.paint.let {
+                val fontMetrics = it.fontMetrics
+                return@let fontMetrics.descent - fontMetrics.ascent
+            }.toInt() + dp2px(4)
+            frameLayout.addView(
+                tv,
+                FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, textHeight).apply {
+                    gravity = Gravity.BOTTOM
+                })
+            val iconIv = ImageView(this)
+            iconIv.scaleType = ImageView.ScaleType.CENTER_INSIDE
+            iconIv.setImageDrawable(getDrawable(buttonInfo.second)?.apply {
+                changeToColor(
+                    bottomMenuThemeColor
+                )
+            })
+            frameLayout.addView(
+                iconIv,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                ).apply {
+                    bottomMargin = textHeight
+                })
+        }
+
+        val chapterControlBar = LinearLayout(this)
+        chapterControlBar.orientation = LinearLayout.HORIZONTAL
+        chapterControlBar.gravity = Gravity.CENTER
+
+        bottomMenu.addView(
+            chapterControlBar,
+            FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+                bottomMargin = dp56 + dp2px(16)
+            })
+        bottomMenu.elevation = dp2pxf(4f)
+
+        val preChapterTv = TextView(this)
+        preChapterTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
+        preChapterTv.paint.isFakeBoldText = true
+        preChapterTv.setTextColor(bottomMenuThemeColor)
+        preChapterTv.background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
+        preChapterTv.text = "上一章"
+        preChapterTv.id = VIEW_ID_PRE_CHAP
+        preChapterTv.setOnClickListener(this)
+        preChapterTv.setPadding(dp2px(4))
+        chapterControlBar.addView(
+            preChapterTv,
+            LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+        )
+
+        val seekBar = SeekBar(this)
+        seekBar.isClickable = true
+        seekBar.isFocusable = true
+        chapterControlBar.addView(
+            seekBar,
+            LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
+                leftMargin = dp2px(8)
+                rightMargin = dp2px(8)
+            }
+        )
+
+
+        val nextChapterTv = TextView(this)
+        nextChapterTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
+        nextChapterTv.paint.isFakeBoldText = true
+        nextChapterTv.setTextColor(bottomMenuThemeColor)
+        nextChapterTv.background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
+        nextChapterTv.text = "下一章"
+        nextChapterTv.id = VIEW_ID_NEXT_CHAP
+        nextChapterTv.setOnClickListener(this)
+        nextChapterTv.setPadding(dp2px(4))
+        chapterControlBar.addView(
+            nextChapterTv,
+            LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+        )
+
+        val topBar = BaseToolBar(this)
+        topBar.setBarClickListener(this)
+        topBar.setTitle("")
+        settingContentView.addView(
+            topBar,
+            0,
+            LinearLayout.LayoutParams(MATCH_PARENT, topBar.getViewHeight())
+        )
+
+        viewModel.showMenu.observeEvent(this, Observer {
+            topBar.paddingStatusBar = marginExtra[1] > 0
+            if (it) {
+                topBar.startAnimation(topInAnim)
+                bottomMenu.startAnimation(bottomInAnim)
+            } else {
+                topBar.startAnimation(topOutAnim)
+                bottomMenu.startAnimation(bottomOutAnim)
+            }
+        })
+
+        viewModel.showMenu.observeState(this, Observer {
+            applyStatusBarColorChange()
+            topBar.isVisible = it
+            topBar.paddingStatusBar = marginExtra[1] > 0
+            bottomMenu.isVisible = it
+            settingBlankView.isVisible = it
+        })
+    }
+
+    private fun initChapterView() {
+        val chapterView = FrameLayout(this)
+        chapterView.isVisible = false
+        contentView.addView(chapterView)
     }
 
     private fun registerSettings() {
@@ -217,6 +464,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         applyKeepScreenOnChange()
         super.onResume()
         applyFullscreen(ReaderSettings.instance.fullscreen.value)
+        applyStatusBarColorChange()
     }
 
     override fun onPause() {
@@ -231,6 +479,20 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+    }
+
+    private fun applyStatusBarColorChange() {
+        val settings = ReaderSettings.instance
+        if (settings.fullscreen.value) {
+            return
+        }
+
+        if (viewModel.showMenu.state) {
+            window.statusBarBlackText(true)
+            return
+        }
+
+        window.statusBarBlackText(false)
     }
 
     private fun applyFullscreen(fullscreen: Boolean) {
@@ -325,7 +587,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
     }
 
     override fun center() {
-
+        viewModel.showMenu.state = true
     }
 
     override fun cancel() {
@@ -536,5 +798,25 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener {
             rootView.sb_para_space.progress = (it * 100 / 3.0f).roundToInt()
         })
 
+    }
+
+    override fun onClick(v: View?) {
+        when (v?.id) {
+            VIEW_ID_SETTING_BLANK -> {
+                viewModel.showMenu.state = false
+            }
+
+            VIEW_ID_NEXT_CHAP -> {
+                pageLoader?.skipNextChapter()
+            }
+
+            VIEW_ID_PRE_CHAP -> {
+                pageLoader?.skipPreChapter()
+            }
+
+            BaseToolBar.VIEW_ID_LEFT_BUTTON -> {
+                onBackPressed()
+            }
+        }
     }
 }

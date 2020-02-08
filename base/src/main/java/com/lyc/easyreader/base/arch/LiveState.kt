@@ -10,8 +10,8 @@ import androidx.lifecycle.Observer
  */
 class LiveState<T>(initValue: T) {
     private val liveState = NonNullLiveData(initValue)
-    private val liveEvent = SingleLiveEvent<T>().also { liveEvent ->
-        liveState.observeForever { liveEvent.value = it }
+    private val liveEvent = SingleLiveEvent<T>().apply {
+        observeForever { liveState.value = it }
     }
 
     var state: T
@@ -19,7 +19,7 @@ class LiveState<T>(initValue: T) {
         get() = liveState.value!!
         @MainThread
         set(value) {
-            liveState.value = value
+            liveEvent.value = value
         }
 
     @AnyThread
@@ -32,7 +32,7 @@ class LiveState<T>(initValue: T) {
     }
 
     fun observeState(owner: LifecycleOwner, observer: Observer<in T>) {
-        liveEvent.observe(owner, observer)
+        liveState.observe(owner, observer)
     }
 
     fun observeEventForever(observer: Observer<in T>) {
@@ -40,6 +40,6 @@ class LiveState<T>(initValue: T) {
     }
 
     fun observeStateForever(observer: Observer<in T>) {
-        liveEvent.observeForever(observer)
+        liveState.observeForever(observer)
     }
 }

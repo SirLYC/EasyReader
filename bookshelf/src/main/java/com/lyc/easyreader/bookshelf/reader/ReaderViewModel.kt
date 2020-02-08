@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookFile
+import com.lyc.easyreader.base.arch.LiveState
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.utils.rv.ObservableList
@@ -24,12 +25,13 @@ class ReaderViewModel : ViewModel() {
     private val handler = Handler(Looper.getMainLooper())
 
     @Volatile
-    var alive = false
+    var alive = true
 
     var bookFile: BookFile? = null
         private set
     val bookChapterList = ObservableList<BookChapter>(arrayListOf())
     val loadingChapterListLiveData = NonNullLiveData(true)
+    val showMenu = LiveState(false)
 
     fun init(bookFile: BookFile) {
         this.bookFile = bookFile
@@ -54,6 +56,9 @@ class ReaderViewModel : ViewModel() {
                     chapterList = result.list
                 }
                 handler.post {
+                    if (!alive) {
+                        return@post
+                    }
                     bookChapterList.addAll(chapterList!!)
                     loadingChapterListLiveData.value = false
                 }
@@ -72,6 +77,7 @@ class ReaderViewModel : ViewModel() {
 
     override fun onCleared() {
         alive = false
+        handler.removeCallbacksAndMessages(null)
         super.onCleared()
     }
 }
