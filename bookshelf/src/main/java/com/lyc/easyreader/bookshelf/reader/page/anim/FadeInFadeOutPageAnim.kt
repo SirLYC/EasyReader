@@ -15,6 +15,7 @@ class FadeInFadeOutPageAnim(
     view: View?,
     listener: OnPageChangeListener?
 ) : PageAnimation(w, h, view, listener!!) {
+    override val needDrawBgColorWhenRunning = true
     private val curSrcRect: Rect = Rect(0, 0, viewWidth, viewHeight)
     private val curDestRect: Rect = Rect(0, 0, viewWidth, viewHeight)
     private val nextSrcRect: Rect = Rect(0, 0, viewWidth, viewHeight)

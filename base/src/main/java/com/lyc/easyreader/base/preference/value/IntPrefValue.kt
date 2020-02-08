@@ -20,4 +20,12 @@ class IntPrefValue(
         k,
         v
     )
-}, validator, null)
+}, validator, null) {
+    fun inc() {
+        value++
+    }
+
+    fun dec() {
+        value--
+    }
+}

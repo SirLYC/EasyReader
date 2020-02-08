@@ -82,6 +82,8 @@ class ReaderSettings private constructor() : ISettings {
             preference,
             validator = { it.coerceIn(0f, 3f) }).also { settingItems.add(it) }
 
+    val pageStyle = PageStylePrefValue("page_style", preference)
+
     override fun applyDefaultSettings() {
         settingItems.forEach {
             it.applyDefaultValue()

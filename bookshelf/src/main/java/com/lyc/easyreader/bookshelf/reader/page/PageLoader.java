@@ -103,7 +103,7 @@ public abstract class PageLoader implements Handler.Callback {
     // 页面的翻页效果模式
     private PageAnimMode pageMode = PageAnimMode.SIMULATION;
     // 加载器的颜色主题
-    private PageStyle pageStyle = PageStyle.BG_0;
+    private PageStyle pageStyle = PageStyle.BG_1;
     // 当前是否是夜间模式
     private boolean isNightMode;
     // 书籍绘制区域的宽高
@@ -229,13 +229,12 @@ public abstract class PageLoader implements Handler.Callback {
         mPageView.setBgColor(mBgColor);
     }
 
-    public void setChapterListIfEmpty(List<BookChapter> chapterList) {
-        if (mChapterList.isEmpty()) {
-            mChapterList.addAll(chapterList);
-            if (!mChapterList.isEmpty()) {
-                isChapterListPrepare = true;
-                openChapter();
-            }
+    public void setChapterList(List<BookChapter> chapterList) {
+        mChapterList.clear();
+        mChapterList.addAll(chapterList);
+        if (!mChapterList.isEmpty()) {
+            isChapterListPrepare = true;
+            openChapter();
         }
     }
 
@@ -315,6 +314,10 @@ public abstract class PageLoader implements Handler.Callback {
      */
     public boolean skipToNextPage() {
         return mPageView.autoNextPage();
+    }
+
+    public int getBgColor() {
+        return mBgColor;
     }
 
     /**
@@ -631,7 +634,7 @@ public abstract class PageLoader implements Handler.Callback {
     /**
      * 打开指定章节
      */
-    public void openChapter() {
+    private void openChapter() {
         isFirstOpen = false;
 
         if (!mPageView.isPrepare()) {

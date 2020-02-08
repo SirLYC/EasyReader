@@ -160,8 +160,10 @@ public class PageView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
 
-        //绘制背景
-        canvas.drawColor(mBgColor);
+        if (pageAnim != null && pageAnim.isRunning && pageAnim.getNeedDrawBgColorWhenRunning()) {
+            int bgColor = mPageLoader == null ? mBgColor : mPageLoader.getBgColor();
+            canvas.drawColor(bgColor);
+        }
 
         //绘制动画
         pageAnim.draw(canvas);

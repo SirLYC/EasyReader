@@ -6,5 +6,6 @@
         <item name="colorPrimaryDark">@color/colorOrange</item>
         <item name="colorAccent">@color/colorLightBlue</item>
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:overScrollMode">never</item>
     </style>
 </resources>

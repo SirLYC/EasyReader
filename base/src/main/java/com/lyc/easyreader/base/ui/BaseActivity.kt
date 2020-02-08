@@ -81,7 +81,6 @@ abstract class BaseActivity : AppCompatActivity() {
         if (BuildConfig.FORCE_PORTRAIT) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
-        NightModeManager.nightMode.observe(this, Observer { onNightModeChange(it) })
         window.let { window ->
             val visibility = window.decorView.systemUiVisibility
             NotchTools.getFullScreenTools().fullScreenUseStatus(this)
@@ -104,8 +103,8 @@ abstract class BaseActivity : AppCompatActivity() {
         rootView.setBackgroundColor(color_bg)
         afterBaseOnCreate(savedInstanceState, rootView)
         createRootView = true
-        onNightModeChange(NightModeManager.nightModeEnable)
         setContentView(rootView)
+        NightModeManager.nightMode.observe(this, Observer { onNightModeChange(it) })
     }
 
     @CallSuper

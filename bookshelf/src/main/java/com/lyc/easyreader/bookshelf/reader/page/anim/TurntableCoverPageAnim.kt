@@ -24,6 +24,7 @@ class TurntableCoverPageAnim(
         val INIT_ROTATE_DEGREE = Math.toDegrees(INIT_ROTATE)
     }
 
+    override val needDrawBgColorWhenRunning = true
     // 三角形全等
     private val rotateX = screenWidth / 2f
     // 直角三角形，x/2对角是INIT_ROTATE / 2

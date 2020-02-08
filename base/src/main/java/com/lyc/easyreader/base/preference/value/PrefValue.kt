@@ -10,7 +10,7 @@ import com.lyc.easyreader.base.preference.IPreference
  */
 abstract class PrefValue<T>(
     private val key: String,
-    private val defaultValue: T,
+    val defaultValue: T,
     private val preference: IPreference,
     initValue: (key: String, defaultValue: T) -> T,
     persist: (key: String, value: T) -> Unit,

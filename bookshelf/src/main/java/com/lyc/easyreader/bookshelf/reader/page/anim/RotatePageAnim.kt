@@ -18,6 +18,8 @@ class RotatePageAnim(
     view: View?,
     listener: OnPageChangeListener
 ) : PageAnimation(screenWidth, screenHeight, view, listener) {
+
+    override val needDrawBgColorWhenRunning = true
     private val camera = Camera()
     private val matrix = Matrix()
     private val bitmapPaint = Paint()

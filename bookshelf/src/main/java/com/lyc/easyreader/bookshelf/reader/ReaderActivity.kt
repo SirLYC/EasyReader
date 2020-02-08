@@ -45,6 +45,7 @@ import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageView
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
+import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettingsDialog
 import com.lyc.easyreader.bookshelf.reader.settings.ScreenOrientation
 import kotlinx.android.synthetic.main.layout_reader_test_panel.*
 import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
@@ -201,9 +202,9 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         pageLoader = loader
         viewModel.loadingChapterListLiveData.observe(this, Observer { loading ->
             if (!loading) {
-                loader.setChapterListIfEmpty(viewModel.bookChapterList)
-                loader.skipToChapter(viewModel.currentChapter.value)
-                loader.skipToPage(viewModel.currentPage.value)
+                loader.setChapterList(viewModel.bookChapterList)
+//                loader.skipToChapter(viewModel.currentChapter.value)
+//                loader.skipToPage(viewModel.currentPage.value)
             }
         })
 
@@ -525,6 +526,11 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             pageLoader?.paraSpaceFactor = it
         })
 
+        settings.pageStyle.observe(this, Observer {
+            pageLoader?.setPageStyle(it)
+            applyStatusBarColorChange()
+        })
+
         NightModeManager.nightMode.observe(this, Observer {
             pageLoader?.setNightMode(it)
         })
@@ -563,7 +569,11 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             return
         }
 
-        window.statusBarBlackText(false)
+        if (NightModeManager.nightModeEnable) {
+            window.statusBarBlackText(false)
+        } else {
+            window.statusBarBlackText(settings.pageStyle.value.statusBarBlack)
+        }
     }
 
     private fun applyFullscreen(fullscreen: Boolean) {
@@ -891,6 +901,11 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
             VIEW_ID_BTN_NIGHT_MODE -> {
                 NightModeManager.nightMode.flip()
+            }
+
+            VIEW_ID_BTN_SETTINGS -> {
+                viewModel.showMenu.state = false
+                ReaderSettingsDialog().show(supportFragmentManager)
             }
         }
     }

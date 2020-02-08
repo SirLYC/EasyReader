@@ -59,6 +59,7 @@ abstract class PageAnimation internal constructor(
         protected set
     val bgBitmap: Bitmap
         get() = nextBitmap
+    open val needDrawBgColorWhenRunning = false
 
     private val slop = ViewConfiguration.get(ReaderApplication.appContext()).scaledTouchSlop
 

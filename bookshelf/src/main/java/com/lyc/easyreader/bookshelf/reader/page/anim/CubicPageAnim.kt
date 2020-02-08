@@ -16,6 +16,7 @@ class CubicPageAnim(
     listener: OnPageChangeListener
 ) : PageAnimation(screenWidth, screenHeight, view, listener) {
 
+    override val needDrawBgColorWhenRunning = true
     private val camera = Camera()
     private val matrix = Matrix()
 

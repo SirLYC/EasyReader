@@ -22,6 +22,7 @@ class FadeOutCoverPageAnim(
         private const val MIN_SCALE = 0.7f
     }
 
+    override val needDrawBgColorWhenRunning = true
     private val nextSrcRect: Rect = Rect(0, 0, viewWidth, viewHeight)
     private val nextDestRect: Rect = Rect(0, 0, viewWidth, viewHeight)
     private val alphaPaint = Paint()

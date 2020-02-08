@@ -11,4 +11,9 @@
         <item name="android:textColor">#ff808080</item>
         <item name="android:itemBackground">@drawable/bg_popup_menu_item_night</item>
     </style>
+
+    <style name="BottomDialogAnim" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/slide_bottom_in</item>
+        <item name="android:windowExitAnimation">@anim/slide_bottom_out</item>
+    </style>
 </resources>
