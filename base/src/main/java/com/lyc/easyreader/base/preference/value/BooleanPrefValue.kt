@@ -14,4 +14,8 @@ class BooleanPrefValue(
         k,
         defVal
     )
-}, { k, v -> preference.putBoolean(k, v) }, null, null)
+}, { k, v -> preference.putBoolean(k, v) }, null, null) {
+    fun flip() {
+        this.value = !this.value
+    }
+}

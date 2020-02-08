@@ -12,6 +12,7 @@ import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.Observer
 import com.lyc.easyreader.base.BuildConfig
 import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.NightModeManager.NIGHT_MODE_MASK_COLOR
@@ -21,7 +22,7 @@ import com.lyc.easyreader.base.utils.notch.NotchTools
 /**
  * Created by Liu Yuchuan on 2020/1/8.
  */
-abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeChangeListener {
+abstract class BaseActivity : AppCompatActivity() {
 
     companion object {
         private const val KEY_CONFIG_CHANGE = "KEY_CONFIG_CHANGE"
@@ -33,7 +34,7 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
     var isCreateFromConfigChange: Boolean = false
         private set
 
-    override fun onNightModeChange(enable: Boolean) {
+    private fun onNightModeChange(enable: Boolean) {
         if (!createRootView) {
             return
         }
@@ -44,6 +45,7 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
             val maskView = this.maskView ?: View(this).apply {
                 setBackgroundColor(NIGHT_MODE_MASK_COLOR)
                 (window.decorView as? ViewGroup)?.addView(this)
+                this@BaseActivity.maskView = this
             }
             maskView.bringToFront()
             maskView.isVisible = true
@@ -79,7 +81,7 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         if (BuildConfig.FORCE_PORTRAIT) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
-        NightModeManager.addNightModeChangeListener(this)
+        NightModeManager.nightMode.observe(this, Observer { onNightModeChange(it) })
         window.let { window ->
             val visibility = window.decorView.systemUiVisibility
             NotchTools.getFullScreenTools().fullScreenUseStatus(this)
@@ -215,8 +217,4 @@ abstract class BaseActivity : AppCompatActivity(), NightModeManager.INightModeCh
         return false
     }
 
-    override fun onDestroy() {
-        NightModeManager.removeNightModeChangeListener(this)
-        super.onDestroy()
-    }
 }

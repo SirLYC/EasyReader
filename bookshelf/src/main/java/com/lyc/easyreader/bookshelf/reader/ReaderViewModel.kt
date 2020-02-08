@@ -32,6 +32,9 @@ class ReaderViewModel : ViewModel() {
     val bookChapterList = ObservableList<BookChapter>(arrayListOf())
     val loadingChapterListLiveData = NonNullLiveData(true)
     val showMenu = LiveState(false)
+    val pageCount = NonNullLiveData(0)
+    val currentPage = NonNullLiveData(0)
+    val currentChapter = NonNullLiveData(0)
 
     fun init(bookFile: BookFile) {
         this.bookFile = bookFile

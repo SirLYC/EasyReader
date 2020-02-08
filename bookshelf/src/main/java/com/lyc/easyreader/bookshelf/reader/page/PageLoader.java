@@ -512,7 +512,6 @@ public abstract class PageLoader implements Handler.Callback {
     public void setPageStyle(PageStyle pageStyle) {
         if (pageStyle != PageStyle.NIGHT) {
             this.pageStyle = pageStyle;
-//            mSettingManager.setPageStyle(pageStyle);
         }
 
         if (isNightMode && pageStyle != PageStyle.NIGHT) {

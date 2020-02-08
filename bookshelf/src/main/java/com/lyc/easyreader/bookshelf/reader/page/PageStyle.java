@@ -12,7 +12,7 @@ public enum PageStyle {
     BG_2(0XFF92918C, 0XFFAAAAAA),
     BG_3(0XFF383429, 0XFFD1CEC5),
     BG_4(0XFF627176, 0XFF001C27),
-    NIGHT(0X99FFFFFF, 0XFF000000);
+    NIGHT(0XFFFFFFFF, 0XFF000000);
 
     private int fontColor;
     private int bgColor;
