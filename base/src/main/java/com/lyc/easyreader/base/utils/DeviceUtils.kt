@@ -47,14 +47,16 @@ fun isAutoBrightness(): Boolean {
 }
 
 fun setBrightness(activity: Activity, brightness: Int) {
-    try {
-        val lp = activity.window.attributes
-        //将 0~255 范围内的数据，转换为 0~1
-        lp.screenBrightness = brightness.toFloat() * (1f / 255f)
-        activity.window.attributes = lp
-    } catch (ex: Exception) {
-        ex.printStackTrace()
-    }
+    doOnMainThread(Runnable {
+        try {
+            val lp = activity.window.attributes
+            //将 0~255 范围内的数据，转换为 0~1
+            lp.screenBrightness = brightness.toFloat() * (1f / 255f)
+            activity.window.attributes = lp
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+    })
 }
 
 fun getScreenBrightness(): Int {

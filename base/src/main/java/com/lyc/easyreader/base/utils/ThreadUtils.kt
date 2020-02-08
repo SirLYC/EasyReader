@@ -23,6 +23,14 @@ fun waitFinishOnMain(runnable: Runnable) {
     }
 }
 
+fun doOnMainThread(runnable: Runnable) {
+    if (Looper.getMainLooper() == Looper.myLooper()) {
+        runnable.run()
+    } else {
+        ExecutorFactory.MAIN_EXECUTOR.execute(runnable)
+    }
+}
+
 
 fun checkMainThread() {
     if (Looper.getMainLooper() != Looper.myLooper()) {

@@ -21,7 +21,7 @@ public class LocalPageLoader extends PageLoader {
 
     public LocalPageLoader(PageView pageView, BookFile collBook) {
         super(pageView, collBook);
-        mStatus = STATUS_PARING;
+        status = STATUS_PARING;
     }
 
     @Override

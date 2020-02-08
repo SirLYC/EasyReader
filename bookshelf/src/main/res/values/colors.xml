@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="reader_bg_1">#F1E5C9</color>
-    <color name="reader_bg_2">#CCE8CF</color>
+    <color name="reader_bg_2">#FFE6E7</color>
     <color name="reader_bg_3">#333E50</color>
     <color name="reader_bg_4">#2B2B2B</color>
     <color name="reader_bg_5">#FFFFFF</color>
     <color name="reader_bg_6">#1E1E1E</color>
+    <color name="reader_bg_7">#F6DfB3</color>
+    <color name="reader_bg_8">#CCE8CF</color>
+    <color name="reader_bg_9">#574136</color>
 
     <color name="reader_font_1">#0E1A36</color>
-    <color name="reader_font_2">#242424</color>
+    <color name="reader_font_2">#811634</color>
     <color name="reader_font_3">#BDC0C5</color>
     <color name="reader_font_4">#A9B7C6</color>
     <color name="reader_font_5">#000000</color>
     <color name="reader_font_6">#9FC6D4</color>
+    <color name="reader_font_7">#5F442F</color>
+    <color name="reader_font_8">#242424</color>
+    <color name="reader_font_9">#D8A68D</color>
 </resources>

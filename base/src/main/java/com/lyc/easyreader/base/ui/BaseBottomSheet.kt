@@ -18,9 +18,9 @@ abstract class BaseBottomSheet : BaseDialogFragment() {
     override fun changeWindowAndDialogAttr(dialog: Dialog, window: Window) {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         window.decorView.setPadding(0)
-        window.setDimAmount(0.5f)
         window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND or WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         val attributes = window.attributes
         attributes.width = MATCH_PARENT
         attributes.height = WRAP_CONTENT

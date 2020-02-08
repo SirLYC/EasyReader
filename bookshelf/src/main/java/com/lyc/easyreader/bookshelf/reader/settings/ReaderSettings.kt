@@ -29,6 +29,8 @@ class ReaderSettings private constructor() : ISettings {
 
     val fullscreen = BooleanPrefValue("fullscreen", true, preference).also { settingItems.add(it) }
 
+    val fontBold = BooleanPrefValue("font_bold", false, preference)
+
     val fontSizeInDp = IntPrefValue(
         "font_size_in_dp",
         16,

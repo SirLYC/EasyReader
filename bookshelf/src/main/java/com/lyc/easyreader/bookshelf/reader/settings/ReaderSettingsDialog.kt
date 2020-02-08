@@ -36,8 +36,9 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
         private val ROW_HEIGHT = dp2px(48)
 
         private val VIEW_ID_FOLLOW_SYSTEM = generateNewViewId()
-        private val VIEW_ID_FONT_INCREASE = generateNewViewId()
+        private val VIEW_ID_BOLD = generateNewViewId()
         private val VIEW_ID_FONT_DECREASE = generateNewViewId()
+        private val VIEW_ID_FONT_INCREASE = generateNewViewId()
         private val VIEW_ID_FONT_DEFAULT = generateNewViewId()
         private val VIEW_ID_USER_PAGE_STYLE = generateNewViewId()
         private val VIEW_ID_MORE_SETTING = generateNewViewId()
@@ -137,10 +138,7 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             settings.userBrightness.observe(this@ReaderSettingsDialog, Observer {
                 progress = it
             })
-        }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
-            leftMargin = dp2px(16)
-            rightMargin = dp2px(16)
-        })
+        }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
 
         addView(ImageView(context).apply {
             scaleType = ImageView.ScaleType.CENTER_INSIDE
@@ -166,9 +164,22 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
     // 第二行 字体
     private fun LinearLayout.initRow2View() {
         val settings = ReaderSettings.instance
+
+        addView(
+            buildTextButton(VIEW_ID_BOLD).apply {
+                text = ("粗体")
+                ReaderSettings.instance.fontBold.observe(this@ReaderSettingsDialog, Observer {
+                    selectState = it
+                })
+            },
+            LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+        )
+
         addView(
             buildTextButton(VIEW_ID_FONT_DECREASE).apply { text = ("Aa-") },
-            LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+            LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
+                leftMargin = dp2px(16)
+            }
         )
         addView(TextView(context).apply {
             setTextColor(contentColor)
@@ -315,11 +326,14 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             VIEW_ID_FOLLOW_SYSTEM -> {
                 settings.brightnessFollowSystem.flip()
             }
-            VIEW_ID_FONT_INCREASE -> {
-                settings.fontSizeInDp.inc()
+            VIEW_ID_BOLD -> {
+                settings.fontBold.flip()
             }
             VIEW_ID_FONT_DECREASE -> {
                 settings.fontSizeInDp.dec()
+            }
+            VIEW_ID_FONT_INCREASE -> {
+                settings.fontSizeInDp.inc()
             }
             VIEW_ID_FONT_DEFAULT -> {
                 settings.fontSizeInDp.applyDefaultValue()

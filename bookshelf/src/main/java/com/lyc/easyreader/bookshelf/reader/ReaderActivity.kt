@@ -531,6 +531,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             applyStatusBarColorChange()
         })
 
+        settings.fontBold.observe(this, Observer {
+            pageLoader?.isFontBold = it
+        })
+
         NightModeManager.nightMode.observe(this, Observer {
             pageLoader?.setNightMode(it)
         })
@@ -683,7 +687,17 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             when (intent?.action) {
                 Intent.ACTION_BATTERY_CHANGED -> {
                     val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
-                    pageLoader?.updateBattery(level)
+                    val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+                    val isCharging =
+                        status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+                    LogUtils.d(
+                        TAG,
+                        "ACTION_BATTERY_CHANGED: level=$level, status=${status}, isCharging=${isCharging}"
+                    )
+                    pageLoader?.updateBattery(
+                        level,
+                        isCharging
+                    )
                 }
 
                 Intent.ACTION_TIME_TICK -> {
