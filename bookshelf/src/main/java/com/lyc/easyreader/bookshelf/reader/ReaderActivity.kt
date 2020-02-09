@@ -199,13 +199,20 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         }
         val loader = page.getPageLoader(viewModel.bookFile)
         loader.setOnPageChangeListener(this)
+        viewModel.bookFileLiveData.observe(this, Observer {
+            loader.bookFile?.set(it)
+        })
         pageLoader = loader
         viewModel.loadingChapterListLiveData.observe(this, Observer { loading ->
             if (!loading) {
+                loader.skipToChapter(viewModel.currentChapter.value)
+                loader.skipToPage(viewModel.currentPage.value)
                 loader.setChapterList(viewModel.bookChapterList)
-//                loader.skipToChapter(viewModel.currentChapter.value)
-//                loader.skipToPage(viewModel.currentPage.value)
             }
+        })
+
+        viewModel.changeChapterCall.observe(this, Observer {
+            loader.skipToChapter(it)
         })
 
 
@@ -462,12 +469,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         })
     }
 
-    private fun initChapterView() {
-        val chapterView = FrameLayout(this)
-        chapterView.isVisible = false
-        contentView.addView(chapterView)
-    }
-
     private fun registerSettings() {
         val settings = ReaderSettings.instance
         settings.screenOrientation.observe(this, Observer {
@@ -587,6 +588,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             exitFullscreen()
         }
         autoFitPageViewMargin(fullscreen)
+        applyStatusBarColorChange()
     }
 
     private fun autoFitPageViewMargin(fullscreen: Boolean) {
@@ -921,11 +923,18 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 viewModel.showMenu.state = false
                 ReaderSettingsDialog().show(supportFragmentManager)
             }
+
+            VIEW_ID_BTN_CATEGORY -> {
+                viewModel.showMenu.state = false
+                ChapterDialog().show(supportFragmentManager)
+            }
         }
     }
 
     override fun onPageChange(pos: Int) {
         viewModel.currentPage.value = pos
+        val chapterPos = pageLoader?.chapterPos ?: -1
+        viewModel.updateRecord(chapterPos, pos)
     }
 
     override fun requestChapters(requestChapters: MutableList<BookChapter>?) {
@@ -937,9 +946,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
     override fun onChapterChange(pos: Int) {
         viewModel.currentChapter.value = pos
+        val pagePos = pageLoader?.pagePos ?: -1
+        viewModel.updateRecord(pos, pagePos)
     }
 
     override fun onPageCountChange(count: Int) {
         viewModel.pageCount.value = count
+        val chapterPos = pageLoader?.chapterPos ?: -1
+        val pagePos = pageLoader?.pagePos ?: -1
+        viewModel.updateRecord(chapterPos, pagePos)
     }
 }

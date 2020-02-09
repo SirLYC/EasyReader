@@ -219,9 +219,12 @@ class BookManager private constructor() : IBookManager {
                         0,
                         0,
                         0,
+                        0,
+                        0,
                         null,
                         BookFile.Status.NORMAL,
-                        md5
+                        md5,
+                        null
                     )
                 if (BookShelfOpenHelper.instance.insertBookFile(newBookFile)) {
                     onFinish(newBookFile, uri)

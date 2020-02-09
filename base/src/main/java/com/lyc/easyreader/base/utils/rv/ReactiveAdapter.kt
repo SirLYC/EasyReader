@@ -118,13 +118,15 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
         if (position < 0 || position >= list.size) {
             return
         }
-        val data = list[position]
+        val data = getDataAt(position)
         onBindViewHolder(holder, position, getItemViewType(position), data, payloads)
     }
 
     final override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         throw RuntimeException("Use onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) !")
     }
+
+    protected open fun getDataAt(position: Int): Any = list[position]
 
     class ViewHolder(itemVIew: View) : RecyclerView.ViewHolder(itemVIew)
 }

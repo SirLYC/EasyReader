@@ -21,7 +21,7 @@ class SimpleToolbar(context: Context, @DrawableRes private val leftIconRes: Int)
         val VIEW_ID_RIGHT_BUTTON = generateNewViewId()
     }
 
-    private val rightButton: ImageView = ImageView(context)
+    val rightButton: ImageView = ImageView(context)
 
     init {
         rightButton.run {

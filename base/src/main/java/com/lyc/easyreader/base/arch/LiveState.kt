@@ -11,7 +11,7 @@ import androidx.lifecycle.Observer
 class LiveState<T>(initValue: T) {
     private val liveState = NonNullLiveData(initValue)
     private val liveEvent = SingleLiveEvent<T>().apply {
-        observeForever { liveState.value = it }
+        liveState.observeForever { value = it }
     }
 
     var state: T
@@ -19,7 +19,7 @@ class LiveState<T>(initValue: T) {
         get() = liveState.value!!
         @MainThread
         set(value) {
-            liveEvent.value = value
+            liveState.value = value
         }
 
     @AnyThread

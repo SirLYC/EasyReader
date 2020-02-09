@@ -2,6 +2,7 @@ package com.lyc.easyreader.bookshelf.db
 
 import android.database.sqlite.SQLiteConstraintException
 import android.util.Log
+import com.lyc.common.EventHubFactory
 import com.lyc.common.thread.SingleThreadRunner
 import com.lyc.easyreader.api.book.*
 import com.lyc.easyreader.base.ReaderApplication
@@ -23,6 +24,52 @@ class BookShelfOpenHelper private constructor() :
     private val daoSession by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { daoMaster.newSession() }
 
     private val dbRunner = SingleThreadRunner("BookShelf-DB")
+
+    private val bookFileRecordListenerHub =
+        EventHubFactory.createDefault<IBookFileRecordListener>(true)
+
+    interface IBookFileRecordListener {
+        fun onBookFileRecordUpdate(bookFile: BookFile)
+    }
+
+    fun addBookFileRecordListener(listener: IBookFileRecordListener) {
+        bookFileRecordListenerHub.addEventListener(listener)
+    }
+
+    fun removeBookFileRecordListener(listener: IBookFileRecordListener) {
+        bookFileRecordListenerHub.removeEventListener(listener)
+    }
+
+    fun asyncSaveUpdateBookAccess(bookFile: BookFile) {
+        bookFile.lastAccessTime = System.currentTimeMillis()
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookFileDao.insertOrReplace(bookFile)
+        })
+    }
+
+
+    fun asyncSaveUpdateBookRecord(bookFile: BookFile, chapter: Int, page: Int, desc: String) {
+        if (bookFile.lastChapter == chapter && bookFile.lastPageInChapter == page) {
+            return
+        }
+        bookFile.lastChapter = chapter
+        bookFile.lastPageInChapter = page
+        bookFile.lastChapterDesc = desc
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookFileDao.insertOrReplace(bookFile)
+            bookFileRecordListenerHub.getEventListeners().forEach {
+                it.onBookFileRecordUpdate(bookFile)
+            }
+        })
+    }
+
+    fun reloadBookFile(bookFile: BookFile): BookFile? {
+        if (bookFile.id == null) {
+            return null
+        }
+
+        return daoSession.bookFileDao.load(bookFile.id)
+    }
 
     /**
      * @return false表示id重复

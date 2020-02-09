@@ -21,6 +21,11 @@ import kotlin.math.roundToInt
  */
 private const val TAG = "DeviceUtils"
 
+fun deviceWidth() = ReaderApplication.appContext().resources.displayMetrics.widthPixels
+
+
+fun deviceHeight() = ReaderApplication.appContext().resources.displayMetrics.heightPixels
+
 fun vibrate(millis: Long) {
     (ReaderApplication.appContext().getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.run {
         if (Build.VERSION.SDK_INT < 26) {

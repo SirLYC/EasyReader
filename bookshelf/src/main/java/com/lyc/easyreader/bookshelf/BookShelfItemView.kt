@@ -103,7 +103,7 @@ class BookShelfItemView(
             })
 
         fileInfoTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(12f))
-        fileInfoTv.gravity = Gravity.CENTER
+        fileInfoTv.gravity = Gravity.CENTER or Gravity.LEFT
         fileInfoTv.setTextColor(color_secondary_text)
         infoContainer.addView(
             fileInfoTv,
@@ -116,7 +116,12 @@ class BookShelfItemView(
         this.position = position
         if (data != null) {
             filenameTv.text = data.filename
-            fileInfoTv.text = data.importTime.toFileTimeString()
+            if (data.lastChapterDesc != null) {
+                fileInfoTv.text =
+                    ("${data.lastAccessTime.toFileTimeString()} | 上次读到：${data.lastChapterDesc}")
+            } else {
+                fileInfoTv.text = ("${data.importTime.toFileTimeString()} | 未读")
+            }
             fileTypeTv.text = data.fileExt.toUpperCase(Locale.ENGLISH)
         }
     }

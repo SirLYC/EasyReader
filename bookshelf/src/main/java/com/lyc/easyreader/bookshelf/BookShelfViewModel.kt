@@ -19,7 +19,8 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
-class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
+class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
+    BookShelfOpenHelper.IBookFileRecordListener {
     private val handler = Handler(Looper.getMainLooper())
 
     val hasDataLiveData = MutableLiveData<Boolean>()
@@ -30,6 +31,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
 
     init {
         BookManager.instance.addBookChangeListener(this)
+        BookShelfOpenHelper.instance.addBookFileRecordListener(this)
     }
 
     fun firstLoadIfNeeded() {
@@ -97,7 +99,8 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
                                 return true
                             }
 
-                            return currentList[oldItemPosition].lastAccessTime == shelfBooks[newItemPosition].lastAccessTime
+                            return currentList[oldItemPosition].lastAccessTime == shelfBooks[newItemPosition].lastAccessTime &&
+                                    currentList[oldItemPosition].lastChapterDesc == shelfBooks[newItemPosition].lastChapterDesc
                         }
                     }
 
@@ -131,6 +134,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
     }
 
     override fun onCleared() {
+        BookShelfOpenHelper.instance.removeBookFileRecordListener(this)
         handler.removeCallbacksAndMessages(null)
         BookManager.instance.removeBookChangeListener(this)
     }
@@ -145,6 +149,27 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener {
     override fun onBooksImported(list: List<BookFile>) {
         if (list.isNotEmpty()) {
             handler.post { refreshList(fromCallback = true) }
+        }
+    }
+
+    override fun onBookFileRecordUpdate(bookFile: BookFile) {
+        handler.post {
+            var index = -1
+            for (i in 0..list.size) {
+                if (bookFile.id == list[i].id) {
+                    index = i
+                    break
+                }
+            }
+
+            if (index == -1) {
+                // 静默更新
+                refreshList(true)
+                return@post
+            }
+
+            // 更新
+            list[index] = bookFile
         }
     }
 }

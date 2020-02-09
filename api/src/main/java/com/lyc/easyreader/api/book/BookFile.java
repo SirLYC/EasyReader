@@ -23,6 +23,11 @@ import java.nio.charset.Charset;
 })
 public class BookFile implements Parcelable {
 
+    private String realPath;
+    private String filename;
+    private String fileExt;
+    private long importTime;
+    private long lastAccessTime;
     public static final Creator<BookFile> CREATOR = new Creator<BookFile>() {
         @Override
         public BookFile createFromParcel(Parcel in) {
@@ -34,11 +39,8 @@ public class BookFile implements Parcelable {
             return new BookFile[size];
         }
     };
-    private String realPath;
-    private String filename;
-    private String fileExt;
-    private long importTime;
-    private long lastAccessTime;
+    private int lastChapter;
+    private int lastPageInChapter;
     private long deleteTime;
     private long handleChapterLastModified;
     @Convert(converter = CharsetConverter.class, columnType = String.class)
@@ -48,16 +50,42 @@ public class BookFile implements Parcelable {
     private Status status;
     @Id
     private String id;
+    private String lastChapterDesc;
+
+    @Generated(hash = 637696708)
+    public BookFile(String realPath, String filename, String fileExt, long importTime, long lastAccessTime,
+                    int lastChapter, int lastPageInChapter, long deleteTime, long handleChapterLastModified,
+                    Charset charset, @NotNull Status status, String id, String lastChapterDesc) {
+        this.realPath = realPath;
+        this.filename = filename;
+        this.fileExt = fileExt;
+        this.importTime = importTime;
+        this.lastAccessTime = lastAccessTime;
+        this.lastChapter = lastChapter;
+        this.lastPageInChapter = lastPageInChapter;
+        this.deleteTime = deleteTime;
+        this.handleChapterLastModified = handleChapterLastModified;
+        this.charset = charset;
+        this.status = status;
+        this.id = id;
+        this.lastChapterDesc = lastChapterDesc;
+    }
+
+    @Generated(hash = 1858747483)
+    public BookFile() {
+    }
 
     protected BookFile(Parcel in) {
-        id = in.readString();
         realPath = in.readString();
         filename = in.readString();
         fileExt = in.readString();
         importTime = in.readLong();
         lastAccessTime = in.readLong();
+        lastChapter = in.readInt();
+        lastPageInChapter = in.readInt();
         deleteTime = in.readLong();
         handleChapterLastModified = in.readLong();
+        id = in.readString();
         status = Status.valueOf(in.readString());
         if (in.readByte() == 0) {
             charset = null;
@@ -66,36 +94,39 @@ public class BookFile implements Parcelable {
         }
     }
 
-    @Generated(hash = 1818824846)
-    public BookFile(String realPath, String filename, String fileExt, long importTime,
-                    long lastAccessTime, long deleteTime, long handleChapterLastModified,
-                    Charset charset, @NotNull Status status, String id) {
-        this.realPath = realPath;
-        this.filename = filename;
-        this.fileExt = fileExt;
-        this.importTime = importTime;
-        this.lastAccessTime = lastAccessTime;
-        this.deleteTime = deleteTime;
-        this.handleChapterLastModified = handleChapterLastModified;
-        this.charset = charset;
-        this.status = status;
-        this.id = id;
+    public void set(BookFile other) {
+        this.realPath = other.realPath;
+        this.filename = other.filename;
+        this.fileExt = other.fileExt;
+        this.importTime = other.importTime;
+        this.lastAccessTime = other.lastAccessTime;
+        this.lastChapter = other.lastChapter;
+        this.lastPageInChapter = other.lastPageInChapter;
+        this.deleteTime = other.deleteTime;
+        this.handleChapterLastModified = other.handleChapterLastModified;
+        this.charset = other.charset;
+        this.status = other.status;
+        this.id = other.id;
+        this.lastChapterDesc = other.lastChapterDesc;
     }
 
-    @Generated(hash = 1858747483)
-    public BookFile() {
+    @Override
+    public int describeContents() {
+        return 0;
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(id);
         dest.writeString(realPath);
         dest.writeString(filename);
         dest.writeString(fileExt);
         dest.writeLong(importTime);
         dest.writeLong(lastAccessTime);
+        dest.writeInt(lastChapter);
+        dest.writeInt(lastPageInChapter);
         dest.writeLong(deleteTime);
         dest.writeLong(handleChapterLastModified);
+        dest.writeString(id);
         dest.writeString(status.name());
         if (charset == null) {
             dest.writeByte((byte) 0);
@@ -103,11 +134,6 @@ public class BookFile implements Parcelable {
             dest.writeByte((byte) 1);
             dest.writeString(charset.name());
         }
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
     }
 
     public long getHandleChapterLastModified() {
@@ -208,6 +234,30 @@ public class BookFile implements Parcelable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public int getLastChapter() {
+        return this.lastChapter;
+    }
+
+    public void setLastChapter(int lastChapter) {
+        this.lastChapter = lastChapter;
+    }
+
+    public int getLastPageInChapter() {
+        return this.lastPageInChapter;
+    }
+
+    public void setLastPageInChapter(int lastPageInChapter) {
+        this.lastPageInChapter = lastPageInChapter;
+    }
+
+    public String getLastChapterDesc() {
+        return this.lastChapterDesc;
+    }
+
+    public void setLastChapterDesc(String lastChapterDesc) {
+        this.lastChapterDesc = lastChapterDesc;
     }
 
     public enum Status {

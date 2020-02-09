@@ -15,22 +15,18 @@ import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode;
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimation;
 
 /**
- * Created by Administrator on 2016/8/29 0029.
- * 原作者的GitHub Project Path:(https://github.com/PeachBlossom/treader)
- * 绘制页面显示内容的类
+ * Created by Liu Yuchuan on 2020/2/2.
  */
 public class PageView extends View {
 
     private final static String TAG = "BookPageWidget";
 
-    private int mViewWidth = 0; // 当前View的宽
-    private int mViewHeight = 0; // 当前View的高
+    private int viewWidth = 0; // 当前View的宽
+    private int viewHeight = 0; // 当前View的高
 
-    private int mStartX = 0;
-    private int mStartY = 0;
+    private int startX = 0;
+    private int startY = 0;
     private boolean isMove = false;
-    // 初始化参数
-    private int mBgColor = 0xFFCEC29C;
     private PageAnimMode pageAnimMode = PageAnimMode.SIMULATION;
     // 是否允许点击
     private boolean canTouch = true;
@@ -76,8 +72,8 @@ public class PageView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        mViewWidth = w;
-        mViewHeight = h;
+        viewWidth = w;
+        viewHeight = h;
 
         isPrepare = true;
 
@@ -93,7 +89,7 @@ public class PageView extends View {
         }
         this.pageAnimMode = pageAnimMode;
         if (mPageLoader != null) {
-            pageAnim = AnimFactory.INSTANCE.createAnim(pageAnimMode, mViewWidth, mViewHeight, this, mPageAnimListener);
+            pageAnim = AnimFactory.INSTANCE.createAnim(pageAnimMode, viewWidth, viewHeight, this, mPageAnimListener);
         }
     }
 
@@ -122,14 +118,14 @@ public class PageView extends View {
         //是否正在执行动画
         abortAnimation();
         if (direction == PageAnimation.Direction.NEXT) {
-            int x = mViewWidth;
-            int y = mViewHeight;
+            int x = viewWidth;
+            int y = viewHeight;
             //初始化动画
             pageAnim.setStartPoint(x, y);
             //设置点击点
             pageAnim.setTouchPoint(x, y);
             //设置方向
-            Boolean hasNext = hasNextPage();
+            boolean hasNext = hasNextPage();
 
             pageAnim.setDirection(direction);
             if (!hasNext) {
@@ -137,7 +133,7 @@ public class PageView extends View {
             }
         } else {
             int x = 0;
-            int y = mViewHeight;
+            int y = viewHeight;
             //初始化动画
             pageAnim.setStartPoint(x, y);
             //设置点击点
@@ -153,15 +149,12 @@ public class PageView extends View {
         this.postInvalidate();
     }
 
-    public void setBgColor(int color) {
-        mBgColor = color;
-    }
-
     @Override
     protected void onDraw(Canvas canvas) {
 
         if (pageAnim != null && pageAnim.isRunning && pageAnim.getNeedDrawBgColorWhenRunning()) {
-            int bgColor = mPageLoader == null ? mBgColor : mPageLoader.getBgColor();
+            // 初始化参数
+            int bgColor = mPageLoader == null ? PageStyle.BG_1.getBgColor() : mPageLoader.getBgColor();
             canvas.drawColor(bgColor);
         }
 
@@ -179,8 +172,8 @@ public class PageView extends View {
         int y = (int) event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                mStartX = x;
-                mStartY = y;
+                startX = x;
+                startY = y;
                 isMove = false;
                 canTouch = mTouchListener.onTouch();
                 pageAnim.handleTouchEvent(event);
@@ -189,7 +182,7 @@ public class PageView extends View {
                 // 判断是否大于最小滑动值。
                 int slop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
                 if (!isMove) {
-                    isMove = Math.abs(mStartX - event.getX()) > slop || Math.abs(mStartY - event.getY()) > slop;
+                    isMove = Math.abs(startX - event.getX()) > slop || Math.abs(startY - event.getY()) > slop;
                 }
 
                 // 如果滑动了，则进行翻页。
@@ -201,8 +194,8 @@ public class PageView extends View {
                 if (!isMove) {
                     //设置中间区域范围
                     if (mCenterRect == null) {
-                        mCenterRect = new RectF(mViewWidth / 5, mViewHeight / 3,
-                                mViewWidth * 4 / 5, mViewHeight * 2 / 3);
+                        mCenterRect = new RectF(viewWidth / 5, viewHeight / 3,
+                                viewWidth * 4 / 5, viewHeight * 2 / 3);
                     }
 
                     //是否点击了中间
@@ -307,9 +300,9 @@ public class PageView extends View {
         }
         mPageLoader = new LocalPageLoader(this, bookFile);
         // 判断是否 PageView 已经初始化完成
-        if (mViewWidth != 0 || mViewHeight != 0) {
+        if (viewWidth != 0 || viewHeight != 0) {
             // 初始化 PageLoader 的屏幕大小
-            mPageLoader.prepareDisplay(mViewWidth, mViewHeight);
+            mPageLoader.prepareDisplay(viewWidth, viewHeight);
         }
 
         return mPageLoader;
