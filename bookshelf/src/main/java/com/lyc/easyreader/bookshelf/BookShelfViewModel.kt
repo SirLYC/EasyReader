@@ -28,6 +28,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
     val list = ObservableList(arrayListOf<BookFile>())
     var firstLoadFinish = false
         private set
+    var isForeground = false
 
     init {
         BookManager.instance.addBookChangeListener(this)
@@ -60,7 +61,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
                         if (firstLoadFinish && !fromCallback) {
                             ReaderHeadsUp.showHeadsUp("刷新完成")
                         }
-                    } else if (firstLoadFinish) {
+                    } else if (firstLoadFinish && !fromCallback) {
                         ReaderHeadsUp.showHeadsUp("没有更新")
                     }
                 } else {
@@ -154,22 +155,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
 
     override fun onBookFileRecordUpdate(bookFile: BookFile) {
         handler.post {
-            var index = -1
-            for (i in 0..list.size) {
-                if (bookFile.id == list[i].id) {
-                    index = i
-                    break
-                }
-            }
-
-            if (index == -1) {
-                // 静默更新
-                refreshList(true)
-                return@post
-            }
-
-            // 更新
-            list[index] = bookFile
+            refreshList(true)
         }
     }
 }

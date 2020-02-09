@@ -21,7 +21,7 @@ import com.lyc.easyreader.base.utils.addColorAlpha
 import com.lyc.easyreader.base.utils.buildCommonButtonBg
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
-import com.lyc.easyreader.bookshelf.utils.toFileTimeString
+import com.lyc.easyreader.bookshelf.utils.detailTimeString
 import java.util.*
 
 /**
@@ -118,9 +118,9 @@ class BookShelfItemView(
             filenameTv.text = data.filename
             if (data.lastChapterDesc != null) {
                 fileInfoTv.text =
-                    ("${data.lastAccessTime.toFileTimeString()} | 上次读到：${data.lastChapterDesc}")
+                    ("${data.lastAccessTime.detailTimeString()} | 上次读到：${data.lastChapterDesc}")
             } else {
-                fileInfoTv.text = ("${data.importTime.toFileTimeString()} | 未读")
+                fileInfoTv.text = ("${data.importTime.detailTimeString()} | 未读")
             }
             fileTypeTv.text = data.fileExt.toUpperCase(Locale.ENGLISH)
         }

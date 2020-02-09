@@ -44,6 +44,9 @@ class BookShelfOpenHelper private constructor() :
         bookFile.lastAccessTime = System.currentTimeMillis()
         dbRunner.asyncRun(Runnable {
             daoSession.bookFileDao.insertOrReplace(bookFile)
+            bookFileRecordListenerHub.getEventListeners().forEach {
+                it.onBookFileRecordUpdate(bookFile)
+            }
         })
     }
 

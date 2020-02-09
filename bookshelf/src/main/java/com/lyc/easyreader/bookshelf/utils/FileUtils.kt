@@ -283,3 +283,9 @@ private val timeDateFormatThreadLocal = ThreadLocal<SimpleDateFormat>()
 fun Long.toFileTimeString(): String = timeDateFormatThreadLocal.getOrSet {
     SimpleDateFormat("yyyy-MM-dd")
 }.format(this)
+
+private val detailTimeDateFormatThreadLocal = ThreadLocal<SimpleDateFormat>()
+@SuppressLint("SimpleDateFormat")
+fun Long.detailTimeString(): String = timeDateFormatThreadLocal.getOrSet {
+    SimpleDateFormat("yyyy-MM-dd HH:mm")
+}.format(this)

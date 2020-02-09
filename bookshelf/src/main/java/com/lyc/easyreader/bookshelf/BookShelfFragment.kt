@@ -189,7 +189,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     override fun onResume() {
         super.onResume()
         activity?.window.statusBarBlackText(true)
-        recyclerView.adapter?.notifyDataSetChanged()
     }
 
     override fun onClick(v: View?) {
