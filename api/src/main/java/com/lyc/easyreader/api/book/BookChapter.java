@@ -21,6 +21,8 @@ public class BookChapter {
     private String title;
     private long start;
     private long end;
+    // 区分是否是通过正则匹配到的
+    private boolean realChapter;
 
 
     @Generated(hash = 1481387400)
@@ -28,9 +30,10 @@ public class BookChapter {
     }
 
 
-    @Generated(hash = 1851369482)
+    @Generated(hash = 1356701021)
     public BookChapter(Long id, int order, long lastModified,
-                       @NotNull String bookId, String title, long start, long end) {
+                       @NotNull String bookId, String title, long start, long end,
+                       boolean realChapter) {
         this.id = id;
         this.order = order;
         this.lastModified = lastModified;
@@ -38,6 +41,7 @@ public class BookChapter {
         this.title = title;
         this.start = start;
         this.end = end;
+        this.realChapter = realChapter;
     }
 
 
@@ -99,5 +103,15 @@ public class BookChapter {
 
     public void setBookId(String bookId) {
         this.bookId = bookId;
+    }
+
+
+    public boolean getRealChapter() {
+        return this.realChapter;
+    }
+
+
+    public void setRealChapter(boolean realChapter) {
+        this.realChapter = realChapter;
     }
 }

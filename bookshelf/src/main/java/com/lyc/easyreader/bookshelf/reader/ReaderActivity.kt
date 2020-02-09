@@ -174,7 +174,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         } else if (!isCreateFromConfigChange) {
             viewModel.restoreState(savedInstanceState)
         }
-        if (viewModel.bookFile == null) {
+        if (viewModel.bookFileLiveData.value == null) {
             ReaderToast.showToast("打开文件失败，请重试")
             finish()
         }
@@ -186,7 +186,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     }
 
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
-        if (viewModel.bookFile == null) {
+        if (viewModel.bookFileLiveData.value == null) {
             return
         }
 
@@ -197,7 +197,9 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             setTouchListener(this@ReaderActivity)
             contentView.addView(this)
         }
-        val loader = page.getPageLoader(viewModel.bookFile)
+        // 这里new一个也没关系，因为后续的变化都可以赋值进去的
+        // 注意传给loader的引用需要是nonnull的
+        val loader = page.getPageLoader(viewModel.bookFileLiveData.value ?: BookFile())
         loader.setOnPageChangeListener(this)
         viewModel.bookFileLiveData.observe(this, Observer {
             loader.bookFile?.set(it)

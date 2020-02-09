@@ -12,6 +12,7 @@ import com.lyc.easyreader.base.arch.LiveState
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.arch.SingleLiveEvent
 import com.lyc.easyreader.base.ui.ReaderToast
+import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.rv.ObservableList
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 
@@ -29,11 +30,6 @@ class ReaderViewModel : ViewModel() {
     @Volatile
     var alive = true
 
-    var bookFile: BookFile?
-        get() = bookFileLiveData.value
-        private set(value) {
-            bookFileLiveData.value = value
-        }
     val bookFileLiveData = MutableLiveData<BookFile>()
     val bookChapterList = ObservableList<BookChapter>(arrayListOf())
     val loadingChapterListLiveData = NonNullLiveData(true)
@@ -46,7 +42,7 @@ class ReaderViewModel : ViewModel() {
     val changeChapterCall = SingleLiveEvent<Int>()
 
     fun init(bookFile: BookFile) {
-        this.bookFile = bookFile
+        bookFileLiveData.value = bookFile
         loadChapterIfNeeded()
     }
 
@@ -55,28 +51,39 @@ class ReaderViewModel : ViewModel() {
             return
         }
         loadingChapterListLiveData.value = true
-        bookFile?.let { bookFile ->
+        bookFileLiveData.value?.let { bookFile ->
             ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
                 val newBookFile = BookShelfOpenHelper.instance.reloadBookFile(bookFile) ?: bookFile
                 var chapterList = BookShelfOpenHelper.instance.queryBookChapters(newBookFile)
                 if (chapterList == null || chapterList.isEmpty()) {
-                    val parser = BookParser(bookFile)
+                    val parser = BookParser(newBookFile)
                     val result = parser.parseChapters()
                     if (result.code != BookParser.CODE_SUCCESS) {
                         ReaderToast.showToast(result.msg)
+                        LogUtils.e(
+                            TAG,
+                            "Parse book failed! Result=${result.msg}",
+                            ex = result.exception
+                        )
                         return@execute
                     }
                     chapterList = result.list
                 }
+                val nonnullList = chapterList!!
                 handler.post {
                     if (!alive) {
                         return@post
                     }
-                    this.bookFile = newBookFile
+                    bookFileLiveData.value = newBookFile
                     BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
                     currentPage.value = newBookFile.lastPageInChapter
                     currentChapter.value = newBookFile.lastChapter
-                    bookChapterList.addAll(chapterList!!)
+                    nonnullList.forEach {
+                        if (!it.realChapter) {
+                            it.title = bookFile.filename
+                        }
+                    }
+                    bookChapterList.addAll(nonnullList)
                     loadingChapterListLiveData.value = false
                 }
             }
@@ -93,17 +100,17 @@ class ReaderViewModel : ViewModel() {
         }
 
         val desc = bookChapterList[chapter].title
-        bookFile?.let {
+        bookFileLiveData.value?.let {
             BookShelfOpenHelper.instance.asyncSaveUpdateBookRecord(it, chapter, page, desc)
         }
     }
 
     fun saveState(bundle: Bundle) {
-        bundle.putParcelable(KEY_BOOK_FILE, bookFile)
+        bundle.putParcelable(KEY_BOOK_FILE, bookFileLiveData.value)
     }
 
     fun restoreState(bundle: Bundle) {
-        bookFile = bundle.getParcelable(KEY_BOOK_FILE)
+        bookFileLiveData.value = bundle.getParcelable(KEY_BOOK_FILE)
         loadChapterIfNeeded()
     }
 

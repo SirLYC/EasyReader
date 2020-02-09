@@ -68,6 +68,8 @@ class BookParser(private val bookFile: BookFile) {
             return ParseChapterResult.FileNotExist
         }
 
+        LogUtils.i(TAG, "Split chapters for file: $file")
+
         val lastModified = file.lastModified()
 
         try {
@@ -77,6 +79,11 @@ class BookParser(private val bookFile: BookFile) {
 
                 // 判断是否有符合预设的章节
                 val chapterPattern = checkChapterType(bookStream, charset)
+                if (chapterPattern == null) {
+                    LogUtils.i(TAG, "No chapter pattern found. Try to slip chapter by lines.")
+                } else {
+                    LogUtils.i(TAG, "Chapter pattern found.")
+                }
                 val buffer = ByteArray(BUFFER_SIZE)
                 // 当前buffer在文件中的起始偏移
                 var curOffset: Long = 0
@@ -84,9 +91,10 @@ class BookParser(private val bookFile: BookFile) {
                 var blockCount = 0
                 // 读取的长度
                 var readLen: Int
-                while (bookStream.read(buffer, 0, buffer.size).also { readLen = it } > 0) {
-                    ++blockCount
-                    if (chapterPattern != null) {
+
+                if (chapterPattern != null) {
+                    while (bookStream.read(buffer, 0, buffer.size).also { readLen = it } > 0) {
+                        ++blockCount
                         val blockContent = String(buffer, 0, readLen, charset)
                         var seekPos = 0
                         val matcher: Matcher = chapterPattern.matcher(blockContent)
@@ -157,66 +165,47 @@ class BookParser(private val bookFile: BookFile) {
                                 }
                             }
                         }
-                    } else {
-                        //章节在buffer的偏移量
-                        var chapterOffset = 0
-                        //当前剩余可分配的长度
-                        var strLength = readLen
-                        //分章的位置
-                        var chapterPos = 0
-                        while (strLength > 0) {
-                            ++chapterPos
-                            //是否长度超过一章
-                            if (strLength > MAX_LENGTH_WITH_NO_CHAPTER) {
-                                //在buffer中一章的终止点
-                                var end = readLen
-                                //寻找换行符作为终止点
-                                for (i in chapterOffset + MAX_LENGTH_WITH_NO_CHAPTER until readLen) {
-                                    if (buffer[i] == BLANK_BYTE) {
-                                        end = i
-                                        break
-                                    }
-                                }
-                                val chapter =
-                                    BookChapter()
-                                chapter.title = "第" + blockCount + "章" + "(" + chapterPos + ")"
-                                chapter.start = curOffset + chapterOffset + 1
-                                chapter.end = curOffset + end
-                                chapters.add(chapter)
-                                //减去已经被分配的长度
-                                strLength -= (end - chapterOffset)
-                                //设置偏移的位置
-                                chapterOffset = end
-                            } else {
-                                val chapter =
-                                    BookChapter()
-                                chapter.title = "第" + blockCount + "章" + "(" + chapterPos + ")"
-                                chapter.start = curOffset + chapterOffset + 1
-                                chapter.end = curOffset + readLen
-                                chapters.add(chapter)
-                                strLength = 0
-                            }
-                        }
-                    }
-                    curOffset += readLen.toLong()
-                    if (chapterPattern != null) {
+                        curOffset += readLen.toLong()
                         val lastChapter: BookChapter = chapters[chapters.size - 1]
                         lastChapter.end = curOffset
                     }
+                    chapters.forEachIndexed { index, bookChapter ->
+                        bookChapter.order = index
+                        bookChapter.lastModified = lastModified
+                        bookChapter.bookId = bookFile.id
+                        bookChapter.realChapter = true
+                        if ("序章" != bookChapter.title) {
+                            bookChapter.start += bookChapter.title.toByteArray(charset)
+                                .size.toLong()
+                            bookChapter.title = bookChapter.title.trim()
+                        }
+                    }
+                } else {
+                    chapters.add(
+                        BookChapter(
+                            null,
+                            0,
+                            lastModified,
+                            bookFile.id,
+                            bookFile.filename,
+                            0L,
+                            file.length(),
+                            false
+                        )
+                    )
                 }
 
-                chapters.forEachIndexed { index, bookChapter ->
-                    bookChapter.order = index
-                    bookChapter.lastModified = lastModified
-                    bookChapter.bookId = bookFile.id
-                    if ("序章" != bookChapter.title) {
-                        bookChapter.start += bookChapter.title.toByteArray(charset).size.toLong()
-                        bookChapter.title = bookChapter.title.trim()
-                    }
-                }
+                LogUtils.i(TAG, "Chapter result: size=${chapters.size}")
+
+
 
                 bookFile.charset = charset
                 bookFile.handleChapterLastModified = lastModified
+                bookFile.lastChapter = 0
+                bookFile.lastPageInChapter = 0
+                if (chapters.size > 0) {
+                    bookFile.lastChapterDesc = chapters[0].title
+                }
 
                 BookShelfOpenHelper.instance.saveBookChapters(bookFile, chapters)
             }

@@ -236,6 +236,9 @@ public abstract class PageLoader implements Handler.Callback {
         if (!mChapterList.isEmpty()) {
             isChapterListPrepare = true;
             openChapter();
+        } else {
+            status = STATUS_EMPTY;
+            pageView.drawCurPage(false);
         }
     }
 
@@ -673,6 +676,7 @@ public abstract class PageLoader implements Handler.Callback {
             }
         } else {
             curPage = new BookPage();
+            status = STATUS_ERROR;
         }
 
         pageView.drawCurPage(false);
