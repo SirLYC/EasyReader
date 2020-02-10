@@ -13,12 +13,9 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
+import android.view.*
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.Animation
@@ -51,7 +48,6 @@ import kotlinx.android.synthetic.main.layout_reader_test_panel.*
 import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -236,6 +232,44 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         }
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // 拦截音量键
+        if (ReaderSettings.instance.volumeControlPage.value && keyCode in intArrayOf(
+                KeyEvent.KEYCODE_VOLUME_UP,
+                KeyEvent.KEYCODE_VOLUME_DOWN
+            )
+        ) {
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        val control = ReaderSettings.instance.volumeControlPage.value
+
+        if (!control) {
+            return super.onKeyUp(keyCode, event)
+        }
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                if (pageLoader?.skipToPrePage() != true) {
+                    ReaderToast.showToast("已经是第一页了")
+                }
+                return true
+            }
+
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                if (pageLoader?.skipToNextPage() != true) {
+                    ReaderToast.showToast("已经是最后一页了")
+                }
+
+                return true
+            }
+        }
+
+        return super.onKeyUp(keyCode, event)
+    }
 
     override fun onStart() {
         super.onStart()
@@ -522,11 +556,11 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         })
 
         settings.lineSpaceFactor.observe(this, Observer {
-            pageLoader?.lineSpaceFactor = it
+            pageLoader?.lineSpaceFactor = it.factor
         })
 
         settings.paraSpaceFactor.observe(this, Observer {
-            pageLoader?.paraSpaceFactor = it
+            pageLoader?.paraSpaceFactor = it.factor
         })
 
         settings.pageStyle.observe(this, Observer {
@@ -536,6 +570,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
         settings.fontBold.observe(this, Observer {
             pageLoader?.isFontBold = it
+        })
+
+        settings.readerMargin.observe(this, Observer {
+            applyFullscreen(settings.fullscreen.value)
         })
 
         NightModeManager.nightMode.observe(this, Observer {
@@ -594,7 +632,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     }
 
     private fun autoFitPageViewMargin(fullscreen: Boolean) {
-        val dp16 = dp2px(16)
+        val margin = dp2px(ReaderSettings.instance.readerMargin.value.margin)
         for (i in marginExtra.indices) {
             marginExtra[i] = 0
         }
@@ -654,10 +692,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         }
 
         pageLoader?.setMargins(
-            dp16 + marginExtra[0],
-            dp16 + marginExtra[1],
-            dp16 + marginExtra[2],
-            dp16 + marginExtra[3]
+            margin + marginExtra[0],
+            margin + marginExtra[1],
+            margin + marginExtra[2],
+            margin + marginExtra[3]
         )
     }
 
@@ -849,53 +887,53 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
 
         // 第五行
-        var isLineSpaceTracking = false
-        var inLineSpaceListener = false
-        rootView.sb_line_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                inLineSpaceListener = true
-                settings.lineSpaceFactor.value = progress * 3.0f * 0.01f
-                inLineSpaceListener = false
-            }
+//        var isLineSpaceTracking = false
+//        var inLineSpaceListener = false
+//        rootView.sb_line_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+//            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+//                inLineSpaceListener = true
+//                settings.lineSpaceFactor.value = progress * 3.0f * 0.01f
+//                inLineSpaceListener = false
+//            }
+//
+//            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+//                isLineSpaceTracking = true
+//            }
+//
+//            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+//                isLineSpaceTracking = false
+//            }
+//        })
+//        settings.lineSpaceFactor.observe(this, Observer {
+//            if (inLineSpaceListener || isLineSpaceTracking) {
+//                return@Observer
+//            }
+//            rootView.sb_line_space.progress = (it * 100 / 3.0f).roundToInt()
+//        })
 
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                isLineSpaceTracking = true
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                isLineSpaceTracking = false
-            }
-        })
-        settings.lineSpaceFactor.observe(this, Observer {
-            if (inLineSpaceListener || isLineSpaceTracking) {
-                return@Observer
-            }
-            rootView.sb_line_space.progress = (it * 100 / 3.0f).roundToInt()
-        })
-
-        var isParaSpaceTracking = false
-        var inParaSpaceListener = false
-        rootView.sb_para_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                inParaSpaceListener = true
-                settings.paraSpaceFactor.value = progress * 3.0f * 0.01f
-                inParaSpaceListener = false
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                isParaSpaceTracking = true
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                isParaSpaceTracking = false
-            }
-        })
-        settings.paraSpaceFactor.observe(this, Observer {
-            if (inParaSpaceListener || isParaSpaceTracking) {
-                return@Observer
-            }
-            rootView.sb_para_space.progress = (it * 100 / 3.0f).roundToInt()
-        })
+//        var isParaSpaceTracking = false
+//        var inParaSpaceListener = false
+//        rootView.sb_para_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+//            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+//                inParaSpaceListener = true
+//                settings.paraSpaceFactor.value = progress * 3.0f * 0.01f
+//                inParaSpaceListener = false
+//            }
+//
+//            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+//                isParaSpaceTracking = true
+//            }
+//
+//            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+//                isParaSpaceTracking = false
+//            }
+//        })
+//        settings.paraSpaceFactor.observe(this, Observer {
+//            if (inParaSpaceListener || isParaSpaceTracking) {
+//                return@Observer
+//            }
+//            rootView.sb_para_space.progress = (it * 100 / 3.0f).roundToInt()
+//        })
 
     }
 

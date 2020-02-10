@@ -7,6 +7,7 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
 import android.util.TypedValue
+import android.view.View
 import android.widget.TextView
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
@@ -18,17 +19,7 @@ import kotlin.math.roundToInt
 /**
  * Created by Liu Yuchuan on 2020/1/18.
  */
-private var currentViewId = 0
-
-@MainThread
-fun generateNewViewId(): Int {
-    if (currentViewId == Int.MAX_VALUE) {
-        currentViewId = 1
-        return 1
-    }
-
-    return ++currentViewId
-}
+fun generateNewViewId() = View.generateViewId()
 
 private var currentRequestCode = 0
 @MainThread
@@ -140,4 +131,10 @@ var TextView.textSizeInPx
     get() = textSize
     set(value) {
         setTextSize(TypedValue.COMPLEX_UNIT_PX, value)
+    }
+
+var TextView.textSizeInDp
+    get() = px2dpf(textSizeInPx)
+    set(value) {
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(value))
     }

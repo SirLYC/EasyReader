@@ -1,6 +1,7 @@
 package com.lyc.easyreader.bookshelf.reader.settings
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -275,6 +276,7 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
         )
 
         addView(TextView(context).apply {
+            id = VIEW_ID_MORE_SETTING
             setOnClickListener(this@ReaderSettingsDialog)
             setTextColor(contentColor)
             setPadding(dp2px(8))
@@ -349,6 +351,11 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             }
             VIEW_ID_MORE_SETTING -> {
                 dismiss()
+                ReaderApplication.appContext().apply {
+                    startActivity(Intent(this, ReaderSettingsActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                }
             }
             VIEW_ID_SCREEN_ON -> {
                 settings.keepScreenOn.flip()

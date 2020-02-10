@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorOrange</item>
+        <item name="colorPrimaryDark">@color/colorOrange</item>
+        <item name="colorAccent">@color/colorLightBlue</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:overScrollMode">never</item>
+    </style>
+
     <style name="PopupMenuDay" parent="Widget.AppCompat.PopupMenu">
         <item name="android:textColor">@android:color/white</item>
         <item name="android:itemBackground">@drawable/bg_popup_menu_item_day</item>
@@ -15,5 +24,9 @@
     <style name="BottomDialogAnim" parent="android:Animation">
         <item name="android:windowEnterAnimation">@anim/slide_bottom_in</item>
         <item name="android:windowExitAnimation">@anim/slide_bottom_out</item>
+    </style>
+
+    <style name="SwitchTheme" parent="Widget.AppCompat.CompoundButton.Switch">
+        <item name="android:colorAccent">@color/colorOrange</item>
     </style>
 </resources>

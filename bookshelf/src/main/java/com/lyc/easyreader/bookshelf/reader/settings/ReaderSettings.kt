@@ -4,7 +4,10 @@ import com.lyc.appinject.CreateMethod
 import com.lyc.appinject.annotations.ExtensionImpl
 import com.lyc.easyreader.api.settings.ISettings
 import com.lyc.easyreader.base.preference.PreferenceManager
-import com.lyc.easyreader.base.preference.value.*
+import com.lyc.easyreader.base.preference.value.BooleanPrefValue
+import com.lyc.easyreader.base.preference.value.EnumPrefValue
+import com.lyc.easyreader.base.preference.value.IntPrefValue
+import com.lyc.easyreader.base.preference.value.PrefValue
 import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageStyle
@@ -76,20 +79,32 @@ class ReaderSettings private constructor() : ISettings {
         BooleanPrefValue("keep_screen_on", true, preference).also { settingItems.add(it) }
 
     val lineSpaceFactor =
-        FloatPrefValue(
+        EnumPrefValue(
             "line_space_factor",
-            0.5f,
+            LineSpaceFactor.MEDIUM,
             preference,
-            validator = { it.coerceIn(0f, 3f) }).also { settingItems.add(it) }
+            { enumValueOf(it) }).also { settingItems.add(it) }
 
     val paraSpaceFactor =
-        FloatPrefValue(
+        EnumPrefValue(
             "para_space_factor",
-            1f,
+            ParamSpaceFactor.MEDIUM,
             preference,
-            validator = { it.coerceIn(0f, 3f) }).also { settingItems.add(it) }
+            { enumValueOf(it) }).also { settingItems.add(it) }
 
-    val pageStyle = PageStylePrefValue("page_style", preference)
+    val pageStyle = PageStylePrefValue("page_style", preference).also {
+        settingItems.add(it)
+    }
+
+    val volumeControlPage =
+        BooleanPrefValue("volume_control_page", false, preference).also { settingItems.add(it) }
+
+    val readerMargin =
+        EnumPrefValue(
+            "reader_margin",
+            ReaderMargin.MEDIUM,
+            preference,
+            { enumValueOf(it) }).also { settingItems.add(it) }
 
     override fun applyDefaultSettings() {
         settingItems.forEach {

@@ -4,5 +4,8 @@
     <application>
         <activity android:name=".scan.BookScanActivity" />
         <activity android:name=".reader.ReaderActivity" />
+        <activity
+            android:name=".reader.settings.ReaderSettingsActivity"
+            android:launchMode="singleTop" />
     </application>
 </manifest>
