@@ -20,12 +20,16 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
+import android.webkit.MimeTypeMap
 import android.widget.*
+import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookFile
+import com.lyc.easyreader.api.main.Schema
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.app.NotchCompat
 import com.lyc.easyreader.base.arch.provideViewModel
@@ -35,6 +39,8 @@ import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.color_orange
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
+import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
+import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.BuildConfig
 import com.lyc.easyreader.bookshelf.R
@@ -46,6 +52,7 @@ import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettingsDialog
 import com.lyc.easyreader.bookshelf.reader.settings.ScreenOrientation
 import kotlinx.android.synthetic.main.layout_reader_test_panel.*
 import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
+import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 
@@ -53,7 +60,7 @@ import kotlin.math.min
  * Created by Liu Yuchuan on 2020/1/30.
  */
 class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListener,
-    PageLoader.OnPageChangeListener {
+    PageLoader.OnPageChangeListener, PopupMenu.OnMenuItemClickListener {
     companion object {
         private const val KEY_BOOK_FILE = "KEY_BOOK_FILE"
 
@@ -85,6 +92,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         private val VIEW_ID_BTN_CATEGORY = generateNewViewId()
         private val VIEW_ID_BTN_NIGHT_MODE = generateNewViewId()
         private val VIEW_ID_BTN_SETTINGS = generateNewViewId()
+
+        private const val MENU_ID_BOOK_MARK = 4
+
+        private const val MENU_ID_COLLECT_BOOK = 9
+
+        private const val MENU_ID_SHARE = 19
+
+        private const val MENU_ID_OPEN_OTHER_APP = 44
     }
 
     private lateinit var viewModel: ReaderViewModel
@@ -474,9 +489,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
         )
 
-        val topBar = BaseToolBar(this)
+        val topBar = SimpleToolbar(this, com.lyc.easyreader.api.R.drawable.ic_more_horiz_24dp)
         topBar.setBackgroundColor(bgColor)
         topBar.leftButton?.drawable?.changeToColor(buttonColor)
+        topBar.rightButton.drawable?.changeToColor(buttonColor)
         topBar.setBarClickListener(this)
         topBar.setTitle("")
         settingContentView.addView(
@@ -968,6 +984,19 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 viewModel.showMenu.state = false
                 ChapterDialog().show(supportFragmentManager)
             }
+
+            SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
+                ReaderPopupMenu(v.context, v, Gravity.LEFT or Gravity.BOTTOM).also {
+                    it.menu.run {
+                        add(0, MENU_ID_COLLECT_BOOK, MENU_ID_COLLECT_BOOK, "收藏")
+                        add(0, MENU_ID_BOOK_MARK, MENU_ID_BOOK_MARK, "加入书签")
+                        add(0, MENU_ID_SHARE, MENU_ID_SHARE, "分享")
+                        add(0, MENU_ID_OPEN_OTHER_APP, MENU_ID_OPEN_OTHER_APP, "其他应用打开")
+                    }
+                    it.setOnMenuItemClickListener(this)
+                    it.show()
+                }
+            }
         }
     }
 
@@ -995,5 +1024,71 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         val chapterPos = pageLoader?.chapterPos ?: -1
         val pagePos = pageLoader?.pagePos ?: -1
         viewModel.updateRecord(chapterPos, pagePos)
+    }
+
+    override fun onMenuItemClick(item: MenuItem?): Boolean {
+        when (item?.itemId) {
+            MENU_ID_BOOK_MARK -> {
+                return true
+            }
+            MENU_ID_COLLECT_BOOK -> {
+                return true
+            }
+            MENU_ID_SHARE -> {
+                shareBookFileByOtherApp()
+                return true
+            }
+            MENU_ID_OPEN_OTHER_APP -> {
+                openBookFileByOtherApp()
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun openBookFileByOtherApp() {
+        viewModel.bookFileLiveData.value?.run {
+            val uri = FileProvider.getUriForFile(
+                this@ReaderActivity,
+                Schema.FILE_PROVIDER_AUTH,
+                File(realPath)
+            )
+            val intent = Intent().apply {
+                setDataAndType(
+                    uri,
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExt)
+                )
+                action = Intent.ACTION_VIEW
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            try {
+                startActivity(Intent.createChooser(intent, "选择APP打开"))
+            } catch (e: Exception) {
+                LogUtils.e(TAG, ex = e)
+            }
+        }
+    }
+
+    private fun shareBookFileByOtherApp() {
+        viewModel.bookFileLiveData.value?.run {
+            val uri = FileProvider.getUriForFile(
+                this@ReaderActivity,
+                Schema.FILE_PROVIDER_AUTH,
+                File(realPath)
+            )
+            val intent = Intent().apply {
+                setDataAndType(
+                    uri,
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExt)
+                )
+                action = Intent.ACTION_SEND
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            try {
+                startActivity(Intent.createChooser(intent, "分享到..."))
+            } catch (e: Exception) {
+                LogUtils.e(TAG, ex = e)
+            }
+        }
     }
 }

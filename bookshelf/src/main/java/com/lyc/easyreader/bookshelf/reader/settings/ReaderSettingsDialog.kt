@@ -61,7 +61,7 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
         var currentHeight = 0
         val rootView = FrameLayout(ctx).apply {
             background = PaintDrawable(themeColor).apply {
-                val r = dp2pxf(4f)
+                val r = dp2pxf(16f)
                 setCornerRadii(floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f))
             }
         }

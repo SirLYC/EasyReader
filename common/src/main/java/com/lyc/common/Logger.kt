@@ -200,7 +200,10 @@ class Logger : Handler.Callback {
         val time: Long
     ) {
         override fun toString(): String {
-            return "$level|$tag|${msg}${ex.let {
+            return "$level|$tag|${msg.let {
+                it ?: if (ex != null) ""
+                else it
+            }}${ex.let {
                 if (it == null) {
                     ""
                 } else {

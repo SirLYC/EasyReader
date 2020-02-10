@@ -14,4 +14,6 @@ object Schema {
     val MAIN_DISCOVER = "lycer://main/${IMainActivityDelegate.ID_DISCOVER}"
 
     val MAIN_USER_CENTER = "lycer://main/${IMainActivityDelegate.ID_USER_CENTER}"
+
+    const val FILE_PROVIDER_AUTH = "com.lyc.easyreader.provider"
 }

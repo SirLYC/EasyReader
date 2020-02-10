@@ -48,8 +48,8 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
         rootView.elevation = dp2pxf(4f)
         rootView.background = GradientDrawable().apply {
             setColor(ReaderSettings.currentPageStyle.bgColor)
-            val dp8 = dp2pxf(8f)
-            cornerRadii = floatArrayOf(dp8, dp8, dp8, dp8, 0f, 0f, 0f, 0f)
+            val r = dp2pxf(16f)
+            cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
         }
 
         val topBar = ChapterDialogTopBar(ctx)
