@@ -47,7 +47,7 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
         val rootView = FrameLayout(ctx)
         rootView.elevation = dp2pxf(4f)
         rootView.background = GradientDrawable().apply {
-            setColor(ReaderSettings.instance.pageStyle.value.bgColor)
+            setColor(ReaderSettings.currentPageStyle.bgColor)
             val dp8 = dp2pxf(8f)
             cornerRadii = floatArrayOf(dp8, dp8, dp8, dp8, 0f, 0f, 0f, 0f)
         }
@@ -88,7 +88,7 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
     }
 
     override fun onResume() {
-        dialog?.window?.statusBarBlackText(ReaderSettings.instance.pageStyle.value.statusBarBlack)
+        dialog?.window?.statusBarBlackText(ReaderSettings.currentPageStyle.statusBarBlack)
         super.onResume()
     }
 
@@ -115,7 +115,7 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
         })
 
         rv.adapter = BookChapterListAdapter(
-            readerViewModel.bookChapterList
+            readerViewModel
         ) { index, item, view ->
             LogUtils.d(TAG, "On chapter item click! Chapter pos=$index, title=${item.title}")
             dismiss()

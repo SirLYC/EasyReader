@@ -114,7 +114,6 @@ public abstract class PageLoader implements Handler.Callback {
     // 是否打开过章节
     private boolean isChapterOpen;
     private boolean triedOpen = false;
-    private boolean isClose;
     // 页面的翻页效果模式
     private PageAnimMode pageMode = PageAnimMode.SIMULATION;
     // 加载器的颜色主题
@@ -280,9 +279,10 @@ public abstract class PageLoader implements Handler.Callback {
 
     /**
      * 跳转到指定章节
+     * 如果目标位置就是当前章节，跳转到第一页
      */
     public void skipToChapter(int pos) {
-        if (curChapterPos == pos) {
+        if (curChapterPos == pos && curPage != null && curPage.position == 0) {
             return;
         }
         // 设置参数
@@ -294,6 +294,7 @@ public abstract class PageLoader implements Handler.Callback {
         // 将下一章缓存设置为null
         nextPageList = null;
         nextPageListPos = -1;
+        pendingPosInChapter = 0;
 
         // 打开指定章节
         openChapter();
@@ -680,44 +681,6 @@ public abstract class PageLoader implements Handler.Callback {
         }
 
         pageView.drawCurPage(false);
-    }
-
-    public void chapterError() {
-        //加载错误
-        status = STATUS_ERROR;
-        pageView.drawCurPage(false);
-    }
-
-    /**
-     * 关闭书本
-     */
-    public void closeBook() {
-        isChapterListPrepare = false;
-        isClose = true;
-
-        clearList(mChapterList);
-        clearList(curPageList);
-        clearList(nextPageList);
-
-        mChapterList.clear();
-        curPageList = null;
-        nextPageList = null;
-        pageView = null;
-        curPage = null;
-    }
-
-    private void clearList(List list) {
-        if (list != null) {
-            list.clear();
-        }
-    }
-
-    public boolean isClose() {
-        return isClose;
-    }
-
-    public boolean isChapterOpen() {
-        return isChapterOpen;
     }
 
     /**

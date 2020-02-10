@@ -23,7 +23,7 @@ class ChapterDialogTopBar(context: Context) : BaseToolBar(context) {
 
     init {
         paddingStatusBar = false
-        val pageStyle = ReaderSettings.instance.pageStyle.value
+        val pageStyle = ReaderSettings.currentPageStyle
         val fontColor = pageStyle.fontColor
         leftButton?.setImageDrawable(getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_close_24dp)?.apply {
             changeToColor(fontColor)

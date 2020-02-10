@@ -38,7 +38,7 @@ public class PageView extends View {
     //点击监听
     private TouchListener mTouchListener;
     //内容加载器
-    private PageLoader mPageLoader;
+    private PageLoader pageLoader;
     // 动画监听类
     private PageAnimation.OnPageChangeListener mPageAnimListener = new PageAnimation.OnPageChangeListener() {
         @Override
@@ -77,8 +77,8 @@ public class PageView extends View {
 
         isPrepare = true;
 
-        if (mPageLoader != null) {
-            mPageLoader.prepareDisplay(w, h);
+        if (pageLoader != null) {
+            pageLoader.prepareDisplay(w, h);
         }
     }
 
@@ -88,7 +88,7 @@ public class PageView extends View {
             return;
         }
         this.pageAnimMode = pageAnimMode;
-        if (mPageLoader != null) {
+        if (pageLoader != null) {
             pageAnim = AnimFactory.INSTANCE.createAnim(pageAnimMode, viewWidth, viewHeight, this, mPageAnimListener);
         }
     }
@@ -154,7 +154,7 @@ public class PageView extends View {
 
         if (pageAnim != null && pageAnim.isRunning && pageAnim.getNeedDrawBgColorWhenRunning()) {
             // 初始化参数
-            int bgColor = mPageLoader == null ? PageStyle.BG_1.getBgColor() : mPageLoader.getBgColor();
+            int bgColor = pageLoader == null ? PageStyle.BG_1.getBgColor() : pageLoader.getBgColor();
             canvas.drawColor(bgColor);
         }
 
@@ -219,7 +219,7 @@ public class PageView extends View {
      */
     private boolean hasPrevPage() {
         mTouchListener.prePage();
-        return mPageLoader.prev();
+        return pageLoader.prev();
     }
 
     /**
@@ -229,12 +229,12 @@ public class PageView extends View {
      */
     private boolean hasNextPage() {
         mTouchListener.nextPage();
-        return mPageLoader.next();
+        return pageLoader.next();
     }
 
     private void pageCancel() {
         mTouchListener.cancel();
-        mPageLoader.pageCancel();
+        pageLoader.pageCancel();
     }
 
     @Override
@@ -265,7 +265,7 @@ public class PageView extends View {
         if (!isPrepare) return;
 
         pageAnim.changePage();
-        mPageLoader.drawPage(getNextBitmap(), false);
+        pageLoader.drawPage(getNextBitmap(), false);
     }
 
     /**
@@ -275,7 +275,7 @@ public class PageView extends View {
      */
     public void drawCurPage(boolean isUpdate) {
         if (!isPrepare) return;
-        mPageLoader.drawPage(getNextBitmap(), isUpdate);
+        pageLoader.drawPage(getNextBitmap(), isUpdate);
     }
 
     @Override
@@ -284,7 +284,7 @@ public class PageView extends View {
         pageAnim.abortAnim();
         pageAnim.clear();
 
-        mPageLoader = null;
+        pageLoader = null;
         pageAnim = null;
     }
 
@@ -295,17 +295,17 @@ public class PageView extends View {
      */
     public PageLoader getPageLoader(BookFile bookFile) {
         // 判是否已经存在
-        if (mPageLoader != null) {
-            return mPageLoader;
+        if (pageLoader != null) {
+            return pageLoader;
         }
-        mPageLoader = new LocalPageLoader(this, bookFile);
+        pageLoader = new LocalPageLoader(this, bookFile);
         // 判断是否 PageView 已经初始化完成
         if (viewWidth != 0 || viewHeight != 0) {
             // 初始化 PageLoader 的屏幕大小
-            mPageLoader.prepareDisplay(viewWidth, viewHeight);
+            pageLoader.prepareDisplay(viewWidth, viewHeight);
         }
 
-        return mPageLoader;
+        return pageLoader;
     }
 
     public interface TouchListener {

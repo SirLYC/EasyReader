@@ -5,7 +5,9 @@ import com.lyc.appinject.annotations.ExtensionImpl
 import com.lyc.easyreader.api.settings.ISettings
 import com.lyc.easyreader.base.preference.PreferenceManager
 import com.lyc.easyreader.base.preference.value.*
+import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
+import com.lyc.easyreader.bookshelf.reader.page.PageStyle
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 
 /**
@@ -16,6 +18,9 @@ class ReaderSettings private constructor() : ISettings {
     companion object {
         @JvmStatic
         val instance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { ReaderSettings() }
+
+        val currentPageStyle
+            get() = if (NightModeManager.nightModeEnable) PageStyle.NIGHT else instance.pageStyle.value
     }
 
     private val preference = PreferenceManager.getPrefernce("reader_settings")

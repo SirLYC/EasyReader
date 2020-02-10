@@ -6,6 +6,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.TextView
 import androidx.core.view.setPadding
+import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.color_yellow
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
@@ -68,6 +69,7 @@ class PageStyleItemView(
             val stylePrefValue = ReaderSettings.instance.pageStyle
             if (stylePrefValue.value != data) {
                 stylePrefValue.value = data
+                NightModeManager.nightMode.value = false
             }
         }
     }

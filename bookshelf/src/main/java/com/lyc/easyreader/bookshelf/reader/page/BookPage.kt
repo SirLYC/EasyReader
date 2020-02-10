@@ -5,7 +5,7 @@ package com.lyc.easyreader.bookshelf.reader.page
  */
 internal class BookPage {
     @JvmField
-    var position = 0
+    var position = -1
     @JvmField
     var title: String? = null
     //当前 lines 中为 title 的行数。

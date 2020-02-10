@@ -1,6 +1,8 @@
 package com.lyc.easyreader.bookshelf.reader
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.view.Gravity
 import android.view.View
 import android.widget.TextView
@@ -20,9 +22,15 @@ class ChapterItemView(
     private val onItemClick: (pos: Int, bookChapter: BookChapter, view: View) -> Unit
 ) : TextView(context), View.OnClickListener {
     private var bookChapter: BookChapter? = null
+    private var currentChapter = -1
+    private val paint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = ReaderSettings.currentPageStyle.fontColor and 0x33FFFFFF
+        }
+    }
 
     init {
-        setTextColor(ReaderSettings.instance.pageStyle.value.fontColor)
+        setTextColor(ReaderSettings.currentPageStyle.fontColor)
         background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
         setPadding(dp2px(16))
         gravity = Gravity.LEFT or Gravity.CENTER
@@ -30,7 +38,12 @@ class ChapterItemView(
         setOnClickListener(this)
     }
 
-    fun bindData(bookChapter: BookChapter?) {
+    fun bindData(bookChapter: BookChapter?, currentChapterIndex: Int) {
+        if (currentChapterIndex != this.currentChapter) {
+            this.currentChapter = currentChapterIndex
+            invalidate()
+        }
+
         if (bookChapter == this.bookChapter) {
             return
         }
@@ -48,5 +61,13 @@ class ChapterItemView(
         val data = this.bookChapter ?: return
 
         onItemClick(data.order, data, this)
+    }
+
+    override fun onDraw(canvas: Canvas?) {
+        val chapter = bookChapter
+        if (chapter != null && chapter.order == currentChapter) {
+            canvas?.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        }
+        super.onDraw(canvas)
     }
 }
