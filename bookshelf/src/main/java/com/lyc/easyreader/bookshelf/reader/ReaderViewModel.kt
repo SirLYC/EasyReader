@@ -79,7 +79,7 @@ class ReaderViewModel : ViewModel() {
                     currentPage.value = newBookFile.lastPageInChapter
                     currentChapter.value = newBookFile.lastChapter
                     nonnullList.forEach {
-                        if (!it.realChapter) {
+                        if (it.chapterType == BookChapter.ChapterType.SINGLE) {
                             it.title = bookFile.filename
                         }
                     }

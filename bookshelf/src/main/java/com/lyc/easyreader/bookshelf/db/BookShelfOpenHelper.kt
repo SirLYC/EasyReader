@@ -3,6 +3,7 @@ package com.lyc.easyreader.bookshelf.db
 import android.database.sqlite.SQLiteConstraintException
 import android.util.Log
 import com.lyc.common.EventHubFactory
+import com.lyc.common.thread.ExecutorFactory
 import com.lyc.common.thread.SingleThreadRunner
 import com.lyc.easyreader.api.book.*
 import com.lyc.easyreader.base.ReaderApplication
@@ -158,6 +159,11 @@ class BookShelfOpenHelper private constructor() :
                     .executeDeleteWithoutDetachingEntities()
                 daoSession.bookFileDao.insertOrReplace(bookFile)
                 daoSession.bookChapterDao.saveInTx(list)
+            }
+            ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
+                bookFileRecordListenerHub.getEventListeners().forEach {
+                    it.onBookFileRecordUpdate(bookFile)
+                }
             }
         })
     }

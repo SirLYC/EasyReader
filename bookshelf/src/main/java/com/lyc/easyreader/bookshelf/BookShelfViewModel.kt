@@ -50,7 +50,11 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
         isLoadingLiveData.value = true
         val currentList = list.toList()
         ExecutorFactory.IO_EXECUTOR.execute {
-            val shelfBooks = BookShelfOpenHelper.instance.loadBookShelfList()
+            val shelfBooks = BookShelfOpenHelper.instance.loadBookShelfList().map {
+                BookFile().apply {
+                    set(it)
+                }
+            }
             val diffResultRef = AtomicReference<DiffUtil.DiffResult>(null)
             val hasChange = AtomicBoolean(true)
             val mainTask = Runnable {

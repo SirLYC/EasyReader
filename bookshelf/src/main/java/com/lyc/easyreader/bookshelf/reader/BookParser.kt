@@ -4,7 +4,9 @@ import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
+import com.lyc.easyreader.bookshelf.utils.ByteCountingLineReader
 import com.lyc.easyreader.bookshelf.utils.detectCharset
+import com.lyc.easyreader.bookshelf.utils.toFileSizeString
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -23,9 +25,7 @@ class BookParser(private val bookFile: BookFile) {
 
         private const val BUFFER_SIZE = 512 * 1024
 
-        private const val MAX_LENGTH_WITH_NO_CHAPTER = 10 * 1024
-
-        private const val BLANK_BYTE = 0x0a.toByte()
+        private const val MAX_LENGTH_WITH_NO_CHAPTER = 10 * 1024L
 
         //正则表达式章节匹配模式
         // "(第)([0-9零一二两三四五六七八九十百千万壹贰叁肆伍陆柒捌玖拾佰仟]{1,10})([章节回集卷])(.*)"
@@ -42,6 +42,8 @@ class BookParser(private val bookFile: BookFile) {
         const val CODE_FILE_NOT_EXIST = -2
 
         const val CODE_FILE_OPEN_FAILED = -5
+
+        const val CODE_FILE_TOO_SMALL = -9
     }
 
     sealed class ParseChapterResult(
@@ -53,6 +55,9 @@ class BookParser(private val bookFile: BookFile) {
         object FileNotExist : ParseChapterResult(CODE_FILE_NOT_EXIST, "文件不存在", null)
         class FileOpenFail(exception: Exception?) :
             ParseChapterResult(CODE_FILE_OPEN_FAILED, "文件打开失败", exception)
+
+        class FileTooSmall(len: Long) :
+            ParseChapterResult(CODE_FILE_TOO_SMALL, "文件过小[${len}]", null)
 
         class Success(list: List<BookChapter>) :
             ParseChapterResult(CODE_SUCCESS, "", null, list)
@@ -66,6 +71,11 @@ class BookParser(private val bookFile: BookFile) {
         val file = bookFile.realPath.let { if (it.isEmpty()) null else File(it) }
         if (file?.exists() != true) {
             return ParseChapterResult.FileNotExist
+        }
+
+        val fileLen = file.length()
+        if (fileLen <= 0) {
+            return ParseChapterResult.FileTooSmall(fileLen)
         }
 
         LogUtils.i(TAG, "Split chapters for file: $file")
@@ -173,14 +183,18 @@ class BookParser(private val bookFile: BookFile) {
                         bookChapter.order = index
                         bookChapter.lastModified = lastModified
                         bookChapter.bookId = bookFile.id
-                        bookChapter.realChapter = true
+                        bookChapter.chapterType = BookChapter.ChapterType.REAL
                         if ("序章" != bookChapter.title) {
                             bookChapter.start += bookChapter.title.toByteArray(charset)
                                 .size.toLong()
                             bookChapter.title = bookChapter.title.trim()
                         }
                     }
-                } else {
+                } else if (fileLen <= MAX_LENGTH_WITH_NO_CHAPTER) {
+                    LogUtils.i(
+                        TAG,
+                        "FileLen=${fileLen.toFileSizeString()} <= ${MAX_LENGTH_WITH_NO_CHAPTER.toFileSizeString()}. Use single chapter with filename as title."
+                    )
                     chapters.add(
                         BookChapter(
                             null,
@@ -190,9 +204,60 @@ class BookParser(private val bookFile: BookFile) {
                             bookFile.filename,
                             0L,
                             file.length(),
-                            false
+                            BookChapter.ChapterType.SINGLE
                         )
                     )
+                } else {
+                    LogUtils.i(
+                        TAG,
+                        "FileLen=${fileLen.toFileSizeString()} > ${MAX_LENGTH_WITH_NO_CHAPTER.toFileSizeString()}. Use virtual chapters."
+                    )
+                    bookStream.seek(0L)
+
+                    // 不需要关闭，因为这个fd最终会被bookStream关掉的
+                    val reader = ByteCountingLineReader(bookStream.fd, charset)
+                    // 下一次需要分章的首个字节偏移
+                    var chapterByteOffset = 0L
+                    var lastLineByteCount: Long
+                    var currentByteCount = 0L
+                    var chapterIndex = 1
+
+                    while (reader.readLine() != null) {
+                        lastLineByteCount = currentByteCount
+                        currentByteCount = reader.byteCount()
+
+                        // 总计读入的内容超过了最大章节，就分一章
+                        if (currentByteCount - chapterByteOffset > MAX_LENGTH_WITH_NO_CHAPTER) {
+                            val chapter = BookChapter()
+                            chapter.title = "第${chapterIndex++}章"
+                            chapter.start = chapterByteOffset
+                            chapter.end = lastLineByteCount
+                            chapterByteOffset = lastLineByteCount
+                            chapters.add(chapter)
+                        }
+                    }
+
+                    // 最后一章
+                    if (currentByteCount > chapterByteOffset + 1) {
+                        val chapter = BookChapter()
+                        chapter.title = "第${chapterIndex}章"
+                        chapter.start = chapterByteOffset
+                        chapter.end = currentByteCount
+                        chapters.add(chapter)
+                    }
+
+                    LogUtils.d(TAG, "[Virtual chapters] fileLen=${fileLen}")
+                    chapters.forEachIndexed { index, bookChapter ->
+                        bookChapter.order = index
+                        bookChapter.lastModified = lastModified
+                        bookChapter.bookId = bookFile.id
+                        // 这里也认为是真的章节
+                        bookChapter.chapterType = BookChapter.ChapterType.VIRTUAL
+                        LogUtils.d(
+                            TAG,
+                            "[Virtual chapters]：index=${index}, start=${bookChapter.start}, end=${bookChapter.end}"
+                        )
+                    }
                 }
 
                 LogUtils.i(TAG, "Chapter result: size=${chapters.size}")
@@ -203,7 +268,7 @@ class BookParser(private val bookFile: BookFile) {
                 bookFile.handleChapterLastModified = lastModified
                 bookFile.lastChapter = 0
                 bookFile.lastPageInChapter = 0
-                if (chapters.size > 0) {
+                if (chapters.isNotEmpty()) {
                     bookFile.lastChapterDesc = chapters[0].title
                 }
 

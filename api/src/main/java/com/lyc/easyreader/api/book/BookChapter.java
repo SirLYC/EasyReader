@@ -1,10 +1,12 @@
 package com.lyc.easyreader.api.book;
 
+import org.greenrobot.greendao.annotation.Convert;
 import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
 import org.greenrobot.greendao.annotation.NotNull;
+import org.greenrobot.greendao.converter.PropertyConverter;
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -21,19 +23,15 @@ public class BookChapter {
     private String title;
     private long start;
     private long end;
+    @NotNull
+    @Convert(converter = ChapterTypeConverter.class, columnType = String.class)
     // 区分是否是通过正则匹配到的
-    private boolean realChapter;
+    private ChapterType chapterType;
 
 
-    @Generated(hash = 1481387400)
-    public BookChapter() {
-    }
-
-
-    @Generated(hash = 1356701021)
-    public BookChapter(Long id, int order, long lastModified,
-                       @NotNull String bookId, String title, long start, long end,
-                       boolean realChapter) {
+    @Generated(hash = 1818994638)
+    public BookChapter(Long id, int order, long lastModified, @NotNull String bookId, String title,
+                       long start, long end, @NotNull ChapterType chapterType) {
         this.id = id;
         this.order = order;
         this.lastModified = lastModified;
@@ -41,7 +39,19 @@ public class BookChapter {
         this.title = title;
         this.start = start;
         this.end = end;
-        this.realChapter = realChapter;
+        this.chapterType = chapterType;
+    }
+
+    @Generated(hash = 1481387400)
+    public BookChapter() {
+    }
+
+    public void setBookId(String bookId) {
+        this.bookId = bookId;
+    }
+
+    public ChapterType getChapterType() {
+        return this.chapterType;
     }
 
 
@@ -100,18 +110,25 @@ public class BookChapter {
         return this.bookId;
     }
 
-
-    public void setBookId(String bookId) {
-        this.bookId = bookId;
+    public void setChapterType(ChapterType chapterType) {
+        this.chapterType = chapterType;
     }
 
 
-    public boolean getRealChapter() {
-        return this.realChapter;
+    public enum ChapterType {
+        REAL, SINGLE, VIRTUAL
     }
 
+    public static class ChapterTypeConverter implements PropertyConverter<ChapterType, String> {
 
-    public void setRealChapter(boolean realChapter) {
-        this.realChapter = realChapter;
+        @Override
+        public ChapterType convertToEntityProperty(String databaseValue) {
+            return ChapterType.valueOf(databaseValue);
+        }
+
+        @Override
+        public String convertToDatabaseValue(ChapterType entityProperty) {
+            return entityProperty.name();
+        }
     }
 }
