@@ -125,6 +125,7 @@ class BookShelfOpenHelper private constructor() :
     }
 
     fun updateBookCollect(bookCollect: BookCollect) {
+        bookCollect.collectTime = System.currentTimeMillis()
         dbRunner.asyncRun(Runnable {
             daoSession.bookCollectDao.insertOrReplace(bookCollect)
         })

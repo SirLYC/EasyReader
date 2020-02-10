@@ -78,7 +78,7 @@ class ReaderViewModel : ViewModel() {
                     if (!alive) {
                         return@post
                     }
-                    this.bookCollect = bookCollect ?: BookCollect(newBookFile.id, false)
+                    this.bookCollect = bookCollect ?: BookCollect(newBookFile.id, false, 0)
                     bookFileLiveData.value = newBookFile
                     BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
                     currentPage.value = newBookFile.lastPageInChapter
@@ -100,7 +100,8 @@ class ReaderViewModel : ViewModel() {
             val bookCollect =
                 this@ReaderViewModel.bookCollect?.also { it.collected = collect } ?: BookCollect(
                     id,
-                    collect
+                    collect,
+                    0
                 ).also {
                     this@ReaderViewModel.bookCollect = it
                 }

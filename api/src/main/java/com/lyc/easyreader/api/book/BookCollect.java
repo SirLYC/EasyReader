@@ -12,11 +12,13 @@ public class BookCollect {
     @Id
     private String bookId;
     private boolean collected;
+    private long collectTime;
 
-    @Generated(hash = 16879410)
-    public BookCollect(String bookId, boolean collected) {
+    @Generated(hash = 41403629)
+    public BookCollect(String bookId, boolean collected, long collectTime) {
         this.bookId = bookId;
         this.collected = collected;
+        this.collectTime = collectTime;
     }
 
     @Generated(hash = 1898021084)
@@ -37,5 +39,13 @@ public class BookCollect {
 
     public void setCollected(boolean collected) {
         this.collected = collected;
+    }
+
+    public long getCollectTime() {
+        return this.collectTime;
+    }
+
+    public void setCollectTime(long collectTime) {
+        this.collectTime = collectTime;
     }
 }
