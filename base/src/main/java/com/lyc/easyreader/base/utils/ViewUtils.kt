@@ -8,10 +8,15 @@ import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
 import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
+import androidx.appcompat.app.AlertDialog
+import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
+import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.color_divider
 import com.lyc.easyreader.base.ui.theme.color_orange
 import kotlin.math.roundToInt
@@ -138,3 +143,26 @@ var TextView.textSizeInDp
     set(value) {
         setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(value))
     }
+
+fun AlertDialog.Builder.showWithNightMode(): AlertDialog {
+    if (!NightModeManager.nightModeEnable) {
+        return show()
+    } else {
+        val dialog = create()
+        (dialog.window?.decorView as? ViewGroup)?.run {
+            if (childCount > 0) {
+                val view = getChildAt(0)
+                removeAllViews()
+                val newRootView = FrameLayout(ReaderApplication.appContext())
+                addView(newRootView, view.layoutParams)
+                newRootView.addView(view)
+                // 增加一个夜间模式遮罩
+                newRootView.addView(FrameLayout(ReaderApplication.appContext()).apply {
+                    setBackgroundColor(NightModeManager.NIGHT_MODE_MASK_COLOR)
+                })
+            }
+        }
+        dialog.show()
+        return dialog
+    }
+}

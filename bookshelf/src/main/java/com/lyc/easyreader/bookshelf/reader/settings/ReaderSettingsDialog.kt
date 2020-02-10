@@ -19,7 +19,7 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lyc.easyreader.base.ReaderApplication
-import com.lyc.easyreader.base.ui.BaseBottomSheet
+import com.lyc.easyreader.base.ui.bottomsheet.BaseBottomSheet
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_orange
@@ -343,7 +343,7 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             VIEW_ID_USER_PAGE_STYLE -> {
                 dismiss()
                 activity?.supportFragmentManager?.let {
-                    PageStyleColorPickerDialog().show(it)
+                    PageStyleColorPickerDialog().showOneTag(it)
                 }
             }
             VIEW_ID_FULL_SCREEN -> {

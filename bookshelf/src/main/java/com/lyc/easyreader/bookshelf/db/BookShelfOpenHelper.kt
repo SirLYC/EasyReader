@@ -117,6 +117,19 @@ class BookShelfOpenHelper private constructor() :
             .list()
     }
 
+    fun queryBookCollect(bookFile: BookFile): BookCollect? {
+        if (bookFile.id == null) {
+            return null
+        }
+        return daoSession.bookCollectDao.load(bookFile.id)
+    }
+
+    fun updateBookCollect(bookCollect: BookCollect) {
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookCollectDao.insertOrReplace(bookCollect)
+        })
+    }
+
     fun queryBookChapters(bookFile: BookFile): List<BookChapter>? {
         if (bookFile.id == null) {
             return null

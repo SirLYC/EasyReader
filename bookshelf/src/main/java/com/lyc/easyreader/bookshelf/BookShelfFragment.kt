@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -28,11 +27,11 @@ import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.ReaderToast
+import com.lyc.easyreader.base.ui.bottomsheet.LinearDialogBottomSheet
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_light_blue
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
-import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
@@ -45,7 +44,7 @@ import java.io.FileInputStream
  * Created by Liu Yuchuan on 2020/1/20.
  */
 class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
-    PopupMenu.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener,
+    SwipeRefreshLayout.OnRefreshListener,
     BookShelfListAdapter.OnItemClickListener {
 
     private lateinit var recyclerView: RecyclerView
@@ -194,15 +193,17 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     override fun onClick(v: View?) {
         when (v?.id) {
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
-                menu?.dismiss()
-
-                menu = ReaderPopupMenu(v.context, v, Gravity.LEFT or Gravity.BOTTOM).also {
-                    it.setOnMenuItemClickListener(this)
-                    it.menu.run {
-                        add(0, MENU_ID_ADD_FROM_LOCAL, MENU_ID_ADD_FROM_LOCAL, "导入本地书籍")
-                        add(0, MENU_ID_SCAN_LOCAL, MENU_ID_SCAN_LOCAL, "扫描书籍")
+                activity?.run {
+                    val dialog = LinearDialogBottomSheet(this)
+                    val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
+                    val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
+                    dialog.show()
+                    dialog.itemClickListener = { id, _ ->
+                        when (id) {
+                            importFileId -> performFileSearch()
+                            scanDirId -> performDirSearch()
+                        }
                     }
-                    it.show()
                 }
             }
             VIEW_ID_ADD_FILE -> {
@@ -212,19 +213,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                 performDirSearch()
             }
         }
-    }
-
-    override fun onMenuItemClick(item: MenuItem?): Boolean {
-        when (item?.itemId) {
-            MENU_ID_ADD_FROM_LOCAL -> {
-                performFileSearch()
-            }
-
-            MENU_ID_SCAN_LOCAL -> {
-                performDirSearch()
-            }
-        }
-        return true
     }
 
     override fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {

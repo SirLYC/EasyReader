@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.api.book.BookChapter
+import com.lyc.easyreader.api.book.BookCollect
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.arch.LiveState
 import com.lyc.easyreader.base.arch.NonNullLiveData
@@ -39,6 +40,8 @@ class ReaderViewModel : ViewModel() {
     val currentChapter = NonNullLiveData(0)
     val chapterReverse = NonNullLiveData(false)
 
+    var bookCollect: BookCollect? = null
+
     val changeChapterCall = SingleLiveEvent<Int>()
 
     fun init(bookFile: BookFile) {
@@ -70,10 +73,12 @@ class ReaderViewModel : ViewModel() {
                     chapterList = result.list
                 }
                 val nonnullList = chapterList!!
+                val bookCollect = BookShelfOpenHelper.instance.queryBookCollect(bookFile)
                 handler.post {
                     if (!alive) {
                         return@post
                     }
+                    this.bookCollect = bookCollect ?: BookCollect(newBookFile.id, false)
                     bookFileLiveData.value = newBookFile
                     BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
                     currentPage.value = newBookFile.lastPageInChapter
@@ -87,6 +92,20 @@ class ReaderViewModel : ViewModel() {
                     loadingChapterListLiveData.value = false
                 }
             }
+        }
+    }
+
+    fun updateCollectState(collect: Boolean) {
+        bookFileLiveData.value?.run {
+            val bookCollect =
+                this@ReaderViewModel.bookCollect?.also { it.collected = collect } ?: BookCollect(
+                    id,
+                    collect
+                ).also {
+                    this@ReaderViewModel.bookCollect = it
+                }
+            BookShelfOpenHelper.instance.updateBookCollect(bookCollect)
+            ReaderToast.showToast(if (collect) "已收藏" else "已取消收藏")
         }
     }
 

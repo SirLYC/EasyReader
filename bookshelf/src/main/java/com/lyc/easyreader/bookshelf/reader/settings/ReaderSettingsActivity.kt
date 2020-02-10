@@ -15,12 +15,18 @@ import com.lyc.easyreader.base.preference.view.TextSettingItemView
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
+import com.lyc.easyreader.base.utils.generateNewViewId
+import com.lyc.easyreader.base.utils.showWithNightMode
 import com.lyc.easyreader.base.utils.statusBarBlackText
 
 /**
  * Created by Liu Yuchuan on 2020/2/10.
  */
 class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
+    companion object {
+        private val VIEW_ID_SCROLL_VIEW = generateNewViewId()
+    }
+
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
         super.afterBaseOnCreate(savedInstanceState, rootView)
         val topBar = BaseToolBar(this)
@@ -28,6 +34,8 @@ class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
         topBar.setTitle("更多设置")
         rootView.addView(topBar, FrameLayout.LayoutParams(MATCH_PARENT, topBar.getViewHeight()))
         val nestedScrollView = NestedScrollView(this)
+        // 配置改变时保留scrollPosition
+        nestedScrollView.id = VIEW_ID_SCROLL_VIEW
         rootView.addView(
             nestedScrollView,
             FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT).apply {
@@ -47,7 +55,7 @@ class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
                         LineSpaceFactor.values().map { it.displayName }.toTypedArray()
                     ) { _, index ->
                         settings.lineSpaceFactor.value = LineSpaceFactor.values()[index]
-                    }.show()
+                    }.showWithNightMode()
             }
             settings.lineSpaceFactor.observe(this@ReaderSettingsActivity, Observer {
                 contentTv.text = it.displayName
@@ -62,7 +70,7 @@ class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
                         ParamSpaceFactor.values().map { it.displayName }.toTypedArray()
                     ) { _, index ->
                         settings.paraSpaceFactor.value = ParamSpaceFactor.values()[index]
-                    }.show()
+                    }.showWithNightMode()
             }
             settings.paraSpaceFactor.observe(this@ReaderSettingsActivity, Observer {
                 contentTv.text = it.displayName
@@ -80,7 +88,7 @@ class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
                             0 -> 0
                             else -> 1 shl (index - 1)
                         }
-                    }.show()
+                    }.showWithNightMode()
             }
             settings.indentCount.observe(this@ReaderSettingsActivity, Observer {
                 contentTv.text = it.toString()
@@ -115,7 +123,7 @@ class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
                         ReaderMargin.values().map { it.displayName }.toTypedArray()
                     ) { _, index ->
                         settings.readerMargin.value = ReaderMargin.values()[index]
-                    }.show()
+                    }.showWithNightMode()
             }
             settings.readerMargin.observe(this@ReaderSettingsActivity, Observer {
                 contentTv.text = it.displayName
@@ -134,7 +142,7 @@ class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
                         ReaderToast.showToast("已恢复默认设置")
                     }
                     .setNegativeButton("否", null)
-                    .show()
+                    .showWithNightMode()
             }
         })
     }

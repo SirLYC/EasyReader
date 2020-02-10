@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.view.setPadding
 import com.lyc.easyreader.base.ReaderApplication
-import com.lyc.easyreader.base.ui.BaseBottomSheet
+import com.lyc.easyreader.base.ui.bottomsheet.BaseBottomSheet
 import com.lyc.easyreader.base.utils.dp2px
 
 /**

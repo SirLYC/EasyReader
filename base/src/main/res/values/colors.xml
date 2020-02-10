@@ -8,5 +8,6 @@
     <color name="colorSecondaryText">#757575</color>
     <color name="colorDivider">#BDBDBD</color>
     <color name="colorGray">#9E9E9E</color>
+    <color name="colorBottomSheetItem">#747474</color>
     <color name="colorYellow">#FED227</color>
 </resources>

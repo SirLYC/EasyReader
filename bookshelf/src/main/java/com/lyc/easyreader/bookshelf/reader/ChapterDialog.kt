@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
-import com.lyc.easyreader.base.ui.BaseBottomSheet
+import com.lyc.easyreader.base.ui.bottomsheet.BaseBottomSheet
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.utils.*

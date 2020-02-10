@@ -1,4 +1,4 @@
-package com.lyc.easyreader.base.ui
+package com.lyc.easyreader.base.ui.bottomsheet
 
 import android.app.Dialog
 import android.graphics.Color
@@ -10,6 +10,7 @@ import android.view.Window
 import android.view.WindowManager
 import androidx.core.view.setPadding
 import com.lyc.easyreader.base.R
+import com.lyc.easyreader.base.ui.BaseDialogFragment
 
 /**
  * Created by Liu Yuchuan on 2020/2/8.

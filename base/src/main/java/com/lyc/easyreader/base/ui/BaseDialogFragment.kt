@@ -14,11 +14,16 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.ui.theme.NightModeManager
+import com.lyc.easyreader.base.utils.LogUtils
 
 /**
  * Created by Liu Yuchuan on 2020/2/8.
  */
 abstract class BaseDialogFragment : DialogFragment() {
+    companion object {
+        const val TAG = "BaseDialogFragment"
+    }
+
     private var maskView: View? = null
     private val showTag = javaClass.name
 
@@ -76,7 +81,8 @@ abstract class BaseDialogFragment : DialogFragment() {
 
     }
 
-    fun show(manager: FragmentManager): BaseDialogFragment {
+    fun showOneTag(manager: FragmentManager, showTag: String?): BaseDialogFragment {
+        LogUtils.d(TAG, "Show baseDialog, tag=${showTag}")
         val fragment = manager.findFragmentByTag(showTag)
         val result = fragment as? BaseDialogFragment
         if (result != null) {
@@ -84,5 +90,9 @@ abstract class BaseDialogFragment : DialogFragment() {
         }
         super.show(manager, showTag)
         return this
+    }
+
+    open fun showOneTag(manager: FragmentManager): BaseDialogFragment {
+        return showOneTag(manager, showTag)
     }
 }

@@ -22,7 +22,6 @@ import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
 import android.webkit.MimeTypeMap
 import android.widget.*
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
@@ -35,11 +34,11 @@ import com.lyc.easyreader.base.app.NotchCompat
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.ReaderToast
+import com.lyc.easyreader.base.ui.bottomsheet.LinearDialogBottomSheet
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.color_orange
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
-import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.BuildConfig
@@ -60,7 +59,7 @@ import kotlin.math.min
  * Created by Liu Yuchuan on 2020/1/30.
  */
 class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListener,
-    PageLoader.OnPageChangeListener, PopupMenu.OnMenuItemClickListener {
+    PageLoader.OnPageChangeListener {
     companion object {
         private const val KEY_BOOK_FILE = "KEY_BOOK_FILE"
 
@@ -977,25 +976,44 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
             VIEW_ID_BTN_SETTINGS -> {
                 viewModel.showMenu.state = false
-                ReaderSettingsDialog().show(supportFragmentManager)
+                ReaderSettingsDialog().showOneTag(supportFragmentManager)
             }
 
             VIEW_ID_BTN_CATEGORY -> {
                 viewModel.showMenu.state = false
-                ChapterDialog().show(supportFragmentManager)
+                ChapterDialog().showOneTag(supportFragmentManager)
             }
 
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
-                ReaderPopupMenu(v.context, v, Gravity.LEFT or Gravity.BOTTOM).also {
-                    it.menu.run {
-                        add(0, MENU_ID_COLLECT_BOOK, MENU_ID_COLLECT_BOOK, "收藏")
-                        add(0, MENU_ID_BOOK_MARK, MENU_ID_BOOK_MARK, "加入书签")
-                        add(0, MENU_ID_SHARE, MENU_ID_SHARE, "分享")
-                        add(0, MENU_ID_OPEN_OTHER_APP, MENU_ID_OPEN_OTHER_APP, "其他应用打开")
+                viewModel.showMenu.state = false
+                val dialog = LinearDialogBottomSheet(this)
+                val collected: Boolean
+                val collectId =
+                    if ((viewModel.bookCollect?.collected == true).also { collected = it }) {
+                        dialog.addItem("取消收藏", R.drawable.ic_star_24dp, Color.WHITE)
+                    } else {
+                        dialog.addItem("加入收藏", R.drawable.ic_star_border_24dp, Color.WHITE)
                     }
-                    it.setOnMenuItemClickListener(this)
-                    it.show()
+                val bookMarkId =
+                    dialog.addItem("加入书签", R.drawable.ic_bookmark_border_24dp, Color.WHITE)
+                val shareId = dialog.addItem("分享", R.drawable.ic_share_24dp, Color.WHITE)
+                val exportId =
+                    dialog.addItem("其他应用打开", R.drawable.ic_launch_24dp, color = Color.WHITE)
+                dialog.bgColor = color_orange
+                dialog.show()
+                dialog.itemClickListener = { id, _ ->
+                    when (id) {
+                        collectId -> {
+                            viewModel.updateCollectState(!collected)
+                        }
+                        bookMarkId -> {
+
+                        }
+                        shareId -> shareBookFileByOtherApp()
+                        exportId -> openBookFileByOtherApp()
+                    }
                 }
+
             }
         }
     }
@@ -1024,26 +1042,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         val chapterPos = pageLoader?.chapterPos ?: -1
         val pagePos = pageLoader?.pagePos ?: -1
         viewModel.updateRecord(chapterPos, pagePos)
-    }
-
-    override fun onMenuItemClick(item: MenuItem?): Boolean {
-        when (item?.itemId) {
-            MENU_ID_BOOK_MARK -> {
-                return true
-            }
-            MENU_ID_COLLECT_BOOK -> {
-                return true
-            }
-            MENU_ID_SHARE -> {
-                shareBookFileByOtherApp()
-                return true
-            }
-            MENU_ID_OPEN_OTHER_APP -> {
-                openBookFileByOtherApp()
-                return true
-            }
-        }
-        return false
     }
 
     private fun openBookFileByOtherApp() {
