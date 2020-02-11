@@ -222,7 +222,6 @@ class BookShelfOpenHelper private constructor() :
             LogUtils.e(TAG, ex = e)
         }
 
-        LogUtils.d(TAG, "Shelf book list=${list}")
         return list
     }
 

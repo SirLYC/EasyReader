@@ -66,18 +66,28 @@ abstract class BaseDialogFragment : DialogFragment() {
 
     @CallSuper
     override fun onActivityCreated(savedInstanceState: Bundle?) {
+        this.dialog?.let { dialog ->
+            dialog.window?.let {
+                changeWindowAndDialogAttr(dialog, it)
+            }
+        }
         super.onActivityCreated(savedInstanceState)
         NightModeManager.nightMode.observe(this, Observer {
             onNightModeChange(it)
         })
         this.dialog?.let { dialog ->
             dialog.window?.let {
-                changeWindowAndDialogAttr(dialog, it)
+                changeWindowAndDialogAfterSetContent(dialog, it)
             }
         }
     }
 
     open fun changeWindowAndDialogAttr(dialog: Dialog, window: Window) {
+
+    }
+
+
+    open fun changeWindowAndDialogAfterSetContent(dialog: Dialog, window: Window) {
 
     }
 

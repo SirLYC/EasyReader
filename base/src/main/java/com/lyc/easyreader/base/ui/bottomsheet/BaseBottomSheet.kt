@@ -8,6 +8,7 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.Window
 import android.view.WindowManager
+import androidx.annotation.CallSuper
 import androidx.core.view.setPadding
 import com.lyc.easyreader.base.R
 import com.lyc.easyreader.base.ui.BaseDialogFragment
@@ -18,6 +19,12 @@ import com.lyc.easyreader.base.ui.BaseDialogFragment
 abstract class BaseBottomSheet : BaseDialogFragment() {
     override fun changeWindowAndDialogAttr(dialog: Dialog, window: Window) {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.setCancelable(true)
+    }
+
+    @CallSuper
+    override fun changeWindowAndDialogAfterSetContent(dialog: Dialog, window: Window) {
         window.decorView.setPadding(0)
         window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
@@ -28,8 +35,6 @@ abstract class BaseBottomSheet : BaseDialogFragment() {
         attributes.gravity = Gravity.BOTTOM
         attributes.windowAnimations = R.style.BottomDialogAnim
         window.attributes = attributes
-        dialog.setCanceledOnTouchOutside(true)
-        dialog.setCancelable(true)
         dialog.setOnShowListener {
             window.setWindowAnimations(0)
         }

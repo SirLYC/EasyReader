@@ -64,7 +64,7 @@ class RenameDialog : BaseDialogFragment(), View.OnClickListener, TextWatcher,
         return view
     }
 
-    override fun changeWindowAndDialogAttr(dialog: Dialog, window: Window) {
+    override fun changeWindowAndDialogAfterSetContent(dialog: Dialog, window: Window) {
         val lp = window.attributes
         lp.height = WRAP_CONTENT
         lp.width = (max(deviceWidth(), 360) * 0.9f).toInt()
@@ -74,7 +74,6 @@ class RenameDialog : BaseDialogFragment(), View.OnClickListener, TextWatcher,
         window.attributes = lp
         dialog.setCanceledOnTouchOutside(false)
     }
-
 
     override fun onClick(v: View?) {
         when (v?.id) {

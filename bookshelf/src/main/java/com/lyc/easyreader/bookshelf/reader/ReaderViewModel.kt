@@ -18,6 +18,8 @@ import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.rv.ObservableList
 import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.system.measureTimeMillis
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -65,7 +67,13 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
                 var chapterList = BookShelfOpenHelper.instance.queryBookChapters(newBookFile)
                 if (chapterList == null || chapterList.isEmpty()) {
                     val parser = BookParser(newBookFile)
-                    val result = parser.parseChapters()
+
+                    val resultCapture = AtomicReference<BookParser.ParseChapterResult>()
+                    val time = measureTimeMillis {
+                        resultCapture.set(parser.parseChapters())
+                    }
+                    LogUtils.d(TAG, "Parse book time: ${time}ms")
+                    val result: BookParser.ParseChapterResult = resultCapture.get()
                     handler.post { parseResult = result }
                     if (result.code != BookParser.CODE_SUCCESS) {
                         ReaderToast.showToast(result.msg)

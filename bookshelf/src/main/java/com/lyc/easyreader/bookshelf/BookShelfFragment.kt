@@ -200,11 +200,13 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     val dialog = LinearDialogBottomSheet(this)
                     val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
                     val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
+                    val batchId = dialog.addItem("批量管理", R.drawable.ic_format_list_bulleted_24dp)
                     dialog.show()
                     dialog.itemClickListener = { id, _ ->
                         when (id) {
                             importFileId -> performFileSearch()
                             scanDirId -> performDirSearch()
+                            batchId -> toggleEditMode()
                         }
                     }
                 }
@@ -302,6 +304,8 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         }
         startActivityForResult(intent, REQUEST_CODE_FILE)
     }
+
+    private fun toggleEditMode() {}
 
     private fun performDirSearch() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)

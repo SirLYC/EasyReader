@@ -1,5 +1,6 @@
 package com.lyc.easyreader.bookshelf.reader
 
+import android.os.SystemClock
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.utils.LogUtils
@@ -8,11 +9,16 @@ import com.lyc.easyreader.bookshelf.utils.ByteCountingLineReader
 import com.lyc.easyreader.bookshelf.utils.detectCharset
 import com.lyc.easyreader.bookshelf.utils.toFileSizeString
 import java.io.File
+import java.io.FileInputStream
 import java.io.IOException
 import java.io.RandomAccessFile
 import java.nio.charset.Charset
-import java.util.regex.Matcher
+import java.util.*
 import java.util.regex.Pattern
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.system.measureTimeMillis
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -24,6 +30,8 @@ class BookParser(private val bookFile: BookFile) {
         const val TAG = "BookParser"
 
         private const val BUFFER_SIZE = 512 * 1024
+
+        private const val CHAR_BUFFER_SIZE = 1000000
 
         private const val MAX_LENGTH_WITH_NO_CHAPTER = 10 * 1024L
 
@@ -94,169 +102,236 @@ class BookParser(private val bookFile: BookFile) {
                 } else {
                     LogUtils.i(TAG, "Chapter pattern found.")
                 }
-                val buffer = ByteArray(BUFFER_SIZE)
-                // 当前buffer在文件中的起始偏移
-                var curOffset: Long = 0
-                // block的个数
-                var blockCount = 0
-                // 读取的长度
-                var readLen: Int
 
-                if (chapterPattern != null) {
-                    while (bookStream.read(buffer, 0, buffer.size).also { readLen = it } > 0) {
-                        ++blockCount
-                        val blockContent = String(buffer, 0, readLen, charset)
-                        var seekPos = 0
-                        val matcher: Matcher = chapterPattern.matcher(blockContent)
-                        while (matcher.find()) { //获取匹配到的字符在字符串中的起始位置
-                            val chapterStart = matcher.start()
-                            //如果 seekPos == 0 && nextChapterPos != 0 表示当前block处前面有一段内容
-                            // 第一种情况一定是序章 第二种情况可能是上一个章节的内容
-                            if (seekPos == 0 && chapterStart != 0) { //获取当前章节的内容
-                                val chapterContent = blockContent.substring(seekPos, chapterStart)
-                                //设置指针偏移
-                                seekPos += chapterContent.length
-                                //如果当前对整个文件的偏移位置为0的话，那么就是序章
-                                if (curOffset == 0L) {
-                                    // 序章
-                                    val preChapter = BookChapter()
-                                    preChapter.title = "序章"
-                                    preChapter.start = 0
-                                    preChapter.end =
-                                        chapterContent.toByteArray(charset).size.toLong()
-                                    if (preChapter.end - preChapter.start > 0) {
-                                        chapters.add(preChapter)
-                                    }
-                                    val curChapter = BookChapter()
-                                    curChapter.title = matcher.group()
-                                    curChapter.start = preChapter.end
-                                    chapters.add(curChapter)
-                                } else {
-                                    //获取上一章节
-                                    val lastChapter: BookChapter = chapters[chapters.size - 1]
-                                    //将当前段落添加上一章去
-                                    lastChapter.end += chapterContent.toByteArray(charset)
-                                        .size.toLong()
-                                    //如果章节内容太小，则移除
-                                    if (lastChapter.end - lastChapter.start <= 0) {
-                                        chapters.remove(lastChapter)
-                                    }
-                                    //创建当前章节
-                                    val curChapter = BookChapter()
-                                    curChapter.title = matcher.group()
-                                    curChapter.start = lastChapter.end
-                                    chapters.add(curChapter)
-                                }
-                            } else {
-                                if (chapters.size != 0) {
-                                    //获取章节内容
-                                    val chapterContent =
-                                        blockContent.substring(seekPos, matcher.start())
-                                    seekPos += chapterContent.length
-                                    //获取上一章节
-                                    val lastChapter: BookChapter = chapters[chapters.size - 1]
-                                    lastChapter.end =
-                                        lastChapter.start + chapterContent.toByteArray(charset).size.toLong()
-                                    //如果章节内容太小，则移除
-                                    if (lastChapter.end - lastChapter.start <= 0) {
-                                        chapters.remove(lastChapter)
-                                    }
-                                    //创建当前章节
-                                    val curChapter = BookChapter()
-                                    curChapter.title = matcher.group()
-                                    curChapter.start = lastChapter.end
-                                    chapters.add(curChapter)
-                                } else {
-                                    val curChapter =
-                                        BookChapter()
-                                    curChapter.title = matcher.group()
-                                    curChapter.start = 0
-                                    chapters.add(curChapter)
-                                }
+                var ioTime = 0L
+                var newStringTime = 0L
+                var encodeTime = 0L
+                var patternTime = 0L
+                var findMapTime = 0L
+                var startTime: Long
+
+                val byteCntBeforeMap = TreeMap<Int, Long>()
+
+                when {
+                    chapterPattern != null -> {
+                        bookStream.seek(0L)
+                        var chapterByteOffset = 0L
+                        var lastPartByteCount: Long
+                        var currentByteCount = 0L
+                        var firstChapter = true
+                        var lastTitle = ""
+                        var currentTitle: String
+                        val reader = FileInputStream(bookStream.fd).bufferedReader(charset)
+
+                        val buffer = CharArray(CHAR_BUFFER_SIZE)
+                        var len: Int
+
+                        startTime = SystemClock.elapsedRealtime()
+                        while (reader.read(buffer).also { len = it } != -1) {
+                            if (len <= 0) {
+                                continue
                             }
+                            byteCntBeforeMap.clear()
+                            ioTime += SystemClock.elapsedRealtime() - startTime
+
+                            startTime = SystemClock.elapsedRealtime()
+                            val str = String(buffer, 0, len)
+                            newStringTime += SystemClock.elapsedRealtime() - startTime
+
+                            lastPartByteCount = currentByteCount
+                            byteCntBeforeMap[0] = 0
+
+//                            startTime = SystemClock.elapsedRealtime()
+//                            lastPartByteCount = currentByteCount
+//                            str.toByteArray(charset).size.toLong().let {
+//                                currentByteCount = lastPartByteCount + it
+//                                byteCntBeforeMap[0] = 0
+//                                byteCntBeforeMap[str.length] = it
+//                            }
+//                            encodeTime += SystemClock.elapsedRealtime() - startTime
+
+                            startTime = SystemClock.elapsedRealtime()
+                            val matcher = chapterPattern.matcher(str)
+                            while (matcher.find()) {
+                                patternTime += SystemClock.elapsedRealtime() - startTime
+                                val start = matcher.start()
+                                startTime = SystemClock.elapsedRealtime()
+
+                                val byteCountBeforeChapter =
+                                    when {
+                                        start == 0 -> {
+                                            0L
+                                        }
+                                        byteCntBeforeMap.containsKey(start) -> {
+                                            byteCntBeforeMap[start]!!
+                                        }
+                                        else -> {
+                                            startTime = SystemClock.elapsedRealtime()
+                                            var index = 0
+                                            var distance = start - 1
+                                            for (key in byteCntBeforeMap.keys) {
+                                                val curDis = abs(key - start)
+                                                if (curDis < distance) {
+                                                    index = key
+                                                    distance = curDis
+                                                }
+                                            }
+                                            findMapTime += SystemClock.elapsedRealtime() - startTime
+                                            val subString = str.substring(
+                                                min(start, index),
+                                                max(start, index)
+                                            )
+                                            val size = subString.toByteArray(charset).size.toLong()
+                                            val actualSize = if (index > start) {
+                                                byteCntBeforeMap[index]!! - size
+                                            } else {
+                                                size + byteCntBeforeMap[index]!!
+                                            }
+                                            byteCntBeforeMap[start] = actualSize
+                                            actualSize
+                                        }
+                                    }
+                                encodeTime += SystemClock.elapsedRealtime() - startTime
+                                currentTitle = lastTitle
+                                lastTitle = matcher.group()
+
+                                val fileOffset = byteCountBeforeChapter + lastPartByteCount
+                                if (firstChapter && fileOffset > 0) {
+                                    // 序章
+                                    val chapter = BookChapter()
+                                    chapter.title = "序章"
+                                    chapter.start = 0
+                                    chapter.end = fileOffset
+                                    chapterByteOffset = fileOffset
+                                    chapters.add(chapter)
+                                    firstChapter = false
+                                } else if (firstChapter) {
+                                    // 没有序章
+                                    // 跳过
+                                    firstChapter = false
+                                } else {
+                                    // 找到了新的一章
+                                    val chapter = BookChapter()
+                                    chapter.title = currentTitle
+                                    chapter.start = chapterByteOffset
+                                    chapter.end = fileOffset
+                                    chapterByteOffset = fileOffset
+                                    chapters.add(chapter)
+                                }
+                                startTime = SystemClock.elapsedRealtime()
+                            }
+
+                            val lastIndex = str.length - 1
+                            if (!byteCntBeforeMap.containsKey(lastIndex)) {
+                                val start = byteCntBeforeMap.keys.last()
+                                val substring = str.substring(start)
+                                val size = substring.toByteArray(charset).size.toLong()
+                                byteCntBeforeMap[lastIndex] = size + byteCntBeforeMap[start]!!
+                            }
+
+                            currentByteCount = lastPartByteCount + byteCntBeforeMap[lastIndex]!!
+
+                            startTime = SystemClock.elapsedRealtime()
                         }
-                        curOffset += readLen.toLong()
-                        val lastChapter: BookChapter = chapters[chapters.size - 1]
-                        lastChapter.end = curOffset
-                    }
-                    chapters.forEachIndexed { index, bookChapter ->
-                        bookChapter.order = index
-                        bookChapter.lastModified = lastModified
-                        bookChapter.bookId = bookFile.id
-                        bookChapter.chapterType = BookChapter.ChapterType.REAL
-                        if ("序章" != bookChapter.title) {
-                            bookChapter.start += bookChapter.title.toByteArray(charset)
-                                .size.toLong()
-                            bookChapter.title = bookChapter.title.trim()
-                        }
-                    }
-                } else if (fileLen <= MAX_LENGTH_WITH_NO_CHAPTER) {
-                    LogUtils.i(
-                        TAG,
-                        "FileLen=${fileLen.toFileSizeString()} <= ${MAX_LENGTH_WITH_NO_CHAPTER.toFileSizeString()}. Use single chapter with filename as title."
-                    )
-                    chapters.add(
-                        BookChapter(
-                            null,
-                            0,
-                            lastModified,
-                            bookFile.id,
-                            bookFile.filename,
-                            0L,
-                            file.length(),
-                            BookChapter.ChapterType.SINGLE
-                        )
-                    )
-                } else {
-                    LogUtils.i(
-                        TAG,
-                        "FileLen=${fileLen.toFileSizeString()} > ${MAX_LENGTH_WITH_NO_CHAPTER.toFileSizeString()}. Use virtual chapters."
-                    )
-                    bookStream.seek(0L)
 
-                    // 不需要关闭，因为这个fd最终会被bookStream关掉的
-                    val reader = ByteCountingLineReader(bookStream.fd, charset)
-                    // 下一次需要分章的首个字节偏移
-                    var chapterByteOffset = 0L
-                    var lastLineByteCount: Long
-                    var currentByteCount = 0L
-                    var chapterIndex = 1
-
-                    while (reader.readLine() != null) {
-                        lastLineByteCount = currentByteCount
-                        currentByteCount = reader.byteCount()
-
-                        // 总计读入的内容超过了最大章节，就分一章
-                        if (currentByteCount - chapterByteOffset > MAX_LENGTH_WITH_NO_CHAPTER) {
+                        if (currentByteCount > chapterByteOffset) {
                             val chapter = BookChapter()
-                            chapter.title = "第${chapterIndex++}章"
+                            chapter.title = lastTitle
                             chapter.start = chapterByteOffset
-                            chapter.end = lastLineByteCount
-                            chapterByteOffset = lastLineByteCount
+                            chapter.end = currentByteCount
                             chapters.add(chapter)
                         }
-                    }
 
-                    // 最后一章
-                    if (currentByteCount > chapterByteOffset + 1) {
-                        val chapter = BookChapter()
-                        chapter.title = "第${chapterIndex}章"
-                        chapter.start = chapterByteOffset
-                        chapter.end = currentByteCount
-                        chapters.add(chapter)
-                    }
+                        chapters.forEachIndexed { index, bookChapter ->
+                            bookChapter.order = index
+                            bookChapter.lastModified = lastModified
+                            bookChapter.bookId = bookFile.id
+                            bookChapter.chapterType = BookChapter.ChapterType.REAL
+                            if ("序章" != bookChapter.title) {
+                                startTime = SystemClock.elapsedRealtime()
+                                bookChapter.start += bookChapter.title.toByteArray(charset)
+                                    .size.toLong()
+                                encodeTime += SystemClock.elapsedRealtime() - startTime
+                                bookChapter.title = bookChapter.title.trim()
+                            }
+                        }
 
-                    LogUtils.d(TAG, "[Virtual chapters] fileLen=${fileLen}")
-                    chapters.forEachIndexed { index, bookChapter ->
-                        bookChapter.order = index
-                        bookChapter.lastModified = lastModified
-                        bookChapter.bookId = bookFile.id
-                        // 这里也认为是真的章节
-                        bookChapter.chapterType = BookChapter.ChapterType.VIRTUAL
                         LogUtils.d(
                             TAG,
-                            "[Virtual chapters]：index=${index}, start=${bookChapter.start}, end=${bookChapter.end}"
+                            "IO time=${ioTime}ms, patter time=${patternTime}ms, encodeTime=${encodeTime}ms, new String time=${newStringTime}, findMapTime=${findMapTime}}"
                         )
+                    }
+
+                    fileLen <= MAX_LENGTH_WITH_NO_CHAPTER -> {
+                        LogUtils.i(
+                            TAG,
+                            "FileLen=${fileLen.toFileSizeString()} <= ${MAX_LENGTH_WITH_NO_CHAPTER.toFileSizeString()}. Use single chapter with filename as title."
+                        )
+                        chapters.add(
+                            BookChapter(
+                                null,
+                                0,
+                                lastModified,
+                                bookFile.id,
+                                bookFile.filename,
+                                0L,
+                                file.length(),
+                                BookChapter.ChapterType.SINGLE
+                            )
+                        )
+                    }
+
+                    else -> {
+                        LogUtils.i(
+                            TAG,
+                            "FileLen=${fileLen.toFileSizeString()} > ${MAX_LENGTH_WITH_NO_CHAPTER.toFileSizeString()}. Use virtual chapters."
+                        )
+                        bookStream.seek(0L)
+
+                        // 不需要关闭，因为这个fd最终会被bookStream关掉的
+                        val reader = ByteCountingLineReader(bookStream.fd, charset)
+                        // 下一次需要分章的首个字节偏移
+                        var chapterByteOffset = 0L
+                        var lastLineByteCount: Long
+                        var currentByteCount = 0L
+                        var chapterIndex = 1
+
+                        while (reader.readLine() != null) {
+                            lastLineByteCount = currentByteCount
+                            currentByteCount = reader.byteCount()
+
+                            // 总计读入的内容超过了最大章节，就分一章
+                            if (currentByteCount - chapterByteOffset > MAX_LENGTH_WITH_NO_CHAPTER) {
+                                val chapter = BookChapter()
+                                chapter.title = "第${chapterIndex++}章"
+                                chapter.start = chapterByteOffset
+                                chapter.end = lastLineByteCount
+                                chapterByteOffset = lastLineByteCount
+                                chapters.add(chapter)
+                            }
+                        }
+
+                        // 最后一章
+                        if (currentByteCount > chapterByteOffset + 1) {
+                            val chapter = BookChapter()
+                            chapter.title = "第${chapterIndex}章"
+                            chapter.start = chapterByteOffset
+                            chapter.end = currentByteCount
+                            chapters.add(chapter)
+                        }
+
+                        LogUtils.d(TAG, "[Virtual chapters] fileLen=${fileLen}")
+                        chapters.forEachIndexed { index, bookChapter ->
+                            bookChapter.order = index
+                            bookChapter.lastModified = lastModified
+                            bookChapter.bookId = bookFile.id
+                            // 这里也认为是真的章节
+                            bookChapter.chapterType = BookChapter.ChapterType.VIRTUAL
+                            LogUtils.d(
+                                TAG,
+                                "[Virtual chapters]：index=${index}, start=${bookChapter.start}, end=${bookChapter.end}"
+                            )
+                        }
                     }
                 }
 
@@ -266,8 +341,10 @@ class BookParser(private val bookFile: BookFile) {
 
                 bookFile.charset = charset
                 bookFile.handleChapterLastModified = lastModified
-
-                BookShelfOpenHelper.instance.saveBookChapters(bookFile, chapters)
+                val databaseTime = measureTimeMillis {
+                    BookShelfOpenHelper.instance.saveBookChapters(bookFile, chapters)
+                }
+                LogUtils.d(TAG, "Database time=${databaseTime}")
             }
 
         } catch (e: IOException) {

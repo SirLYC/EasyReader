@@ -32,7 +32,7 @@ public class ByteCountingLineReader implements Closeable {
     }
 
     public String readLine() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(65536);
         if (ended) return null;
         while (true) {
             int c = read();

@@ -74,8 +74,8 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
         return rootView
     }
 
-    override fun changeWindowAndDialogAttr(dialog: Dialog, window: Window) {
-        super.changeWindowAndDialogAttr(dialog, window)
+    override fun changeWindowAndDialogAfterSetContent(dialog: Dialog, window: Window) {
+        super.changeWindowAndDialogAfterSetContent(dialog, window)
         val lp = window.attributes
         if (getScreenOrientation() % 180 == 0) {
             lp.height = max((deviceHeight() * 0.75f).roundToInt(), dp2px(480))
