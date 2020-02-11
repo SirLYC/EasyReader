@@ -116,10 +116,11 @@ class BookParser(private val bookFile: BookFile) {
                     chapterPattern != null -> {
                         bookStream.seek(0L)
                         var chapterByteOffset = 0L
-                        var lastPartByteCount: Long
+                        var lastPartByteCount = 0L
                         var currentByteCount = 0L
                         var firstChapter = true
                         var lastTitle = ""
+                        var lastString = ""
                         var currentTitle: String
                         val reader = FileInputStream(bookStream.fd).bufferedReader(charset)
 
@@ -135,20 +136,11 @@ class BookParser(private val bookFile: BookFile) {
                             ioTime += SystemClock.elapsedRealtime() - startTime
 
                             startTime = SystemClock.elapsedRealtime()
-                            val str = String(buffer, 0, len)
+                            val str = lastString + String(buffer, 0, len)
                             newStringTime += SystemClock.elapsedRealtime() - startTime
 
                             lastPartByteCount = currentByteCount
                             byteCntBeforeMap[0] = 0
-
-//                            startTime = SystemClock.elapsedRealtime()
-//                            lastPartByteCount = currentByteCount
-//                            str.toByteArray(charset).size.toLong().let {
-//                                currentByteCount = lastPartByteCount + it
-//                                byteCntBeforeMap[0] = 0
-//                                byteCntBeforeMap[str.length] = it
-//                            }
-//                            encodeTime += SystemClock.elapsedRealtime() - startTime
 
                             startTime = SystemClock.elapsedRealtime()
                             val matcher = chapterPattern.matcher(str)
@@ -209,7 +201,7 @@ class BookParser(private val bookFile: BookFile) {
                                     // 没有序章
                                     // 跳过
                                     firstChapter = false
-                                } else {
+                                } else if (fileOffset > chapterByteOffset) {
                                     // 找到了新的一章
                                     val chapter = BookChapter()
                                     chapter.title = currentTitle
@@ -221,15 +213,14 @@ class BookParser(private val bookFile: BookFile) {
                                 startTime = SystemClock.elapsedRealtime()
                             }
 
-                            val lastIndex = str.length - 1
-                            if (!byteCntBeforeMap.containsKey(lastIndex)) {
-                                val start = byteCntBeforeMap.keys.last()
-                                val substring = str.substring(start)
-                                val size = substring.toByteArray(charset).size.toLong()
-                                byteCntBeforeMap[lastIndex] = size + byteCntBeforeMap[start]!!
+                            // 有可能因为分段正好把一个章节分开了
+                            // 这里要把没有分章的剩余字符串全部加到下一次迭代中
+                            val last = byteCntBeforeMap.keys.last()
+                            lastString = if (last != str.length) {
+                                str.substring(last)
+                            } else {
+                                ""
                             }
-
-                            currentByteCount = lastPartByteCount + byteCntBeforeMap[lastIndex]!!
 
                             startTime = SystemClock.elapsedRealtime()
                         }
