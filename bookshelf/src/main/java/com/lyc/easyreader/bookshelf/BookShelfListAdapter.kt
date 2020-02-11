@@ -38,5 +38,7 @@ class BookShelfListAdapter(
 
     interface OnItemClickListener {
         fun onBookShelfItemClick(pos: Int, data: BookShelfBook, view: BookShelfItemView)
+
+        fun onBookShelfItemLongClick(pos: Int, data: BookShelfBook, view: BookShelfItemView)
     }
 }

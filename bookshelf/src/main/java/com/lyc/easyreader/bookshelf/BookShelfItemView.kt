@@ -31,7 +31,7 @@ import java.util.*
 class BookShelfItemView(
     context: Context,
     private val onItemClickListener: BookShelfListAdapter.OnItemClickListener
-) : FrameLayout(context), View.OnClickListener {
+) : FrameLayout(context), View.OnClickListener, View.OnLongClickListener {
 
     private val filenameTv = TextView(context)
     private val coverImageView = ImageView(context)
@@ -47,6 +47,7 @@ class BookShelfItemView(
         setPadding(dp2px(16), dp2px(8), dp2px(16), dp2px(8))
         initView()
         setOnClickListener(this)
+        setOnLongClickListener(this)
     }
 
     private fun initView() {
@@ -132,5 +133,15 @@ class BookShelfItemView(
         if (data != null && position >= 0) {
             onItemClickListener.onBookShelfItemClick(position, data, this)
         }
+    }
+
+    override fun onLongClick(v: View?): Boolean {
+        val data = this.data
+        val position = this.position
+        if (data != null && position >= 0) {
+            onItemClickListener.onBookShelfItemLongClick(position, data, this)
+            return true
+        }
+        return false
     }
 }

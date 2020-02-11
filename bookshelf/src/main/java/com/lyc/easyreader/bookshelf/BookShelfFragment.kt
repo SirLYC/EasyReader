@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
@@ -31,6 +32,7 @@ import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_light_blue
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
+import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.db.BookShelfBook
@@ -38,6 +40,7 @@ import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
 import com.lyc.easyreader.bookshelf.utils.detectCharset
 import com.lyc.easyreader.bookshelf.utils.singleUriDocumentFile
+import java.io.File
 import java.io.FileInputStream
 
 /**
@@ -310,6 +313,77 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     }
 
     override fun onBookShelfItemClick(pos: Int, data: BookShelfBook, view: BookShelfItemView) {
-        ReaderActivity.openBookFile(data)
+        val file = File(data.realPath)
+        if (!file.exists()) {
+            activity?.run {
+                AlertDialog.Builder(this)
+                    .setTitle("无法打开")
+                    .setMessage("文件已被移动或删除，是否删除记录？")
+                    .setPositiveButton("是") { _, _ ->
+                        BookManager.instance.deleteBook(data.id)
+                    }
+                    .setNegativeButton("否", null)
+                    .show()
+            }
+        } else {
+            ReaderActivity.openBookFile(data)
+        }
+    }
+
+    override fun onBookShelfItemLongClick(pos: Int, data: BookShelfBook, view: BookShelfItemView) {
+        activity?.run {
+            val menu = ReaderPopupMenu(this, view)
+
+            val renameId = 1
+            val deleteId = 5
+            val collectId = 9
+
+            menu.addItem(
+                renameId,
+                "重命名"
+            )
+            menu.addItem(
+                deleteId,
+                "删除"
+            )
+            if (data.collect) {
+                menu.addItem(
+                    collectId,
+                    "取消收藏"
+                )
+            } else {
+                menu.addItem(
+                    collectId,
+                    "收藏"
+                )
+            }
+            menu.setIconEnable(true)
+            menu.gravity = Gravity.RIGHT
+            menu.show()
+
+            menu.setOnMenuItemClickListener {
+                when (it.itemId) {
+                    collectId -> {
+                        BookManager.instance.updateBookCollect(data.id, !data.collect)
+                    }
+                    deleteId -> {
+                        AlertDialog.Builder(this)
+                            .setMessage("要把“${data.filename}”从书架移除吗（不会删除导入原位置文件）？")
+                            .setPositiveButton("是") { _, _ ->
+                                BookManager.instance.deleteBook(data.id)
+                            }
+                            .setNegativeButton("否", null)
+                            .show()
+                    }
+                    renameId -> {
+                        activity?.run {
+                            RenameDialog.show(supportFragmentManager, data)
+                        }
+                    }
+                }
+
+                return@setOnMenuItemClickListener true
+            }
+        }
     }
 }

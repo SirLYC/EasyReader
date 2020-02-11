@@ -13,6 +13,7 @@ import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.ui.ReaderHeadsUp
+import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.getMd5
 import com.lyc.easyreader.base.utils.toHexString
@@ -47,6 +48,15 @@ class BookManager private constructor() : IBookManager {
 
     override fun removeBookChangeListener(listener: IBookManager.IBookChangeListener) {
         eventHub.removeEventListener(listener)
+    }
+
+    override fun alterBookName(id: String, newName: String, async: Boolean) {
+        BookShelfOpenHelper.instance.alterBookName(id, newName, async) {
+            ReaderToast.showToast("修改成功")
+            eventHub.getEventListeners().forEach {
+                it.onBookInfoUpdate(id)
+            }
+        }
     }
 
     @AnyThread
@@ -97,6 +107,24 @@ class BookManager private constructor() : IBookManager {
                         handleImportBooksFinished(faiCnt, repeatCnt, newBooks.toList())
                     }
                 })
+            }
+        }
+    }
+
+    override fun updateBookCollect(id: String, collect: Boolean, async: Boolean) {
+        BookShelfOpenHelper.instance.updateBookCollect(id, collect, async) {
+            eventHub.getEventListeners().forEach {
+                it.onBookCollectChange(id, collect)
+                ReaderToast.showToast(if (collect) "已收藏" else "已取消收藏")
+            }
+        }
+    }
+
+    override fun deleteBook(id: String, async: Boolean) {
+        BookShelfOpenHelper.instance.deleteBookFile(id, async) {
+            eventHub.getEventListeners().forEach {
+                it.onBookDeleted(id)
+                ReaderToast.showToast("已删除")
             }
         }
     }

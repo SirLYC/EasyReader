@@ -28,26 +28,26 @@ class BookShelfOpenHelper private constructor() :
 
     private val dbRunner = SingleThreadRunner("BookShelf-DB")
 
-    private val bookFileRecordListenerHub =
-        EventHubFactory.createDefault<IBookFileRecordListener>(true)
+    private val bookFileInfoUpdateListenerHub =
+        EventHubFactory.createDefault<IBookFileInfoUpdateListener>(true)
 
     private val bookFileCollectListenerHub =
         EventHubFactory.createDefault<IBookFileCollectListener>(true)
 
-    interface IBookFileRecordListener {
-        fun onBookReadRecordUpdate()
+    interface IBookFileInfoUpdateListener {
+        fun onBookInfoUpdate()
     }
 
     interface IBookFileCollectListener {
-        fun onBookCollectChange(id: String)
+        fun onBookCollectChange(id: String, collect: Boolean)
     }
 
-    fun addBookFileRecordListener(listener: IBookFileRecordListener) {
-        bookFileRecordListenerHub.addEventListener(listener)
+    fun addBookFileInfoUpdateListener(listener: IBookFileInfoUpdateListener) {
+        bookFileInfoUpdateListenerHub.addEventListener(listener)
     }
 
-    fun removeBookFileRecordListener(listener: IBookFileRecordListener) {
-        bookFileRecordListenerHub.removeEventListener(listener)
+    fun removeBookFileInfoUpdateListener(listener: IBookFileInfoUpdateListener) {
+        bookFileInfoUpdateListenerHub.removeEventListener(listener)
     }
 
     fun addBookFileCollectListener(listener: IBookFileCollectListener) {
@@ -62,8 +62,8 @@ class BookShelfOpenHelper private constructor() :
         bookFile.lastAccessTime = System.currentTimeMillis()
         dbRunner.asyncRun(Runnable {
             daoSession.bookFileDao.insertOrReplace(bookFile)
-            bookFileRecordListenerHub.getEventListeners().forEach {
-                it.onBookReadRecordUpdate()
+            bookFileInfoUpdateListenerHub.getEventListeners().forEach {
+                it.onBookInfoUpdate()
             }
         })
     }
@@ -72,8 +72,8 @@ class BookShelfOpenHelper private constructor() :
     fun asyncUpdateBookReadRecord(bookReadRecord: BookReadRecord) {
         dbRunner.asyncRun(Runnable {
             daoSession.bookReadRecordDao.insertOrReplace(bookReadRecord)
-            bookFileRecordListenerHub.getEventListeners().forEach {
-                it.onBookReadRecordUpdate()
+            bookFileInfoUpdateListenerHub.getEventListeners().forEach {
+                it.onBookInfoUpdate()
             }
         })
     }
@@ -95,6 +95,48 @@ class BookShelfOpenHelper private constructor() :
         }
 
         return daoSession.bookFileDao.load(bookFile.id)
+    }
+
+    fun alterBookName(
+        id: String,
+        newName: String,
+        async: Boolean = true,
+        callback: () -> Unit = {}
+    ) {
+        val db = daoSession.database
+        val command = Runnable {
+            val sql =
+                "update ${BookFileDao.TABLENAME} set ${BookFileDao.Properties.Filename.columnName}=\"$newName\" where ${BookFileDao.Properties.Id.columnName}=\"$id\""
+            Log.d(TAG, "alterBookName, sql=$sql")
+            db.execSQL(sql)
+            callback()
+        }
+        if (async) {
+            dbRunner.asyncRun(command)
+        } else {
+            dbRunner.awaitRun(command)
+        }
+    }
+
+    fun deleteBookFile(id: String, async: Boolean = true, callback: () -> Unit = {}) {
+        val command = Runnable {
+            daoSession.runInTx {
+                daoSession.bookReadRecordDao.deleteByKey(id)
+                daoSession.bookCollectDao.deleteByKey(id)
+                daoSession.bookChapterDao.queryBuilder()
+                    .where(BookChapterDao.Properties.BookId.eq(id))
+                    .buildDelete()
+                    .forCurrentThread()
+                    .executeDeleteWithoutDetachingEntities()
+                daoSession.bookFileDao.deleteByKey(id)
+                callback()
+            }
+        }
+        if (async) {
+            dbRunner.asyncRun(command)
+        } else {
+            dbRunner.awaitRun(command)
+        }
     }
 
     /**
@@ -147,8 +189,8 @@ class BookShelfOpenHelper private constructor() :
             "t",
             daoMaster.daoConfigMap()[BookFileDao::class.java]!!.allColumns
         )
-        sb.append(", j.${BookReadRecordDao.Properties.Desc.columnName}")
-        sb.append(" from ${BookFileDao.TABLENAME} t left join ${BookReadRecordDao.TABLENAME} j on t.${BookFileDao.Properties.Id.columnName}=j.${BookReadRecordDao.Properties.BookId.columnName}")
+        sb.append(", j1.${BookReadRecordDao.Properties.Desc.columnName}, j2.${BookCollectDao.Properties.BookId.columnName}")
+        sb.append(" from ${BookFileDao.TABLENAME} t left join ${BookReadRecordDao.TABLENAME} j1 on t.${BookFileDao.Properties.Id.columnName}=j1.${BookReadRecordDao.Properties.BookId.columnName} left join ${BookCollectDao.TABLENAME} j2 on t.${BookFileDao.Properties.Id.columnName}=j2.${BookCollectDao.Properties.BookId.columnName}")
             .append(" where t.${BookFileDao.Properties.Status.columnName}=\"${BookFile.Status.NORMAL.name}\"")
             .append(" order by ${BookFileDao.Properties.LastAccessTime.columnName} desc, ${BookFileDao.Properties.ImportTime.columnName} desc")
         Log.d(TAG, "sql=$sb")
@@ -169,7 +211,7 @@ class BookShelfOpenHelper private constructor() :
                             BookShelfBook(
                                 if (it.isNull(recordOffset)) null else it.getString(
                                     recordOffset
-                                ), bookFile
+                                ), it.getShort(recordOffset + 1).toInt() != 0, bookFile
                             )
                         )
                     } while (it.moveToNext())
@@ -191,20 +233,26 @@ class BookShelfOpenHelper private constructor() :
         return daoSession.bookCollectDao.load(bookFile.id)
     }
 
-    fun updateBookCollect(bookCollect: BookCollect) {
-        bookCollect.collectTime = System.currentTimeMillis()
-        dbRunner.asyncRun(Runnable {
-            daoSession.bookCollectDao.insertOrReplace(bookCollect)
-            bookFileRecordListenerHub.getEventListeners().forEach {
-                it.onBookReadRecordUpdate()
+    fun updateBookCollect(
+        id: String,
+        collect: Boolean,
+        async: Boolean = true,
+        callback: () -> Unit = {}
+    ) {
+        val time = System.currentTimeMillis()
+        val command = Runnable {
+            if (collect) {
+                daoSession.insertOrReplace(BookCollect(id, true, time))
+            } else {
+                writableDatabase.execSQL("update ${BookCollectDao.TABLENAME} set ${BookCollectDao.Properties.Collected.columnName}=0 where ${BookCollectDao.Properties.BookId.columnName}=\"${id}\"")
             }
-        })
-    }
-
-    fun cancelBookCollect(id: String) {
-        dbRunner.asyncRun(Runnable {
-
-        })
+            callback()
+        }
+        if (async) {
+            dbRunner.asyncRun(command)
+        } else {
+            dbRunner.awaitRun(command)
+        }
     }
 
     fun queryBookChapters(bookFile: BookFile): List<BookChapter>? {
@@ -251,8 +299,8 @@ class BookShelfOpenHelper private constructor() :
                 daoSession.bookChapterDao.saveInTx(list)
             }
             ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
-                bookFileRecordListenerHub.getEventListeners().forEach {
-                    it.onBookReadRecordUpdate()
+                bookFileInfoUpdateListenerHub.getEventListeners().forEach {
+                    it.onBookInfoUpdate()
                 }
             }
         })

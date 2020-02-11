@@ -7,21 +7,22 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.api.book.BookChapter
-import com.lyc.easyreader.api.book.BookCollect
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.book.BookReadRecord
+import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.base.arch.LiveState
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.arch.SingleLiveEvent
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.rv.ObservableList
+import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
  */
-class ReaderViewModel : ViewModel() {
+class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
     companion object {
         const val TAG = "ReaderViewModel"
         const val KEY_BOOK_FILE = "${TAG}_KEY_BOOK_FILE"
@@ -41,8 +42,9 @@ class ReaderViewModel : ViewModel() {
     val currentChapter = NonNullLiveData(0)
     val chapterReverse = NonNullLiveData(false)
     val charOffsets = intArrayOf(-1, -1)
+    var parseResult: BookParser.ParseChapterResult? = null
 
-    var bookCollect: BookCollect? = null
+    var collected = false
     var bookReadRecord: BookReadRecord? = null
 
     val changeChapterCall = SingleLiveEvent<Int>()
@@ -64,6 +66,7 @@ class ReaderViewModel : ViewModel() {
                 if (chapterList == null || chapterList.isEmpty()) {
                     val parser = BookParser(newBookFile)
                     val result = parser.parseChapters()
+                    handler.post { parseResult = result }
                     if (result.code != BookParser.CODE_SUCCESS) {
                         ReaderToast.showToast(result.msg)
                         LogUtils.e(
@@ -71,6 +74,12 @@ class ReaderViewModel : ViewModel() {
                             "Parse book failed! Result=${result.msg}",
                             ex = result.exception
                         )
+                        handler.post {
+                            if (!alive) {
+                                return@post
+                            }
+                            loadingChapterListLiveData.value = false
+                        }
                         return@execute
                     }
                     chapterList = result.list
@@ -82,7 +91,9 @@ class ReaderViewModel : ViewModel() {
                     if (!alive) {
                         return@post
                     }
-                    this.bookCollect = bookCollect ?: BookCollect(newBookFile.id, false, 0)
+                    bookCollect?.let {
+                        this.collected = it.collected
+                    }
                     bookFileLiveData.value = newBookFile
                     BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
                     currentPage.value = bookRecord.page
@@ -103,16 +114,7 @@ class ReaderViewModel : ViewModel() {
 
     fun updateCollectState(collect: Boolean) {
         bookFileLiveData.value?.run {
-            val bookCollect =
-                this@ReaderViewModel.bookCollect?.also { it.collected = collect } ?: BookCollect(
-                    id,
-                    collect,
-                    0
-                ).also {
-                    this@ReaderViewModel.bookCollect = it
-                }
-            BookShelfOpenHelper.instance.updateBookCollect(bookCollect)
-            ReaderToast.showToast(if (collect) "已收藏" else "已取消收藏")
+            BookManager.instance.updateBookCollect(id, collect)
         }
     }
 
@@ -158,5 +160,21 @@ class ReaderViewModel : ViewModel() {
         alive = false
         handler.removeCallbacksAndMessages(null)
         super.onCleared()
+    }
+
+    override fun onBooksImported(list: List<BookFile>) {}
+
+    override fun onBookDeleted(id: String) {}
+
+    override fun onBookCollectChange(id: String, collect: Boolean) {
+        handler.post {
+            if (id == bookFileLiveData.value?.id) {
+                this.collected = collect
+            }
+        }
+    }
+
+    override fun onBookInfoUpdate(id: String) {
+
     }
 }

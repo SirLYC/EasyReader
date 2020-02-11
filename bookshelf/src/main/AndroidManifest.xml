@@ -2,8 +2,12 @@
     package="com.lyc.easyreader.bookshelf">
 
     <application>
-        <activity android:name=".scan.BookScanActivity" />
-        <activity android:name=".reader.ReaderActivity" />
+        <activity
+            android:name=".scan.BookScanActivity"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".reader.ReaderActivity"
+            android:launchMode="singleTop" />
         <activity
             android:name=".reader.settings.ReaderSettingsActivity"
             android:launchMode="singleTop" />

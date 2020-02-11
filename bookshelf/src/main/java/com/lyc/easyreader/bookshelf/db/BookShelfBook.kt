@@ -7,5 +7,6 @@ import com.lyc.easyreader.api.book.BookFile
  */
 class BookShelfBook(
     val recordDesc: String?,
+    var collect: Boolean,
     bookFile: BookFile
 ) : BookFile(bookFile)

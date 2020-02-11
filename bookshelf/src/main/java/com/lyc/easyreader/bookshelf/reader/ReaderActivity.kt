@@ -91,14 +91,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         private val VIEW_ID_BTN_CATEGORY = generateNewViewId()
         private val VIEW_ID_BTN_NIGHT_MODE = generateNewViewId()
         private val VIEW_ID_BTN_SETTINGS = generateNewViewId()
-
-        private const val MENU_ID_BOOK_MARK = 4
-
-        private const val MENU_ID_COLLECT_BOOK = 9
-
-        private const val MENU_ID_SHARE = 19
-
-        private const val MENU_ID_OPEN_OTHER_APP = 44
     }
 
     private lateinit var viewModel: ReaderViewModel
@@ -228,6 +220,9 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                     loader.skipToPage(viewModel.currentPage.value)
                 }
                 loader.setChapterList(viewModel.bookChapterList)
+                if (viewModel.parseResult != null && viewModel.parseResult!!.code != BookParser.CODE_SUCCESS) {
+                    finish()
+                }
             }
         })
 
@@ -997,7 +992,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 val dialog = LinearDialogBottomSheet(this)
                 val collected: Boolean
                 val collectId =
-                    if ((viewModel.bookCollect?.collected == true).also { collected = it }) {
+                    if ((viewModel.collected).also { collected = it }) {
                         dialog.addItem("取消收藏", R.drawable.ic_star_24dp, Color.WHITE)
                     } else {
                         dialog.addItem("加入收藏", R.drawable.ic_star_border_24dp, Color.WHITE)

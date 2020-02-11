@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Created by Liu Yuchuan on 2020/1/20.
  */
 class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
-    BookShelfOpenHelper.IBookFileRecordListener {
+    BookShelfOpenHelper.IBookFileInfoUpdateListener {
     private val handler = Handler(Looper.getMainLooper())
 
     val hasDataLiveData = MutableLiveData<Boolean>()
@@ -32,7 +32,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
 
     init {
         BookManager.instance.addBookChangeListener(this)
-        BookShelfOpenHelper.instance.addBookFileRecordListener(this)
+        BookShelfOpenHelper.instance.addBookFileInfoUpdateListener(this)
     }
 
     fun firstLoadIfNeeded() {
@@ -97,12 +97,15 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
                             oldItemPosition: Int,
                             newItemPosition: Int
                         ): Boolean {
-                            if (currentList[oldItemPosition] === shelfBooks[newItemPosition]) {
+                            val curVal = currentList[oldItemPosition]
+                            val newVal = shelfBooks[newItemPosition]
+                            if (curVal === newVal) {
                                 return true
                             }
 
-                            return currentList[oldItemPosition].lastAccessTime == shelfBooks[newItemPosition].lastAccessTime
-                                    && currentList[oldItemPosition].recordDesc == shelfBooks[newItemPosition].recordDesc
+                            return curVal.lastAccessTime == newVal.lastAccessTime
+                                    && curVal.filename == newVal.filename
+                                    && curVal.recordDesc == newVal.recordDesc
                         }
                     }
 
@@ -136,7 +139,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
     }
 
     override fun onCleared() {
-        BookShelfOpenHelper.instance.removeBookFileRecordListener(this)
+        BookShelfOpenHelper.instance.removeBookFileInfoUpdateListener(this)
         handler.removeCallbacksAndMessages(null)
         BookManager.instance.removeBookChangeListener(this)
     }
@@ -154,7 +157,29 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
         }
     }
 
-    override fun onBookReadRecordUpdate() {
+    override fun onBookDeleted(id: String) {
+        handler.post { refreshList(fromCallback = true) }
+    }
+
+    override fun onBookInfoUpdate() {
+        handler.post {
+            refreshList(true)
+        }
+    }
+
+    override fun onBookCollectChange(id: String, collect: Boolean) {
+        handler.post {
+            for (bookShelfBook in list) {
+                if (bookShelfBook.id == id) {
+                    bookShelfBook.collect = collect
+                    return@post
+                }
+            }
+            refreshList(true)
+        }
+    }
+
+    override fun onBookInfoUpdate(id: String) {
         handler.post {
             refreshList(true)
         }

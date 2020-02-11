@@ -10,15 +10,27 @@
         <item name="android:overScrollMode">never</item>
     </style>
 
-    <style name="PopupMenuDay" parent="Widget.AppCompat.PopupMenu">
-        <item name="android:textColor">@android:color/white</item>
-        <item name="android:itemBackground">@drawable/bg_popup_menu_item_day</item>
+    <style name="PopupMenuDayNormal" parent="PopupMenuDayOrange">
+        <item name="android:textColor">@color/colorPrimaryText</item>
+        <item name="android:itemBackground">@drawable/bg_popup_menu_item_day_normal</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="PopupMenuNight" parent="PopupMenuDay">
+    <style name="PopupMenuNightNormal" parent="PopupMenuDayOrange">
+        <item name="android:textColor">#000000</item>
+        <item name="android:itemBackground">@drawable/bg_popup_menu_item_night_normal</item>
+    </style>
+
+    <style name="PopupMenuDayOrange" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:itemBackground">@drawable/bg_popup_menu_item_day_orange</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="PopupMenuNightOrange" parent="PopupMenuDayOrange">
         <item name="android:textColor">#ff808080</item>
-        <item name="android:itemBackground">@drawable/bg_popup_menu_item_night</item>
+        <item name="android:itemBackground">@drawable/bg_popup_menu_item_night_orange</item>
     </style>
 
     <style name="BottomDialogAnim" parent="android:Animation">
