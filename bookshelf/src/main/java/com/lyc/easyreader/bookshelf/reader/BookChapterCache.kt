@@ -28,6 +28,10 @@ class BookChapterCache {
             value.memorySize
         })
 
+    fun evict(bookChapter: BookChapter) {
+        cache.remove(calculateKey(bookChapter))
+    }
+
     fun put(bookChapter: BookChapter, value: BookChapterWrapper) {
         cache.put(calculateKey(bookChapter), value)
     }

@@ -9,6 +9,7 @@ import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookCollect
 import com.lyc.easyreader.api.book.BookFile
+import com.lyc.easyreader.api.book.BookReadRecord
 import com.lyc.easyreader.base.arch.LiveState
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.arch.SingleLiveEvent
@@ -39,8 +40,10 @@ class ReaderViewModel : ViewModel() {
     val currentPage = NonNullLiveData(0)
     val currentChapter = NonNullLiveData(0)
     val chapterReverse = NonNullLiveData(false)
+    val charOffsets = intArrayOf(-1, -1)
 
     var bookCollect: BookCollect? = null
+    var bookReadRecord: BookReadRecord? = null
 
     val changeChapterCall = SingleLiveEvent<Int>()
 
@@ -74,6 +77,7 @@ class ReaderViewModel : ViewModel() {
                 }
                 val nonnullList = chapterList!!
                 val bookCollect = BookShelfOpenHelper.instance.queryBookCollect(bookFile)
+                val bookRecord = BookShelfOpenHelper.instance.loadBookRecordOrNew(bookFile)
                 handler.post {
                     if (!alive) {
                         return@post
@@ -81,8 +85,10 @@ class ReaderViewModel : ViewModel() {
                     this.bookCollect = bookCollect ?: BookCollect(newBookFile.id, false, 0)
                     bookFileLiveData.value = newBookFile
                     BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
-                    currentPage.value = newBookFile.lastPageInChapter
-                    currentChapter.value = newBookFile.lastChapter
+                    currentPage.value = bookRecord.page
+                    currentChapter.value = bookRecord.chapter
+                    charOffsets[0] = bookRecord.offsetStart
+                    charOffsets[0] = bookRecord.offsetEnd
                     nonnullList.forEach {
                         if (it.chapterType == BookChapter.ChapterType.SINGLE) {
                             it.title = bookFile.filename
@@ -110,8 +116,8 @@ class ReaderViewModel : ViewModel() {
         }
     }
 
-    fun updateRecord(chapter: Int, page: Int) {
-        if (chapter < 0 || page < 0) {
+    fun updateBookReadRecord(chapter: Int, page: Int) {
+        if (chapter < 0 || page < 0 || charOffsets[0] == -1 || charOffsets[0] == -1 || charOffsets[1] < charOffsets[0]) {
             return
         }
 
@@ -121,7 +127,21 @@ class ReaderViewModel : ViewModel() {
 
         val desc = bookChapterList[chapter].title
         bookFileLiveData.value?.let {
-            BookShelfOpenHelper.instance.asyncSaveUpdateBookRecord(it, chapter, page, desc)
+            val record = bookReadRecord?.apply {
+                this.chapter = chapter
+                this.page = page
+                this.offsetStart = charOffsets[0]
+                this.offsetEnd = charOffsets[1]
+                this.desc = desc
+            } ?: BookReadRecord(
+                it.id,
+                chapter,
+                charOffsets[0],
+                charOffsets[1],
+                page,
+                desc
+            )
+            BookShelfOpenHelper.instance.asyncUpdateBookReadRecord(record)
         }
     }
 

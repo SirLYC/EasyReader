@@ -217,8 +217,16 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         pageLoader = loader
         viewModel.loadingChapterListLiveData.observe(this, Observer { loading ->
             if (!loading) {
-                loader.skipToChapter(viewModel.currentChapter.value)
-                loader.skipToPage(viewModel.currentPage.value)
+                if (viewModel.charOffsets.all { it != -1 } && viewModel.charOffsets[1] >= viewModel.charOffsets[0]) {
+                    loader.skipToChapter(
+                        viewModel.currentChapter.value,
+                        viewModel.charOffsets[0],
+                        viewModel.charOffsets[1]
+                    )
+                } else {
+                    loader.skipToChapter(viewModel.currentChapter.value)
+                    loader.skipToPage(viewModel.currentPage.value)
+                }
                 loader.setChapterList(viewModel.bookChapterList)
             }
         })
@@ -1021,7 +1029,8 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     override fun onPageChange(pos: Int) {
         viewModel.currentPage.value = pos
         val chapterPos = pageLoader?.chapterPos ?: -1
-        viewModel.updateRecord(chapterPos, pos)
+        pageLoader?.getPageOffset(pos, viewModel.charOffsets)
+        viewModel.updateBookReadRecord(chapterPos, pos)
     }
 
     override fun requestChapters(requestChapters: MutableList<BookChapter>?) {
@@ -1033,15 +1042,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
     override fun onChapterChange(pos: Int) {
         viewModel.currentChapter.value = pos
-        val pagePos = pageLoader?.pagePos ?: -1
-        viewModel.updateRecord(pos, pagePos)
+    }
+
+    override fun onChapterOpen(pos: Int) {
+        onChapterChange(pos)
     }
 
     override fun onPageCountChange(count: Int) {
         viewModel.pageCount.value = count
-        val chapterPos = pageLoader?.chapterPos ?: -1
-        val pagePos = pageLoader?.pagePos ?: -1
-        viewModel.updateRecord(chapterPos, pagePos)
     }
 
     private fun openBookFileByOtherApp() {

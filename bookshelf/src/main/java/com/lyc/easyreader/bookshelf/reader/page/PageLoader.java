@@ -20,6 +20,7 @@ import com.lyc.easyreader.api.book.BookFile;
 import com.lyc.easyreader.base.ui.ReaderResourcesKt;
 import com.lyc.easyreader.base.ui.theme.NightModeManager;
 import com.lyc.easyreader.base.utils.DeviceUtilsKt;
+import com.lyc.easyreader.base.utils.LogUtils;
 import com.lyc.easyreader.base.utils.ViewUtilsKt;
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode;
 import com.lyc.easyreader.bookshelf.utils.StringUtilsKt;
@@ -96,6 +97,9 @@ public abstract class PageLoader implements Handler.Callback {
     private int nextPageListPos;
     // 期望在当前章节中的翻页
     private int pendingPosInChapter = -1;
+    // 期望在当前章节中偏移量（字符数量）
+    private int pendingOffsetStart = -1;
+    private int pendingOffsetEnd = -1;
     private final RectF polarRect = new RectF();
     private final RectF batteryFrameRect = new RectF();
     private final RectF batteryCapRect = new RectF();
@@ -252,6 +256,7 @@ public abstract class PageLoader implements Handler.Callback {
         // 载入上一章。
         if (parsePrevChapter()) {
             curPage = getCurPage(0);
+            notifyCurPageChange();
         } else {
             curPage = new BookPage();
         }
@@ -270,6 +275,7 @@ public abstract class PageLoader implements Handler.Callback {
         //判断是否达到章节的终止点
         if (parseNextChapter()) {
             curPage = getCurPage(0);
+            notifyCurPageChange();
         } else {
             curPage = new BookPage();
         }
@@ -300,6 +306,24 @@ public abstract class PageLoader implements Handler.Callback {
         openChapter();
     }
 
+    public void skipToChapter(int pos, int offsetStart, int offsetEnd) {
+        pendingOffsetStart = offsetStart;
+        pendingOffsetEnd = offsetEnd;
+        // 设置参数
+        curChapterPos = pos;
+
+        // 将上一章的缓存设置为null
+        prePageList = null;
+        prePageListPos = -1;
+        // 将下一章缓存设置为null
+        nextPageList = null;
+        nextPageListPos = -1;
+        pendingPosInChapter = 0;
+
+        // 打开指定章节
+        openChapter();
+    }
+
     /**
      * 跳转到指定的页
      */
@@ -310,8 +334,85 @@ public abstract class PageLoader implements Handler.Callback {
             return false;
         }
         curPage = getCurPage(pos);
+        if (curPage == null) {
+            return false;
+        }
         pageView.drawCurPage(false);
         return true;
+    }
+
+    private int findMostPossiblePageInOffset(int offsetStart, int offsetEnd) {
+        if (curPageList == null) {
+            return -1;
+        }
+
+        if (offsetStart > offsetEnd) {
+            return -1;
+        }
+
+        BookPage first = curPageList.get(0);
+        if (offsetEnd < first.getCharEnd() || offsetStart < first.getCharStart()) {
+            return 0;
+        }
+
+        BookPage last = curPageList.get(curPageList.size() - 1);
+        if (offsetStart >= last.getCharStart() || offsetEnd >= last.getCharEnd()) {
+            return curPageList.size() - 1;
+        }
+
+        int startPage = findPagePosAtOffset(offsetStart);
+        if (startPage == -1) {
+            return -1;
+        }
+        int endPage = findPagePosAtOffset(offsetEnd);
+        if (endPage == -1) {
+            return -1;
+        }
+
+        if (startPage == endPage) {
+            return startPage;
+        }
+
+        int page = -1;
+        float percent = 0;
+        // 找到可能的结果中区间重叠比例最高的
+        for (int i = startPage; i <= endPage; i++) {
+            BookPage bookPage = curPageList.get(i);
+            int len = bookPage.getCharEnd() - bookPage.getCharStart();
+            if (len <= 0) {
+                continue;
+            }
+            int start = Math.max(bookPage.getCharStart(), offsetStart);
+            int end = Math.min(bookPage.getCharEnd(), offsetEnd);
+            float curPercent = (end - start) * 1f / (bookPage.getCharEnd() - bookPage.getCharStart());
+            if (curPercent > percent) {
+                percent = curPercent;
+                page = i;
+            }
+        }
+
+        return page;
+    }
+
+    private int findPagePosAtOffset(int offsetStart) {
+        if (curPageList == null) {
+            return -1;
+        }
+
+        int low = 0;
+        int high = curPageList.size() - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            BookPage midVal = curPageList.get(mid);
+            if (offsetStart >= midVal.getCharEnd())
+                low = mid + 1;
+            else if (offsetStart < midVal.getCharStart())
+                high = mid - 1;
+            else
+                return mid; // key found
+        }
+        return -1;  // key not found
     }
 
     /**
@@ -657,15 +758,30 @@ public abstract class PageLoader implements Handler.Callback {
         }
 
         if (parseCurChapter()) {
-            int position = 0;
-            if (pendingPosInChapter >= 0) {
+            int position = -1;
+            if (pendingOffsetStart != -1 && pendingOffsetEnd != -1 && pendingOffsetEnd >= pendingOffsetStart) {
+                position = findMostPossiblePageInOffset(pendingOffsetStart, pendingOffsetEnd);
+                if (position == -1) {
+                    LogUtils.e(TAG, "Cannot find page at (" + pendingOffsetStart + ", " + pendingOffsetEnd + ")");
+                } else {
+                    LogUtils.e(TAG, "Page at (" + pendingOffsetStart + ", " + pendingOffsetEnd + ") is " + position);
+                }
+                pendingOffsetStart = -1;
+                pendingOffsetEnd = -1;
+            }
+            if (position == -1 && pendingPosInChapter >= 0) {
                 position = pendingPosInChapter;
                 // 防止记录页的页号，大于当前最大页号
                 if (position >= curPageList.size()) {
                     position = curPageList.size() - 1;
                 }
-                pendingPosInChapter = -1;
             }
+
+            if (position == -1) {
+                position = 0;
+            }
+
+            pendingPosInChapter = -1;
             // 如果章节从未打开
             if (!isChapterOpen) {
                 curPage = getCurPage(position);
@@ -674,6 +790,10 @@ public abstract class PageLoader implements Handler.Callback {
                 isChapterOpen = true;
             } else {
                 curPage = getCurPage(position);
+            }
+
+            if (mPageChangeListener != null) {
+                mPageChangeListener.onChapterOpen(curChapterPos);
             }
         } else {
             curPage = new BookPage();
@@ -991,6 +1111,7 @@ public abstract class PageLoader implements Handler.Callback {
         mCancelPage = curPage;
         if (parsePrevChapter()) {
             curPage = getPrevLastPage();
+            notifyCurPageChange();
         } else {
             curPage = new BookPage();
         }
@@ -1058,6 +1179,7 @@ public abstract class PageLoader implements Handler.Callback {
         // 解析下一章数据
         if (parseNextChapter()) {
             curPage = curPageList.get(0);
+            notifyCurPageChange();
         } else {
             curPage = new BookPage();
         }
@@ -1223,6 +1345,7 @@ public abstract class PageLoader implements Handler.Callback {
             } else {
                 if (parsePrevChapter()) {
                     curPage = getPrevLastPage();
+                    notifyCurPageChange();
                 } else {
                     curPage = new BookPage();
                 }
@@ -1236,6 +1359,7 @@ public abstract class PageLoader implements Handler.Callback {
             } else {
                 if (parseNextChapter()) {
                     curPage = curPageList.get(0);
+                    notifyCurPageChange();
                 } else {
                     curPage = new BookPage();
                 }
@@ -1394,15 +1518,41 @@ public abstract class PageLoader implements Handler.Callback {
                 }
             }
         }
+
+        int currentOffSet = 0;
+        for (int i = 0, s = pages.size(); i < s; i++) {
+            BookPage firstPage = pages.get(i);
+            firstPage.setCharStart(currentOffSet);
+            currentOffSet += firstPage.caulateCharCnt();
+            firstPage.setCharEnd(currentOffSet);
+        }
+
         return pages;
     }
 
+    public void getPageOffset(int pos, int[] offsets) {
+        if (curPageList != null && pos >= 0 && pos < curPageList.size()) {
+            BookPage bookPage = curPageList.get(pos);
+            offsets[0] = bookPage.getCharStart();
+            offsets[1] = bookPage.getCharEnd() - 1;
+        }
+    }
 
     private BookPage getCurPage(int pos) {
+        notifyPageChange(pos);
+        return curPageList.get(pos);
+    }
+
+    private void notifyCurPageChange() {
+        if (mPageChangeListener != null && curPage != null && curPage.position >= 0) {
+            mPageChangeListener.onPageChange(curPage.position);
+        }
+    }
+
+    private void notifyPageChange(int pos) {
         if (mPageChangeListener != null) {
             mPageChangeListener.onPageChange(pos);
         }
-        return curPageList.get(pos);
     }
 
     private BookPage getPrevPage() {
@@ -1410,9 +1560,7 @@ public abstract class PageLoader implements Handler.Callback {
         if (pos < 0) {
             return null;
         }
-        if (mPageChangeListener != null) {
-            mPageChangeListener.onPageChange(pos);
-        }
+        notifyPageChange(pos);
         return curPageList.get(pos);
     }
 
@@ -1421,18 +1569,14 @@ public abstract class PageLoader implements Handler.Callback {
         if (pos >= curPageList.size()) {
             return null;
         }
-        if (mPageChangeListener != null) {
-            mPageChangeListener.onPageChange(pos);
-        }
+        notifyPageChange(pos);
         return curPageList.get(pos);
     }
 
     private BookPage getPrevLastPage() {
         int pos = curPageList.size() - 1;
 
-        if (mPageChangeListener != null) {
-            mPageChangeListener.onPageChange(pos);
-        }
+        notifyPageChange(pos);
 
         return curPageList.get(pos);
     }
@@ -1465,6 +1609,8 @@ public abstract class PageLoader implements Handler.Callback {
          * @param pos:切换章节的序号
          */
         void onChapterChange(int pos);
+
+        void onChapterOpen(int pos);
 
         /**
          * 作用：请求加载章节内容

@@ -24,15 +24,18 @@ public class LocalPageLoader extends PageLoader {
     protected BufferedReader getChapterReader(BookChapter chapter) {
         BookChapterWrapper chapterWrapper = chapterCache.get(chapter);
         if (chapterWrapper != null) {
-            return chapterWrapper.openBufferedReader();
-        } else {
-            BookChapterWrapper wrapper = new BookChapterWrapper(chapter, bookFile);
-            BufferedReader bufferedReader = wrapper.openBufferedReader();
+            BufferedReader bufferedReader = chapterWrapper.openBufferedReader();
             if (bufferedReader != null) {
-                chapterCache.put(chapter, wrapper);
+                return bufferedReader;
             }
-            return bufferedReader;
         }
+        chapterCache.evict(chapter);
+        BookChapterWrapper wrapper = new BookChapterWrapper(chapter, bookFile);
+        BufferedReader bufferedReader = wrapper.openBufferedReader();
+        if (bufferedReader != null) {
+            chapterCache.put(chapter, wrapper);
+        }
+        return bufferedReader;
     }
 
     @Override

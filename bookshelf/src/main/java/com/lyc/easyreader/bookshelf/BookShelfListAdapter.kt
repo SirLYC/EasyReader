@@ -5,15 +5,15 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.recyclerview.widget.RecyclerView
-import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.utils.rv.ObservableList
 import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
+import com.lyc.easyreader.bookshelf.db.BookShelfBook
 
 /**
  * Created by Liu Yuchuan on 2020/1/28.
  */
 class BookShelfListAdapter(
-    list: ObservableList<BookFile>,
+    list: ObservableList<BookShelfBook>,
     private val onItemClickListener: OnItemClickListener
 ) : ReactiveAdapter(list) {
     override fun onBindViewHolder(
@@ -23,7 +23,7 @@ class BookShelfListAdapter(
         data: Any?,
         payloads: MutableList<Any>
     ) {
-        (holder.itemView as? BookShelfItemView)?.bindData(data as? BookFile, position)
+        (holder.itemView as? BookShelfItemView)?.bindData(data as? BookShelfBook, position)
     }
 
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {
@@ -37,6 +37,6 @@ class BookShelfListAdapter(
     }
 
     interface OnItemClickListener {
-        fun onBookShelfItemClick(pos: Int, data: BookFile, view: BookShelfItemView)
+        fun onBookShelfItemClick(pos: Int, data: BookShelfBook, view: BookShelfItemView)
     }
 }

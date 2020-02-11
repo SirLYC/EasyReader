@@ -12,7 +12,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_orange
 import com.lyc.easyreader.base.ui.theme.color_primary_text
@@ -21,6 +20,7 @@ import com.lyc.easyreader.base.utils.addColorAlpha
 import com.lyc.easyreader.base.utils.buildCommonButtonBg
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
+import com.lyc.easyreader.bookshelf.db.BookShelfBook
 import com.lyc.easyreader.bookshelf.utils.detailTimeString
 import java.util.*
 
@@ -39,7 +39,7 @@ class BookShelfItemView(
     private val fileInfoTv = TextView(context)
 
 
-    private var data: BookFile? = null
+    private var data: BookShelfBook? = null
     private var position = -1
 
     init {
@@ -111,14 +111,14 @@ class BookShelfItemView(
         )
     }
 
-    fun bindData(data: BookFile?, position: Int) {
+    fun bindData(data: BookShelfBook?, position: Int) {
         this.data = data
         this.position = position
         if (data != null) {
             filenameTv.text = data.filename
-            if (data.lastChapterDesc != null) {
+            if (data.recordDesc != null) {
                 fileInfoTv.text =
-                    ("${data.lastAccessTime.detailTimeString()} | 上次读到：${data.lastChapterDesc}")
+                    ("${data.lastAccessTime.detailTimeString()} | 上次读到：${data.recordDesc}")
             } else {
                 fileInfoTv.text = ("${data.importTime.detailTimeString()} | 未读")
             }

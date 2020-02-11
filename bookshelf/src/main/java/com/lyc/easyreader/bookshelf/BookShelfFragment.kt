@@ -21,7 +21,6 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.main.AbstractMainTabFragment
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
@@ -34,6 +33,7 @@ import com.lyc.easyreader.base.ui.theme.color_light_blue
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
+import com.lyc.easyreader.bookshelf.db.BookShelfBook
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
 import com.lyc.easyreader.bookshelf.utils.detectCharset
@@ -309,7 +309,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         viewModel.refreshList()
     }
 
-    override fun onBookShelfItemClick(pos: Int, data: BookFile, view: BookShelfItemView) {
+    override fun onBookShelfItemClick(pos: Int, data: BookShelfBook, view: BookShelfItemView) {
         ReaderActivity.openBookFile(data)
     }
 }

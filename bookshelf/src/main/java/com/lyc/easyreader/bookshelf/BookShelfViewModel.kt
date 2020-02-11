@@ -12,6 +12,7 @@ import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.ui.ReaderHeadsUp
 import com.lyc.easyreader.base.utils.rv.ObservableList
+import com.lyc.easyreader.bookshelf.db.BookShelfBook
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -25,10 +26,9 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
 
     val hasDataLiveData = MutableLiveData<Boolean>()
     val isLoadingLiveData = NonNullLiveData(false)
-    val list = ObservableList(arrayListOf<BookFile>())
+    val list = ObservableList(arrayListOf<BookShelfBook>())
     var firstLoadFinish = false
         private set
-    var isForeground = false
 
     init {
         BookManager.instance.addBookChangeListener(this)
@@ -50,11 +50,8 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
         isLoadingLiveData.value = true
         val currentList = list.toList()
         ExecutorFactory.IO_EXECUTOR.execute {
-            val shelfBooks = BookShelfOpenHelper.instance.loadBookShelfList().map {
-                BookFile().apply {
-                    set(it)
-                }
-            }
+            BookShelfOpenHelper.instance.loadBookShelfBookList()
+            val shelfBooks = BookShelfOpenHelper.instance.loadBookShelfBookList()
             val diffResultRef = AtomicReference<DiffUtil.DiffResult>(null)
             val hasChange = AtomicBoolean(true)
             val mainTask = Runnable {
@@ -104,8 +101,8 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
                                 return true
                             }
 
-                            return currentList[oldItemPosition].lastAccessTime == shelfBooks[newItemPosition].lastAccessTime &&
-                                    currentList[oldItemPosition].lastChapterDesc == shelfBooks[newItemPosition].lastChapterDesc
+                            return currentList[oldItemPosition].lastAccessTime == shelfBooks[newItemPosition].lastAccessTime
+                                    && currentList[oldItemPosition].recordDesc == shelfBooks[newItemPosition].recordDesc
                         }
                     }
 
@@ -157,7 +154,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
         }
     }
 
-    override fun onBookFileRecordUpdate(bookFile: BookFile) {
+    override fun onBookReadRecordUpdate() {
         handler.post {
             refreshList(true)
         }

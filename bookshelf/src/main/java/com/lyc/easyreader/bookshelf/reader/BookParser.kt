@@ -266,11 +266,6 @@ class BookParser(private val bookFile: BookFile) {
 
                 bookFile.charset = charset
                 bookFile.handleChapterLastModified = lastModified
-                bookFile.lastChapter = 0
-                bookFile.lastPageInChapter = 0
-                if (chapters.isNotEmpty()) {
-                    bookFile.lastChapterDesc = chapters[0].title
-                }
 
                 BookShelfOpenHelper.instance.saveBookChapters(bookFile, chapters)
             }

@@ -46,6 +46,8 @@ class LogUtils {
             }
         }
 
+        @JvmStatic
+        @JvmOverloads
         fun d(
             tag: String,
             msg: String? = null,
@@ -57,6 +59,8 @@ class LogUtils {
             Logger.globalInstance.d(tag, msg, ex, outputToConsole, outputToFile)
         }
 
+        @JvmStatic
+        @JvmOverloads
         fun i(
             tag: String, msg: String? = null, ex: Throwable? = null,
             outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
@@ -66,6 +70,8 @@ class LogUtils {
             Logger.globalInstance.i(tag, msg, ex, outputToConsole, outputToFile)
         }
 
+        @JvmStatic
+        @JvmOverloads
         fun w(
             tag: String, msg: String? = null, ex: Throwable? = null,
             outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
@@ -75,6 +81,8 @@ class LogUtils {
             Logger.globalInstance.w(tag, msg, ex, outputToConsole, outputToFile)
         }
 
+        @JvmStatic
+        @JvmOverloads
         fun e(
             tag: String, msg: String? = null, ex: Throwable? = null,
             outputToConsole: Boolean = Logger.globalInstance.outputToConsole,
