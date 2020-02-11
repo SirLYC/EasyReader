@@ -117,7 +117,6 @@ class BookParser(private val bookFile: BookFile) {
                         bookStream.seek(0L)
                         var chapterByteOffset = 0L
                         var lastPartByteCount = 0L
-                        var currentByteCount = 0L
                         var firstChapter = true
                         var lastTitle = ""
                         var lastString = ""
@@ -139,7 +138,6 @@ class BookParser(private val bookFile: BookFile) {
                             val str = lastString + String(buffer, 0, len)
                             newStringTime += SystemClock.elapsedRealtime() - startTime
 
-                            lastPartByteCount = currentByteCount
                             byteCntBeforeMap[0] = 0
 
                             startTime = SystemClock.elapsedRealtime()
@@ -221,15 +219,16 @@ class BookParser(private val bookFile: BookFile) {
                             } else {
                                 ""
                             }
+                            lastPartByteCount += byteCntBeforeMap[last]!!
 
                             startTime = SystemClock.elapsedRealtime()
                         }
 
-                        if (currentByteCount > chapterByteOffset) {
+                        if (fileLen > chapterByteOffset) {
                             val chapter = BookChapter()
                             chapter.title = lastTitle
                             chapter.start = chapterByteOffset
-                            chapter.end = currentByteCount
+                            chapter.end = fileLen
                             chapters.add(chapter)
                         }
 
