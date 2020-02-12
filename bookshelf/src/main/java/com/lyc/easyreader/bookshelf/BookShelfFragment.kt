@@ -35,7 +35,6 @@ import com.lyc.easyreader.base.ui.theme.color_secondary_text
 import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
-import com.lyc.easyreader.bookshelf.db.BookShelfBook
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
 import com.lyc.easyreader.bookshelf.utils.detectCharset
@@ -316,7 +315,14 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         viewModel.refreshList()
     }
 
-    override fun onBookShelfItemClick(pos: Int, data: BookShelfBook, view: BookShelfItemView) {
+    override fun onBookShelfItemClick(
+        pos: Int,
+        view: BookShelfItemView
+    ) {
+        if (pos < 0 || pos >= viewModel.list.size) {
+            return
+        }
+        val data = viewModel.list[pos]
         val file = File(data.realPath)
         if (!file.exists()) {
             activity?.run {
@@ -334,7 +340,14 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         }
     }
 
-    override fun onBookShelfItemLongClick(pos: Int, data: BookShelfBook, view: BookShelfItemView) {
+    override fun onBookShelfItemLongClick(
+        pos: Int,
+        view: BookShelfItemView
+    ) {
+        if (pos < 0 || pos >= viewModel.list.size) {
+            return
+        }
+        val data = viewModel.list[pos]
         activity?.run {
             val menu = ReaderPopupMenu(this, view)
 

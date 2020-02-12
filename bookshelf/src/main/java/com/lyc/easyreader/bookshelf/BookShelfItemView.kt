@@ -131,7 +131,7 @@ class BookShelfItemView(
         val data = this.data
         val position = this.position
         if (data != null && position >= 0) {
-            onItemClickListener.onBookShelfItemClick(position, data, this)
+            onItemClickListener.onBookShelfItemClick(position, this)
         }
     }
 
@@ -139,7 +139,7 @@ class BookShelfItemView(
         val data = this.data
         val position = this.position
         if (data != null && position >= 0) {
-            onItemClickListener.onBookShelfItemLongClick(position, data, this)
+            onItemClickListener.onBookShelfItemLongClick(position, this)
             return true
         }
         return false
