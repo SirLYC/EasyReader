@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.TextView
 import androidx.core.view.setPadding
 import com.lyc.easyreader.base.ui.theme.NightModeManager
-import com.lyc.easyreader.base.ui.theme.color_yellow
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
 import com.lyc.easyreader.base.utils.textSizeInPx
@@ -31,7 +30,6 @@ class PageStyleItemView(
         backgroundDrawable.cornerRadius = radius
         setPadding(dp2px(8))
         setOnClickListener(this)
-        text = "字体"
         minWidth = dp2px(56)
         background = backgroundDrawable
         gravity = Gravity.CENTER
@@ -43,7 +41,7 @@ class PageStyleItemView(
     }
 
     fun bindData(data: PageStyle?) {
-        val select = ReaderSettings.instance.pageStyle.value == data
+        val select = ReaderSettings.currentPageStyle == data
         if (data == this.data && select == this.select) {
             return
         }
@@ -53,9 +51,15 @@ class PageStyleItemView(
         this.data = data
         this.select = select
 
+        paint.isFakeBoldText = select
         if (select) {
-            backgroundDrawable.setStroke(dp2pxf(1.5f).roundToInt(), color_yellow)
+            text = "当前"
+            backgroundDrawable.setStroke(
+                dp2pxf(2f).roundToInt(),
+                ReaderSettings.currentPageStyle.fontColor
+            )
         } else {
+            text = "字体"
             backgroundDrawable.setStroke(0, 0)
         }
         setTextColor(data.fontColor)

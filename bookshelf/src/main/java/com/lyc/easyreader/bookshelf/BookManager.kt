@@ -154,7 +154,7 @@ class BookManager private constructor() : IBookManager {
             if (faiCnt <= 0) {
                 if (sucCnt == 1) "导入成功" else "成功导入${sucCnt}个文件"
             } else {
-                "成功导入${sucCnt}个文件，失败${faiCnt}"
+                "成功导入${sucCnt}个文件，失败${faiCnt}个"
             } + if (repeatCnt == 0) "" else "，${repeatCnt}个文件已经在书架，无需导入"
         )
         eventHub.getEventListeners().forEach {

@@ -2,7 +2,6 @@ package com.lyc.easyreader.bookshelf.reader.settings
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.PaintDrawable
@@ -22,7 +21,7 @@ import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.ui.bottomsheet.BaseBottomSheet
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.getDrawableRes
-import com.lyc.easyreader.base.ui.theme.color_orange
+import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.color_yellow
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.reader.page.PageStyle
@@ -47,7 +46,6 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
         private val VIEW_ID_SCREEN_ORIENTATION = generateNewViewId()
         private val VIEW_ID_SCREEN_ON = generateNewViewId()
 
-        val themeColor = color_orange
         const val contentColor = Color.WHITE
         val selectColor = color_yellow
     }
@@ -59,13 +57,22 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
     ): View? {
         val ctx = ReaderApplication.appContext()
         var currentHeight = 0
-        val rootView = FrameLayout(ctx).apply {
-            background = PaintDrawable(themeColor).apply {
+        val rootView = FrameLayout(ctx)
+        rootView.setPadding(dp2px(16))
+
+        val settings = ReaderSettings.instance
+        val themeChange = {
+            rootView.background = PaintDrawable(ReaderSettings.currentPageStyle.bgColor).apply {
                 val r = dp2pxf(16f)
                 setCornerRadii(floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f))
             }
         }
-        rootView.setPadding(dp2px(16))
+        settings.pageStyle.observe(this, Observer {
+            themeChange()
+        })
+        NightModeManager.nightMode.observe(this, Observer {
+            themeChange()
+        })
 
         for (i in 1..5) {
             LinearLayout(ctx).apply {
@@ -107,17 +114,19 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             }
         )
 
+        val themeDrawables = mutableListOf<Drawable>()
+
         addView(ImageView(context).apply {
             scaleType = ImageView.ScaleType.CENTER_INSIDE
-            setImageDrawable(getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_brightness_low_24dp)?.apply {
-                changeToColor(contentColor)
+            setImageDrawable(getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_brightness_low_24dp)?.also {
+                themeDrawables.add(it)
             })
 
         }, LinearLayout.LayoutParams(dp24, dp24))
 
         addView(SeekBar(context).apply {
-            progressDrawable?.changeToColor(contentColor)
-            thumb?.changeToColor(contentColor)
+            progressDrawable?.let { themeDrawables.add(it) }
+            thumb?.let { themeDrawables.add(it) }
             max = 0xff
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(
@@ -143,8 +152,8 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
 
         addView(ImageView(context).apply {
             scaleType = ImageView.ScaleType.CENTER_INSIDE
-            setImageDrawable(getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_brightness_high_24dp)?.apply {
-                changeToColor(contentColor)
+            setImageDrawable(getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_brightness_high_24dp)?.also {
+                themeDrawables.add(it)
             })
 
         }, LinearLayout.LayoutParams(dp24, dp24))
@@ -160,6 +169,20 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
                 leftMargin = dp2px(16)
             }
         )
+
+        val themeChangeCallback = {
+            val fontColor = ReaderSettings.currentPageStyle.fontColor
+            themeDrawables.forEach {
+                it.changeToColor(fontColor)
+            }
+        }
+
+        ReaderSettings.instance.pageStyle.observe(this@ReaderSettingsDialog, Observer {
+            themeChangeCallback()
+        })
+        NightModeManager.nightMode.observe(this@ReaderSettingsDialog, Observer {
+            themeChangeCallback()
+        })
     }
 
     // 第二行 字体
@@ -183,12 +206,20 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             }
         )
         addView(TextView(context).apply {
-            setTextColor(contentColor)
             textSizeInPx = dp2pxf(16f)
             paint.isFakeBoldText = true
             gravity = Gravity.CENTER
             settings.fontSizeInDp.observe(this@ReaderSettingsDialog, Observer {
                 text = "$it"
+            })
+            val themeChangeCallback = {
+                setTextColor(ReaderSettings.currentPageStyle.fontColor)
+            }
+            ReaderSettings.instance.pageStyle.observe(this@ReaderSettingsDialog, Observer {
+                themeChangeCallback()
+            })
+            NightModeManager.nightMode.observe(this@ReaderSettingsDialog, Observer {
+                themeChangeCallback()
             })
         }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
             leftMargin = dp2px(16)
@@ -229,6 +260,15 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
                     adapter.notifyDataSetChanged()
                     userStyleButton.selectState = PageStyle.innerStyles[it.id] == null
                 })
+                val themeChangeCallback = {
+                    adapter.notifyDataSetChanged()
+                }
+                ReaderSettings.instance.pageStyle.observe(this@ReaderSettingsDialog, Observer {
+                    themeChangeCallback()
+                })
+                NightModeManager.nightMode.observe(this@ReaderSettingsDialog, Observer {
+                    themeChangeCallback()
+                })
             }
         }, 0, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
             rightMargin = dp2px(16)
@@ -238,17 +278,6 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
     // 第四行 翻页效果
     private fun LinearLayout.initRow4View() {
         val settings = ReaderSettings.instance
-
-//        addView(TextView(context).apply {
-//            setTextColor(contentColor)
-//            textSizeInPx = dp2pxf(14f)
-//            paint.isFakeBoldText = true
-//            gravity = Gravity.CENTER
-//            text = "翻页效果"
-//        }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-//            rightMargin = dp2px(16)
-//        })
-
         addView(RecyclerView(context).apply {
             setPadding(0, dp2px(4), 0, dp2px(4))
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -256,6 +285,15 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
                 .also { adapter ->
                     settings.pageAnimMode.observe(this@ReaderSettingsDialog, Observer {
                         adapter.notifyDataSetChanged()
+                    })
+                    val themeChangeCallback = {
+                        adapter.notifyDataSetChanged()
+                    }
+                    ReaderSettings.instance.pageStyle.observe(this@ReaderSettingsDialog, Observer {
+                        themeChangeCallback()
+                    })
+                    NightModeManager.nightMode.observe(this@ReaderSettingsDialog, Observer {
+                        themeChangeCallback()
                     })
                 }
         }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -275,7 +313,7 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
         )
 
-        addView(TextView(context).apply {
+        val moreSettingButton = TextView(context).apply {
             id = VIEW_ID_MORE_SETTING
             setOnClickListener(this@ReaderSettingsDialog)
             setTextColor(contentColor)
@@ -291,7 +329,8 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
                 getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_keyboard_arrow_right_24dp),
                 null
             )
-        }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
+        }
+        addView(moreSettingButton, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
             leftMargin = dp2px(16)
             rightMargin = dp2px(16)
         })
@@ -306,17 +345,38 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             },
             LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
         )
+
+        val themeChangeCallback = {
+            val fontColor = ReaderSettings.currentPageStyle.fontColor
+            moreSettingButton.setTextColor(fontColor)
+            moreSettingButton.compoundDrawables.forEach {
+                it?.changeToColor(fontColor)
+            }
+        }
+
+        ReaderSettings.instance.pageStyle.observe(this@ReaderSettingsDialog, Observer {
+            themeChangeCallback()
+        })
+        NightModeManager.nightMode.observe(this@ReaderSettingsDialog, Observer {
+            themeChangeCallback()
+        })
     }
 
     private fun buildTextButton(id: Int): SelectButton {
         val button = SelectButton(
             ReaderApplication.appContext(),
-            buildCommonButtonBg(contentColor, true),
-            buildCommonButtonBg(selectColor, true),
-            buildCommonButtonTextColor(contentColor),
-            buildCommonButtonTextColor(selectColor)
+            ReaderSettings.currentPageStyle
         )
-        button.setTextColor(buildCommonButtonTextColor(color = contentColor))
+        val settings = ReaderSettings.instance
+        val themeChange = {
+            button.updatePageStyle(ReaderSettings.currentPageStyle)
+        }
+        settings.pageStyle.observe(this, Observer {
+            themeChange()
+        })
+        NightModeManager.nightMode.observe(this, Observer {
+            themeChange()
+        })
         button.setOnClickListener(this)
         button.id = id
         return button
@@ -367,38 +427,50 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
     }
 
     class SelectButton(
-        context: Context?,
-        private val commonDrawable: Drawable,
-        private val selectDrawable: Drawable,
-        private val commonTextColor: ColorStateList,
-        private val selectTextColor: ColorStateList
+        context: Context, private var pageStyle: PageStyle
     ) : TextView(context) {
+
+        private var commonDrawable = buildCommonButtonBg(pageStyle.fontColor, true)
+        private var selectDrawable =
+            buildCommonButtonBg(pageStyle.fontColor, true, strokeWidth = dp2pxf(2f))
+
+        init {
+            background = commonDrawable
+            setTextColor(buildCommonButtonTextColor(pageStyle.fontColor))
+            textSizeInPx = dp2pxf(14f)
+            setPadding(dp2px(8))
+            isClickable = true
+            isFocusable = true
+            minWidth = dp2px(56)
+            gravity = Gravity.CENTER
+        }
+
+        fun updatePageStyle(newStyle: PageStyle) {
+            if (pageStyle != newStyle) {
+                pageStyle = newStyle
+                commonDrawable = buildCommonButtonBg(newStyle.fontColor, true)
+                selectDrawable =
+                    buildCommonButtonBg(pageStyle.fontColor, true, strokeWidth = dp2pxf(2f))
+                setTextColor(buildCommonButtonTextColor(newStyle.fontColor))
+                background = if (selectState) {
+                    selectDrawable
+                } else {
+                    commonDrawable
+                }
+            }
+        }
 
         var selectState = false
             set(value) {
                 if (value != field) {
+                    paint.isFakeBoldText = value
                     background = if (value) {
-                        setTextColor(selectTextColor)
                         selectDrawable
                     } else {
-                        setTextColor(commonTextColor)
                         commonDrawable
                     }
                     field = value
                 }
             }
-
-        init {
-            background = commonDrawable
-            setTextColor(commonTextColor)
-            textSizeInPx = dp2pxf(14f)
-            setPadding(dp2px(8))
-            paint.isFakeBoldText = true
-            isClickable = true
-            isFocusable = true
-            paint.isFakeBoldText = true
-            minWidth = dp2px(56)
-            gravity = Gravity.CENTER
-        }
     }
 }

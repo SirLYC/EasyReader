@@ -4,8 +4,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.recyclerview.widget.RecyclerView
-import com.lyc.easyreader.base.utils.buildCommonButtonBg
-import com.lyc.easyreader.base.utils.buildCommonButtonTextColor
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 
@@ -37,10 +35,7 @@ class PageAnimModeAdapter : RecyclerView.Adapter<PageAnimModeAdapter.ViewHolder>
         return ViewHolder(
             ReaderSettingsDialog.SelectButton(
                 parent.context,
-                buildCommonButtonBg(ReaderSettingsDialog.contentColor, true),
-                buildCommonButtonBg(ReaderSettingsDialog.selectColor, true),
-                buildCommonButtonTextColor(ReaderSettingsDialog.contentColor),
-                buildCommonButtonTextColor(ReaderSettingsDialog.selectColor)
+                ReaderSettings.currentPageStyle
             ).apply {
                 layoutParams =
                     RecyclerView.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
@@ -57,6 +52,7 @@ class PageAnimModeAdapter : RecyclerView.Adapter<PageAnimModeAdapter.ViewHolder>
         val data = values[position]
         holder.data = data
         holder.view.apply {
+            updatePageStyle(ReaderSettings.currentPageStyle)
             text = data.displayName
             selectState = data == ReaderSettings.instance.pageAnimMode.value
         }

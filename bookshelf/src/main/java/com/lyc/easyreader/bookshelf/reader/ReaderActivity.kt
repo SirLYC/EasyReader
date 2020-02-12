@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.PaintDrawable
 import android.net.Uri
 import android.os.BatteryManager
@@ -13,9 +14,12 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
-import android.view.*
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.Animation
@@ -37,23 +41,15 @@ import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.ui.bottomsheet.LinearDialogBottomSheet
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.theme.NightModeManager
-import com.lyc.easyreader.base.ui.theme.color_orange
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
-import com.lyc.easyreader.bookshelf.BuildConfig
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageView
-import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettingsDialog
-import com.lyc.easyreader.bookshelf.reader.settings.ScreenOrientation
-import kotlinx.android.synthetic.main.layout_reader_test_panel.*
-import kotlinx.android.synthetic.main.layout_reader_test_panel.view.*
 import java.io.File
-import kotlin.math.max
-import kotlin.math.min
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -243,10 +239,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
         registerSettings()
         initSettingView()
-
-        if (BuildConfig.READER_TEST_MODE) {
-            testControlPanel(rootView)
-        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -312,32 +304,30 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     }
 
     private fun initSettingView() {
-        val buttonColor = Color.WHITE
-        val bgColor = color_orange
-
-        val settingContentView = LinearLayout(this)
-        settingContentView.orientation = LinearLayout.VERTICAL
+        val settingContentView = FrameLayout(this)
         contentView.addView(settingContentView)
         val settingBlankView = FrameLayout(this)
-        settingBlankView.setBackgroundColor(0x00000000)
-        settingContentView.addView(settingBlankView, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        settingBlankView.setBackgroundColor(0x7f000000)
+        settingContentView.addView(
+            settingBlankView,
+            FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+        )
         settingBlankView.id = VIEW_ID_SETTING_BLANK
         settingBlankView.setOnClickListener(this)
 
         val bottomButtons = arrayOf(
             Triple(VIEW_ID_BTN_CATEGORY, R.drawable.ic_format_list_bulleted_24dp, "目录"),
-            Triple(VIEW_ID_BTN_NIGHT_MODE, R.drawable.ic_half_moon_24dp, "夜间"),
+            Triple(VIEW_ID_BTN_NIGHT_MODE, 0, "夜间"),
             Triple(VIEW_ID_BTN_SETTINGS, R.drawable.ic_settings_24dp, "设置")
         )
 
         val bottomMenu = FrameLayout(this)
         bottomMenu.isClickable = true
         bottomMenu.isFocusable = true
-        bottomMenu.setBackgroundColor(bgColor)
         bottomMenu.setPadding(dp2px(16))
         settingContentView.addView(
             bottomMenu,
-            LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+            FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
                 gravity = Gravity.BOTTOM
             })
 
@@ -347,13 +337,15 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         bottomMenu.addView(bottomButtonBar, FrameLayout.LayoutParams(MATCH_PARENT, dp56).apply {
             gravity = Gravity.BOTTOM
         })
+        val bottomTvs = mutableListOf<TextView>()
+        val bottomIcons = mutableListOf<Drawable>()
         bottomButtons.forEach { buttonInfo ->
             val frameLayout = FrameLayout(this)
             frameLayout.id = buttonInfo.first
             frameLayout.setOnClickListener(this)
             bottomButtonBar.addView(frameLayout, LinearLayout.LayoutParams(0, MATCH_PARENT, 1f))
             val tv = TextView(this)
-            tv.setTextColor(buttonColor)
+            bottomTvs.add(tv)
             tv.text = buttonInfo.third
             tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(12f))
             tv.maxLines = 1
@@ -370,11 +362,11 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 })
             val iconIv = ImageView(this)
             iconIv.scaleType = ImageView.ScaleType.CENTER_INSIDE
-            iconIv.setImageDrawable(getDrawable(buttonInfo.second)?.apply {
-                changeToColor(
-                    buttonColor
-                )
-            })
+            if (buttonInfo.second != 0) {
+                iconIv.setImageDrawable(getDrawable(buttonInfo.second)?.apply {
+                    bottomIcons.add(this)
+                })
+            }
             frameLayout.background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
             frameLayout.addView(
                 iconIv,
@@ -386,12 +378,20 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 })
 
             if (buttonInfo.first == VIEW_ID_BTN_NIGHT_MODE) {
+                val dayModeDrawable =
+                    getDrawable(com.lyc.easyreader.api.R.drawable.ic_brightness_high_24dp)?.also {
+                        bottomIcons.add(it)
+                    }
+                val nightModeDrawable =
+                    getDrawable(com.lyc.easyreader.api.R.drawable.ic_half_moon_24dp)?.also {
+                        bottomIcons.add(it)
+                    }
                 NightModeManager.nightMode.observe(this, Observer {
                     if (it) {
-                        iconIv.setImageDrawable(getDrawable(com.lyc.easyreader.api.R.drawable.ic_brightness_high_24dp))
+                        iconIv.setImageDrawable(dayModeDrawable)
                         tv.text = "日间"
                     } else {
-                        iconIv.setImageDrawable(getDrawable(com.lyc.easyreader.api.R.drawable.ic_half_moon_24dp))
+                        iconIv.setImageDrawable(nightModeDrawable)
                         tv.text = "夜间"
                     }
                 })
@@ -412,7 +412,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         val preChapterTv = TextView(this)
         preChapterTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
         preChapterTv.paint.isFakeBoldText = true
-        preChapterTv.setTextColor(buttonColor)
         preChapterTv.background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
         preChapterTv.text = "上一章"
         preChapterTv.id = VIEW_ID_PRE_CHAP
@@ -426,8 +425,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         val seekBar = SeekBar(this)
         seekBar.isClickable = true
         seekBar.isFocusable = true
-        seekBar.progressDrawable?.changeToColor(buttonColor)
-        seekBar.thumb?.changeToColor(buttonColor)
+
 
         val pageCountView = TextView(this)
         pageCountView.setTextColor(Color.WHITE)
@@ -460,6 +458,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
             override fun onStartTrackingTouch(seekBar: SeekBar) {
                 pageCountView.isVisible = true
+                pageCountView.translationY = -bottomMenu.height.toFloat()
                 pageCountView.text = ("${seekBar.progress + 1}/${viewModel.pageCount.value}")
             }
 
@@ -480,7 +479,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         val nextChapterTv = TextView(this)
         nextChapterTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp2pxf(14f))
         nextChapterTv.paint.isFakeBoldText = true
-        nextChapterTv.setTextColor(buttonColor)
         nextChapterTv.background = getDrawableAttrRes(android.R.attr.selectableItemBackground)
         nextChapterTv.text = "下一章"
         nextChapterTv.id = VIEW_ID_NEXT_CHAP
@@ -492,16 +490,34 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         )
 
         val topBar = SimpleToolbar(this, com.lyc.easyreader.api.R.drawable.ic_more_horiz_24dp)
-        topBar.setBackgroundColor(bgColor)
-        topBar.leftButton?.drawable?.changeToColor(buttonColor)
-        topBar.rightButton.drawable?.changeToColor(buttonColor)
         topBar.setBarClickListener(this)
         topBar.setTitle("")
         settingContentView.addView(
             topBar,
-            0,
             LinearLayout.LayoutParams(MATCH_PARENT, topBar.getViewHeight())
         )
+
+        val themeChangeCallback = {
+            val currentPageStyle = ReaderSettings.currentPageStyle
+            topBar.setBackgroundColor(currentPageStyle.bgColor)
+            val fontColor = currentPageStyle.fontColor
+            topBar.leftButton?.drawable?.changeToColor(fontColor)
+            topBar.rightButton.drawable?.changeToColor(fontColor)
+            preChapterTv.setTextColor(fontColor)
+            nextChapterTv.setTextColor(fontColor)
+            seekBar.progressDrawable?.changeToColor(fontColor)
+            seekBar.thumb?.changeToColor(fontColor)
+            bottomMenu.setBackgroundColor(currentPageStyle.bgColor)
+            bottomIcons.forEach {
+                it.changeToColor(fontColor)
+            }
+            bottomTvs.forEach {
+                it.setTextColor(fontColor)
+            }
+        }
+
+        ReaderSettings.instance.pageStyle.observe(this, Observer { themeChangeCallback() })
+        NightModeManager.nightMode.observe(this, Observer { themeChangeCallback() })
 
         viewModel.showMenu.observeEvent(this, Observer {
             topBar.paddingStatusBar = marginExtra[1] > 0
@@ -624,11 +640,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     private fun applyStatusBarColorChange() {
         val settings = ReaderSettings.instance
         if (settings.fullscreen.value) {
-            return
-        }
-
-        if (viewModel.showMenu.state) {
-            window.statusBarBlackText(false)
             return
         }
 
@@ -792,169 +803,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         }
     }
 
-    private fun testControlPanel(rootView: FrameLayout) {
-        LayoutInflater.from(this).inflate(R.layout.layout_reader_test_panel, rootView, true)
-
-        val settings = ReaderSettings.instance
-
-        rootView.tv_title.setOnClickListener {
-            layout_panel.isVisible = false
-        }
-
-        rootView.bt_default.setOnClickListener {
-            settings.applyDefaultSettings()
-        }
-
-        // 第一行
-        rootView.bt_screen_orientation.setOnClickListener {
-            val screenOrientation = settings.screenOrientation.value
-            settings.screenOrientation.value =
-                ScreenOrientation.values()[(screenOrientation.ordinal + 1) % ScreenOrientation.values().size]
-        }
-        settings.screenOrientation.observe(this@ReaderActivity, Observer {
-            rootView.bt_screen_orientation.text = settings.screenOrientation.value.displayName
-        })
-
-        rootView.bt_fullscreen.setOnClickListener {
-            settings.fullscreen.value = !settings.fullscreen.value
-        }
-        settings.fullscreen.observe(this@ReaderActivity, Observer {
-            rootView.bt_fullscreen.text = if (it) "全屏" else "非全屏"
-        })
-
-        rootView.bt_anim_mode.setOnClickListener {
-            val pageAnimMode = settings.pageAnimMode.value
-            settings.pageAnimMode.value =
-                PageAnimMode.values()[(pageAnimMode.ordinal + 1) % PageAnimMode.values().size]
-        }
-        settings.pageAnimMode.observe(this@ReaderActivity, Observer {
-            rootView.bt_anim_mode.text = it.displayName
-        })
-
-        rootView.bt_keep_screen_on.setOnClickListener {
-            settings.keepScreenOn.value = !settings.keepScreenOn.value
-        }
-
-        settings.keepScreenOn.observe(this, Observer {
-            rootView.bt_keep_screen_on.text = if (it) "屏幕常亮：开" else "屏幕常亮：关"
-        })
-
-        // 第二行
-        rootView.bt_decrease_font.setOnClickListener {
-            settings.fontSizeInDp.value -= 1
-        }
-        settings.fontSizeInDp.observe(this@ReaderActivity, Observer {
-            rootView.tv_font_size.text = ("$it")
-        })
-        rootView.bt_increase_font.setOnClickListener {
-            settings.fontSizeInDp.value += 1
-        }
-
-        // 第三行
-        rootView.bt_indent_count_increase.setOnClickListener {
-            settings.indentCount.value = min(settings.indentCount.value + 1, 8)
-        }
-
-        rootView.bt_indent_count_decrease.setOnClickListener {
-            settings.indentCount.value = max(settings.indentCount.value - 1, 0)
-        }
-
-        rootView.bt_indent_char.setOnClickListener {
-            settings.indentFull.value = !settings.indentFull.value
-        }
-
-        settings.indentCount.observe(
-            this,
-            Observer { rootView.tv_indent_count.text = it.toString() })
-        settings.indentFull.observe(this, Observer {
-            rootView.bt_indent_char.text = if (it) "全角" else "半角"
-        })
-
-        var isTracking = false
-        var inListener = false
-        // 第四行
-        rootView.sb_brightness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                inListener = true
-                settings.userBrightness.value = progress
-                inListener = false
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                isTracking = true
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                isTracking = false
-            }
-        })
-        settings.userBrightness.observe(this, Observer {
-            if (inListener || isTracking) {
-                return@Observer
-            }
-            rootView.sb_brightness.progress = it
-        })
-
-        rootView.bt_brightness_mode.setOnClickListener {
-            settings.brightnessFollowSystem.value = !settings.brightnessFollowSystem.value
-        }
-
-        settings.brightnessFollowSystem.observe(this, Observer {
-            rootView.bt_brightness_mode.text = if (it) "跟随系统" else "自定义"
-        })
-
-
-        // 第五行
-//        var isLineSpaceTracking = false
-//        var inLineSpaceListener = false
-//        rootView.sb_line_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-//            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-//                inLineSpaceListener = true
-//                settings.lineSpaceFactor.value = progress * 3.0f * 0.01f
-//                inLineSpaceListener = false
-//            }
-//
-//            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-//                isLineSpaceTracking = true
-//            }
-//
-//            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-//                isLineSpaceTracking = false
-//            }
-//        })
-//        settings.lineSpaceFactor.observe(this, Observer {
-//            if (inLineSpaceListener || isLineSpaceTracking) {
-//                return@Observer
-//            }
-//            rootView.sb_line_space.progress = (it * 100 / 3.0f).roundToInt()
-//        })
-
-//        var isParaSpaceTracking = false
-//        var inParaSpaceListener = false
-//        rootView.sb_para_space.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-//            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-//                inParaSpaceListener = true
-//                settings.paraSpaceFactor.value = progress * 3.0f * 0.01f
-//                inParaSpaceListener = false
-//            }
-//
-//            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-//                isParaSpaceTracking = true
-//            }
-//
-//            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-//                isParaSpaceTracking = false
-//            }
-//        })
-//        settings.paraSpaceFactor.observe(this, Observer {
-//            if (inParaSpaceListener || isParaSpaceTracking) {
-//                return@Observer
-//            }
-//            rootView.sb_para_space.progress = (it * 100 / 3.0f).roundToInt()
-//        })
-
-    }
-
     override fun onClick(v: View?) {
         when (v?.id) {
             VIEW_ID_SETTING_BLANK -> {
@@ -989,20 +837,21 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
                 viewModel.showMenu.state = false
+                val pageStyle = ReaderSettings.currentPageStyle
                 val dialog = LinearDialogBottomSheet(this)
                 val collected: Boolean
                 val collectId =
                     if ((viewModel.collected).also { collected = it }) {
-                        dialog.addItem("取消收藏", R.drawable.ic_star_24dp, Color.WHITE)
+                        dialog.addItem("取消收藏", R.drawable.ic_star_24dp, pageStyle.fontColor)
                     } else {
-                        dialog.addItem("加入收藏", R.drawable.ic_star_border_24dp, Color.WHITE)
+                        dialog.addItem("加入收藏", R.drawable.ic_star_border_24dp, pageStyle.fontColor)
                     }
                 val bookMarkId =
-                    dialog.addItem("加入书签", R.drawable.ic_bookmark_border_24dp, Color.WHITE)
-                val shareId = dialog.addItem("分享", R.drawable.ic_share_24dp, Color.WHITE)
+                    dialog.addItem("加入书签", R.drawable.ic_bookmark_border_24dp, pageStyle.fontColor)
+                val shareId = dialog.addItem("分享", R.drawable.ic_share_24dp, pageStyle.fontColor)
                 val exportId =
-                    dialog.addItem("其他应用打开", R.drawable.ic_launch_24dp, color = Color.WHITE)
-                dialog.bgColor = color_orange
+                    dialog.addItem("其他应用打开", R.drawable.ic_launch_24dp, color = pageStyle.fontColor)
+                dialog.bgColor = pageStyle.bgColor
                 dialog.show()
                 dialog.itemClickListener = { id, _ ->
                     when (id) {

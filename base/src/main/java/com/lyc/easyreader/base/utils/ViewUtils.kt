@@ -56,11 +56,15 @@ fun Canvas.drawTopDivideLine(width: Float, lineSize: Float = 1f) {
     drawRect(0f, 0f, width, lineSize, divideLinePaint)
 }
 
-fun buildCommonButtonBg(color: Int = color_orange, outline: Boolean = false): Drawable {
+fun buildCommonButtonBg(
+    color: Int = color_orange,
+    outline: Boolean = false,
+    strokeWidth: Float = dp2pxf(1f)
+): Drawable {
     val commonBg = GradientDrawable().apply {
         cornerRadius = dp2pxf(4f)
         if (outline) {
-            setStroke(dp2pxf(1f).roundToInt(), color)
+            setStroke(strokeWidth.roundToInt(), color)
         } else {
             setColor(color)
         }
@@ -68,7 +72,7 @@ fun buildCommonButtonBg(color: Int = color_orange, outline: Boolean = false): Dr
     val commonBgNotEnabled = GradientDrawable().apply {
         cornerRadius = dp2pxf(4f)
         if (outline) {
-            setStroke(dp2pxf(1f).roundToInt(), color)
+            setStroke(strokeWidth.roundToInt(), color)
         } else {
             setColor(color)
         }

@@ -28,7 +28,8 @@ abstract class BaseBottomSheet : BaseDialogFragment() {
         window.decorView.setPadding(0)
         window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.setDimAmount(0.5f)
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         val attributes = window.attributes
         attributes.width = MATCH_PARENT
         attributes.height = WRAP_CONTENT
