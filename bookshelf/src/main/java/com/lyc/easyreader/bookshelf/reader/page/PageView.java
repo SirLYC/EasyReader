@@ -194,8 +194,8 @@ public class PageView extends View {
                 if (!isMove) {
                     //设置中间区域范围
                     if (mCenterRect == null) {
-                        mCenterRect = new RectF(viewWidth / 5, viewHeight / 3,
-                                viewWidth * 4 / 5, viewHeight * 2 / 3);
+                        mCenterRect = new RectF(viewWidth / 5f, viewHeight / 5f,
+                                viewWidth * 4f / 5f, viewHeight * 4f / 5f);
                     }
 
                     //是否点击了中间

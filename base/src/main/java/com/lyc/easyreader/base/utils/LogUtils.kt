@@ -93,6 +93,10 @@ class LogUtils {
             Logger.globalInstance.e(tag, msg, ex, outputToConsole, outputToFile)
         }
 
+        fun waitForWriteFinish() {
+            Logger.globalInstance.waitForWriteFinish()
+        }
+
         fun addSpecialNameForTag(tag: String, name: String) {
             initLoggerIfNeeded()
             Logger.globalInstance.addSpecialTagForFile(tag, name)

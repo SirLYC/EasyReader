@@ -9,6 +9,7 @@ import com.lyc.common.thread.SingleThreadRunner
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
+import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -23,13 +24,22 @@ class Logger : Handler.Callback {
         private const val MSG_ADD_PENDING = 1
         private const val MSG_WRITE_FILE = 2
 
-        private const val WRITE_DELAY = 1000L
-
         private val timeFormatThreadLocal = ThreadLocal<SimpleDateFormat>()
 
         @JvmStatic
         val globalInstance by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
             Logger()
+        }
+
+        fun toStackTraceString(tr: Throwable?): String? {
+            if (tr == null) {
+                return ""
+            }
+            val sw = StringWriter()
+            val pw = PrintWriter(sw)
+            tr.printStackTrace(pw)
+            pw.flush()
+            return sw.toString()
         }
     }
 
@@ -192,6 +202,10 @@ class Logger : Handler.Callback {
         )?.sendToTarget()
     }
 
+    fun waitForWriteFinish() {
+        fileRunner.await()
+    }
+
     private class LogEntry(
         val level: Level,
         val tag: String,
@@ -207,7 +221,7 @@ class Logger : Handler.Callback {
                 if (it == null) {
                     ""
                 } else {
-                    "\n${Log.getStackTraceString(it)}"
+                    "\n${toStackTraceString(it)}"
                 }
             }
             }"
@@ -222,7 +236,7 @@ class Logger : Handler.Callback {
                 }
                 fileRunner.getHandler()?.let {
                     it.removeMessages(MSG_WRITE_FILE)
-                    it.sendEmptyMessageDelayed(MSG_WRITE_FILE, WRITE_DELAY)
+                    it.sendEmptyMessage(MSG_WRITE_FILE)
                 }
             }
 
