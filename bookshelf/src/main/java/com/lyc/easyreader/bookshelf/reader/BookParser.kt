@@ -4,6 +4,7 @@ import android.os.SystemClock
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.utils.LogUtils
+import com.lyc.easyreader.base.utils.thread.CancelToken
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 import com.lyc.easyreader.bookshelf.utils.ByteCountingLineReader
 import com.lyc.easyreader.bookshelf.utils.detectCharset
@@ -15,7 +16,6 @@ import java.io.RandomAccessFile
 import java.nio.charset.Charset
 import java.util.*
 import java.util.regex.Pattern
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.system.measureTimeMillis
@@ -52,6 +52,8 @@ class BookParser(private val bookFile: BookFile) {
         const val CODE_FILE_OPEN_FAILED = -5
 
         const val CODE_FILE_TOO_SMALL = -9
+
+        const val CODE_CANCEL = -14
     }
 
     sealed class ParseChapterResult(
@@ -69,12 +71,15 @@ class BookParser(private val bookFile: BookFile) {
 
         class Success(list: List<BookChapter>) :
             ParseChapterResult(CODE_SUCCESS, "", null, list)
+
+        object Cancel :
+            ParseChapterResult(CODE_CANCEL, "取消", null, null)
     }
 
     /**
      * 对文件进行分章节
      */
-    fun parseChapters(): ParseChapterResult {
+    fun parseChapters(cancelToken: CancelToken): ParseChapterResult {
         val chapters = mutableListOf<BookChapter>()
         val file = bookFile.realPath.let { if (it.isEmpty()) null else File(it) }
         if (file?.exists() != true) {
@@ -93,6 +98,11 @@ class BookParser(private val bookFile: BookFile) {
         try {
             RandomAccessFile(file, "r").use { bookStream ->
                 val charset = bookStream.detectCharset()
+
+                if (cancelToken.canceld) {
+                    return@use
+                }
+
                 bookStream.seek(0)
 
                 // 判断是否有符合预设的章节
@@ -107,7 +117,6 @@ class BookParser(private val bookFile: BookFile) {
                 var newStringTime = 0L
                 var encodeTime = 0L
                 var patternTime = 0L
-                var findMapTime = 0L
                 var startTime: Long
 
                 val byteCntBeforeMap = TreeMap<Int, Long>()
@@ -128,6 +137,9 @@ class BookParser(private val bookFile: BookFile) {
 
                         startTime = SystemClock.elapsedRealtime()
                         while (reader.read(buffer).also { len = it } != -1) {
+                            if (cancelToken.canceld) {
+                                return@use
+                            }
                             if (len <= 0) {
                                 continue
                             }
@@ -143,6 +155,9 @@ class BookParser(private val bookFile: BookFile) {
                             startTime = SystemClock.elapsedRealtime()
                             val matcher = chapterPattern.matcher(str)
                             while (matcher.find()) {
+                                if (cancelToken.canceld) {
+                                    return@use
+                                }
                                 patternTime += SystemClock.elapsedRealtime() - startTime
                                 val start = matcher.start()
                                 startTime = SystemClock.elapsedRealtime()
@@ -156,17 +171,7 @@ class BookParser(private val bookFile: BookFile) {
                                             byteCntBeforeMap[start]!!
                                         }
                                         else -> {
-                                            startTime = SystemClock.elapsedRealtime()
-                                            var index = 0
-                                            var distance = start - 1
-                                            for (key in byteCntBeforeMap.keys) {
-                                                val curDis = abs(key - start)
-                                                if (curDis < distance) {
-                                                    index = key
-                                                    distance = curDis
-                                                }
-                                            }
-                                            findMapTime += SystemClock.elapsedRealtime() - startTime
+                                            val index = byteCntBeforeMap.lastKey()
                                             val subString = str.substring(
                                                 min(start, index),
                                                 max(start, index)
@@ -213,7 +218,7 @@ class BookParser(private val bookFile: BookFile) {
 
                             // 有可能因为分段正好把一个章节分开了
                             // 这里要把没有分章的剩余字符串全部加到下一次迭代中
-                            val last = byteCntBeforeMap.keys.last()
+                            val last = byteCntBeforeMap.lastKey()
                             lastString = if (last != str.length) {
                                 str.substring(last)
                             } else {
@@ -248,7 +253,7 @@ class BookParser(private val bookFile: BookFile) {
 
                         LogUtils.d(
                             TAG,
-                            "IO time=${ioTime}ms, patter time=${patternTime}ms, encodeTime=${encodeTime}ms, new String time=${newStringTime}, findMapTime=${findMapTime}}"
+                            "IOTime=${ioTime}ms; PatternTime=${patternTime}ms, encodeTime=${encodeTime}ms, newStringTime=${newStringTime}"
                         )
                     }
 
@@ -287,6 +292,9 @@ class BookParser(private val bookFile: BookFile) {
                         var chapterIndex = 1
 
                         while (reader.readLine() != null) {
+                            if (cancelToken.canceld) {
+                                return@use
+                            }
                             lastLineByteCount = currentByteCount
                             currentByteCount = reader.byteCount()
 
@@ -325,9 +333,11 @@ class BookParser(private val bookFile: BookFile) {
                     }
                 }
 
+                if (cancelToken.canceld) {
+                    return ParseChapterResult.Cancel
+                }
+
                 LogUtils.i(TAG, "Chapter result: size=${chapters.size}")
-
-
 
                 bookFile.charset = charset
                 bookFile.handleChapterLastModified = lastModified

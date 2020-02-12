@@ -1,7 +1,8 @@
-package com.lyc.easyreader.base.utils
+package com.lyc.easyreader.base.utils.thread
 
 import android.os.Looper
 import com.lyc.common.thread.ExecutorFactory
+import com.lyc.easyreader.base.utils.LogUtils
 import java.util.concurrent.CountDownLatch
 
 /**
@@ -18,7 +19,10 @@ fun waitFinishOnMain(runnable: Runnable) {
         try {
             latch.await()
         } catch (e: Exception) {
-            LogUtils.e(TAG, ex = e)
+            LogUtils.e(
+                TAG,
+                ex = e
+            )
         }
     }
 }

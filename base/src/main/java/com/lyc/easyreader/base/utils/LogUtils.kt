@@ -4,6 +4,7 @@ import android.os.SystemClock
 import com.lyc.common.Logger
 import com.lyc.easyreader.base.BuildConfig
 import com.lyc.easyreader.base.ReaderApplication
+import com.lyc.easyreader.base.utils.thread.waitFinishOnMain
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock

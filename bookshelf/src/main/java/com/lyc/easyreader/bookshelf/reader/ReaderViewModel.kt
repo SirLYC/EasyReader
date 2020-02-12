@@ -16,6 +16,8 @@ import com.lyc.easyreader.base.arch.SingleLiveEvent
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.rv.ObservableList
+import com.lyc.easyreader.base.utils.thread.CancelToken
+import com.lyc.easyreader.base.utils.thread.CancelTokenList
 import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 import java.util.concurrent.atomic.AtomicReference
@@ -44,6 +46,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
     val currentChapter = NonNullLiveData(0)
     val chapterReverse = NonNullLiveData(false)
     val charOffsets = intArrayOf(-1, -1)
+    val cancelTokenList = CancelTokenList()
     var parseResult: BookParser.ParseChapterResult? = null
 
     var collected = false
@@ -69,12 +72,23 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
                     val parser = BookParser(newBookFile)
 
                     val resultCapture = AtomicReference<BookParser.ParseChapterResult>()
+                    val cancelToken = CancelToken()
                     val time = measureTimeMillis {
-                        resultCapture.set(parser.parseChapters())
+                        resultCapture.set(parser.parseChapters(cancelToken.also {
+                            cancelTokenList.add(
+                                it
+                            )
+                        }))
                     }
                     LogUtils.d(TAG, "Parse book time: ${time}ms")
                     val result: BookParser.ParseChapterResult = resultCapture.get()
                     handler.post { parseResult = result }
+
+                    if (result.code == BookParser.CODE_CANCEL || cancelToken.canceld) {
+                        LogUtils.i(TAG, "Parse canceled.")
+                        return@execute
+                    }
+
                     if (result.code != BookParser.CODE_SUCCESS) {
                         ReaderToast.showToast(result.msg)
                         LogUtils.e(
@@ -167,6 +181,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
     override fun onCleared() {
         alive = false
         handler.removeCallbacksAndMessages(null)
+        cancelTokenList.clear()
         super.onCleared()
     }
 

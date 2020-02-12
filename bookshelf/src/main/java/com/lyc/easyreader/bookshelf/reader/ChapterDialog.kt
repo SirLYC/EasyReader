@@ -116,7 +116,7 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
 
         rv.adapter = BookChapterListAdapter(
             readerViewModel
-        ) { index, item, view ->
+        ) { index, item, _ ->
             LogUtils.d(TAG, "On chapter item click! Chapter pos=$index, title=${item.title}")
             dismiss()
             readerViewModel.changeChapterCall.value = index
@@ -125,6 +125,11 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
                 reverse = it
             })
             observe(this@ChapterDialog)
+        }
+
+        val currentChapter = readerViewModel.currentChapter.value
+        if (currentChapter >= 0 && currentChapter < readerViewModel.bookChapterList.size) {
+            rv.scrollToPosition(currentChapter)
         }
     }
 

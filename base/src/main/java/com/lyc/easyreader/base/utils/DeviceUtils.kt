@@ -12,6 +12,7 @@ import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import com.lyc.easyreader.base.ReaderApplication
+import com.lyc.easyreader.base.utils.thread.doOnMainThread
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.math.roundToInt
