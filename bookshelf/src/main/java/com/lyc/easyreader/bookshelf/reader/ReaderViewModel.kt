@@ -6,10 +6,7 @@ import android.os.Looper
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.lyc.common.thread.ExecutorFactory
-import com.lyc.easyreader.api.book.BookChapter
-import com.lyc.easyreader.api.book.BookFile
-import com.lyc.easyreader.api.book.BookReadRecord
-import com.lyc.easyreader.api.book.IBookManager
+import com.lyc.easyreader.api.book.*
 import com.lyc.easyreader.base.arch.LiveState
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.arch.SingleLiveEvent
@@ -26,13 +23,19 @@ import kotlin.system.measureTimeMillis
 /**
  * Created by Liu Yuchuan on 2020/1/30.
  */
-class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
+class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
+    BookShelfOpenHelper.IBookMarkChangeListener {
     companion object {
         const val TAG = "ReaderViewModel"
         const val KEY_BOOK_FILE = "${TAG}_KEY_BOOK_FILE"
     }
 
     private val handler = Handler(Looper.getMainLooper())
+
+    init {
+        BookShelfOpenHelper.instance.addBookMarkChangeListener(this)
+        BookManager.instance.addBookChangeListener(this)
+    }
 
     @Volatile
     var alive = true
@@ -46,13 +49,16 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
     val currentChapter = NonNullLiveData(0)
     val chapterReverse = NonNullLiveData(false)
     val charOffsets = intArrayOf(-1, -1)
-    val cancelTokenList = CancelTokenList()
+    private val cancelTokenList = CancelTokenList()
     var parseResult: BookParser.ParseChapterResult? = null
+    private var isLoadingBookMarks = false
+    val bookMarkList = ObservableList<BookMark>(arrayListOf())
 
     var collected = false
     var bookReadRecord: BookReadRecord? = null
 
     val changeChapterCall = SingleLiveEvent<Int>()
+    val skipBookMarkCall = SingleLiveEvent<Triple<Int, Int, Int>>()
 
     fun init(bookFile: BookFile) {
         bookFileLiveData.value = bookFile
@@ -134,6 +140,30 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
         }
     }
 
+    fun loadBookMarksIfNeeded() {
+        if (bookMarkList.isNotEmpty()) {
+            return
+        }
+        refreshBookMarks()
+    }
+
+    private fun refreshBookMarks() {
+        if (isLoadingBookMarks) {
+            return
+        }
+
+        isLoadingBookMarks = true
+        bookFileLiveData.value?.let { bookFile ->
+            ExecutorFactory.IO_EXECUTOR.execute {
+                val bookMarks = BookShelfOpenHelper.instance.loadBookMarks(bookFile.id)
+                handler.post {
+                    bookMarkList.replaceAll(bookMarks)
+                    isLoadingBookMarks = false
+                }
+            }
+        }
+    }
+
     fun updateCollectState(collect: Boolean) {
         bookFileLiveData.value?.run {
             BookManager.instance.updateBookCollect(id, collect)
@@ -180,8 +210,10 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
 
     override fun onCleared() {
         alive = false
-        handler.removeCallbacksAndMessages(null)
         cancelTokenList.clear()
+        handler.removeCallbacksAndMessages(null)
+        BookShelfOpenHelper.instance.removeBookMarkChangeListener(this)
+        BookManager.instance.removeBookChangeListener(this)
         super.onCleared()
     }
 
@@ -199,5 +231,11 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener {
 
     override fun onBookInfoUpdate(id: String) {
 
+    }
+
+    override fun onBookMarkChange(bookId: String) {
+        handler.post {
+            refreshBookMarks()
+        }
     }
 }

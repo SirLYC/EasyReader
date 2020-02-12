@@ -1600,6 +1600,19 @@ public abstract class PageLoader implements Handler.Callback {
         handler.removeCallbacksAndMessages(null);
     }
 
+    public String getDescForCurrentPage() {
+        if (curPage != null && curPage.lines != null) {
+            for (String line : curPage.lines) {
+                String trim = StringUtilsKt.fullToHalf(line).trim();
+                if (!TextUtils.isEmpty(trim)) {
+                    return trim;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /*****************************************interface*****************************************/
 
     public interface OnPageChangeListener {

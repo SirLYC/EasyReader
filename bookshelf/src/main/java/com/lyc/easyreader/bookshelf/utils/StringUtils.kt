@@ -7,7 +7,20 @@ import kotlin.concurrent.getOrSet
 /**
  * Created by Liu Yuchuan on 2020/2/4.
  */
-fun halfToFull(input: String): String? {
+fun fullToHalf(input: String): String {
+    val c = input.toCharArray()
+    for (i in c.indices) {
+        if (c[i] == 12288.toChar()) //全角空格
+        {
+            c[i] = 32.toChar()
+            continue
+        }
+        if (c[i] > 65280.toChar() && c[i] < 65375.toChar()) c[i] = (c[i] - 65248)
+    }
+    return String(c)
+}
+
+fun halfToFull(input: String): String {
     val c = input.toCharArray()
     for (i in c.indices) {
         if (c[i] == 32.toChar()) //半角空格

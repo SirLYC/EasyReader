@@ -32,6 +32,7 @@ import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookFile
+import com.lyc.easyreader.api.book.BookMark
 import com.lyc.easyreader.api.main.Schema
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.app.NotchCompat
@@ -45,6 +46,8 @@ import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.R
+import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
+import com.lyc.easyreader.bookshelf.reader.bookmark.BookMarkDialog
 import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageView
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
@@ -85,6 +88,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         private val VIEW_ID_PRE_CHAP = generateNewViewId()
         private val VIEW_ID_NEXT_CHAP = generateNewViewId()
         private val VIEW_ID_BTN_CATEGORY = generateNewViewId()
+        private val VIEW_ID_BTN_BOOK_MARK = generateNewViewId()
         private val VIEW_ID_BTN_NIGHT_MODE = generateNewViewId()
         private val VIEW_ID_BTN_SETTINGS = generateNewViewId()
     }
@@ -225,6 +229,9 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         viewModel.changeChapterCall.observe(this, Observer {
             loader.skipToChapter(it)
         })
+        viewModel.skipBookMarkCall.observe(this, Observer {
+            loader.skipToChapter(it.first, it.second, it.third)
+        })
 
 
         BatteryAndTimeReceiver().let {
@@ -317,6 +324,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
         val bottomButtons = arrayOf(
             Triple(VIEW_ID_BTN_CATEGORY, R.drawable.ic_format_list_bulleted_24dp, "目录"),
+            Triple(VIEW_ID_BTN_BOOK_MARK, R.drawable.ic_bookmark_border_24dp, "书签"),
             Triple(VIEW_ID_BTN_NIGHT_MODE, 0, "夜间"),
             Triple(VIEW_ID_BTN_SETTINGS, R.drawable.ic_settings_24dp, "设置")
         )
@@ -835,6 +843,11 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 ChapterDialog().showOneTag(supportFragmentManager)
             }
 
+            VIEW_ID_BTN_BOOK_MARK -> {
+                viewModel.showMenu.state = false
+                BookMarkDialog().showOneTag(supportFragmentManager)
+            }
+
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
                 viewModel.showMenu.state = false
                 val pageStyle = ReaderSettings.currentPageStyle
@@ -847,7 +860,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                         dialog.addItem("加入收藏", R.drawable.ic_star_border_24dp, pageStyle.fontColor)
                     }
                 val bookMarkId =
-                    dialog.addItem("加入书签", R.drawable.ic_bookmark_border_24dp, pageStyle.fontColor)
+                    dialog.addItem("添加书签", R.drawable.ic_bookmark_border_24dp, pageStyle.fontColor)
                 val shareId = dialog.addItem("分享", R.drawable.ic_share_24dp, pageStyle.fontColor)
                 val exportId =
                     dialog.addItem("其他应用打开", R.drawable.ic_launch_24dp, color = pageStyle.fontColor)
@@ -859,7 +872,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                             viewModel.updateCollectState(!collected)
                         }
                         bookMarkId -> {
-
+                            addBookMark()
                         }
                         shareId -> shareBookFileByOtherApp()
                         exportId -> openBookFileByOtherApp()
@@ -867,6 +880,34 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 }
 
             }
+        }
+    }
+
+    private fun addBookMark() {
+        viewModel.bookFileLiveData.value?.let { bookFile ->
+            val desc = pageLoader?.descForCurrentPage
+            if (desc == null) {
+                ReaderToast.showToast("添加失败")
+                return@let
+            }
+
+            val chapter = viewModel.currentChapter.value
+            if (chapter < 0 || chapter >= viewModel.bookChapterList.size) {
+                return@let
+            }
+            val bookMark = BookMark(
+                null,
+                bookFile.id,
+                chapter,
+                viewModel.charOffsets[0],
+                viewModel.charOffsets[1],
+                viewModel.currentPage.value,
+                System.currentTimeMillis(),
+                viewModel.bookChapterList[chapter].title,
+                desc
+            )
+            BookShelfOpenHelper.instance.addBookMark(bookMark)
+            ReaderToast.showToast("已添加书签")
         }
     }
 

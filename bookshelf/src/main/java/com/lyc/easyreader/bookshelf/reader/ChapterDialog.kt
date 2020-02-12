@@ -8,7 +8,6 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.core.view.isVisible
-import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,7 +15,6 @@ import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.bottomsheet.BaseBottomSheet
-import com.lyc.easyreader.base.ui.theme.color_secondary_text
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
@@ -36,7 +34,6 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
     private lateinit var readerViewModel: ReaderViewModel
     private lateinit var reverseButton: TextView
     private lateinit var rv: RecyclerView
-    private lateinit var loadingView: TextView
 
     override fun onCreateContentView(
         inflater: LayoutInflater,
@@ -64,12 +61,6 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
         rootView.addView(rv, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT).apply {
             topMargin = topBar.getViewHeight()
         })
-
-        loadingView = TextView(ctx)
-        loadingView.gravity = Gravity.CENTER
-        loadingView.textSizeInPx = dp2pxf(18f)
-        loadingView.setPadding(dp2px(16))
-        loadingView.setTextColor(color_secondary_text)
 
         return rootView
     }
@@ -136,12 +127,6 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
 
     private fun applyChapterLoadingStateChange(isLoading: Boolean, isEmpty: Boolean) {
         rv.isVisible = !isLoading && !isEmpty
-        loadingView.isVisible = isLoading || isEmpty
-        if (isLoading) {
-            loadingView.text = "正在加载..."
-        } else {
-            loadingView.text = "没有章节"
-        }
     }
 
     override fun onClick(v: View?) {

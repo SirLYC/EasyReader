@@ -31,15 +31,15 @@ class BookShelfOpenHelper private constructor() :
     private val bookFileInfoUpdateListenerHub =
         EventHubFactory.createDefault<IBookFileInfoUpdateListener>(true)
 
-    private val bookFileCollectListenerHub =
-        EventHubFactory.createDefault<IBookFileCollectListener>(true)
+    private val bookMarkChangeListenerHub =
+        EventHubFactory.createDefault<IBookMarkChangeListener>(true)
 
     interface IBookFileInfoUpdateListener {
         fun onBookInfoUpdate()
     }
 
-    interface IBookFileCollectListener {
-        fun onBookCollectChange(id: String, collect: Boolean)
+    interface IBookMarkChangeListener {
+        fun onBookMarkChange(bookId: String)
     }
 
     fun addBookFileInfoUpdateListener(listener: IBookFileInfoUpdateListener) {
@@ -50,12 +50,12 @@ class BookShelfOpenHelper private constructor() :
         bookFileInfoUpdateListenerHub.removeEventListener(listener)
     }
 
-    fun addBookFileCollectListener(listener: IBookFileCollectListener) {
-        bookFileCollectListenerHub.addEventListener(listener)
+    fun addBookMarkChangeListener(listener: IBookMarkChangeListener) {
+        bookMarkChangeListenerHub.addEventListener(listener)
     }
 
-    fun removeBookFileCollectListener(listener: IBookFileCollectListener) {
-        bookFileCollectListenerHub.removeEventListener(listener)
+    fun removeBookMarkChangeListener(listener: IBookMarkChangeListener) {
+        bookMarkChangeListenerHub.removeEventListener(listener)
     }
 
     fun asyncSaveUpdateBookAccess(bookFile: BookFile) {
@@ -64,6 +64,60 @@ class BookShelfOpenHelper private constructor() :
             daoSession.bookFileDao.insertOrReplace(bookFile)
             bookFileInfoUpdateListenerHub.getEventListeners().forEach {
                 it.onBookInfoUpdate()
+            }
+        })
+    }
+
+    fun loadBookMarks(bookId: String): List<BookMark> {
+        return daoSession.bookMarkDao.queryBuilder()
+            .where(BookMarkDao.Properties.BookId.eq(bookId))
+            .orderDesc(BookMarkDao.Properties.Time, BookMarkDao.Properties.Chapter)
+            .list()
+    }
+
+    fun addBookMark(bookMark: BookMark) {
+        if (bookMark.bookId == null) {
+            return
+        }
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookMarkDao.insert(bookMark)
+            bookMarkChangeListenerHub.getEventListeners().forEach {
+                it.onBookMarkChange(bookMark.bookId)
+            }
+        })
+    }
+
+    fun deleteBookMark(bookMark: BookMark) {
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookMarkDao.delete(bookMark)
+            bookMarkChangeListenerHub.getEventListeners().forEach {
+                it.onBookMarkChange(bookMark.bookId)
+            }
+        })
+    }
+
+    fun deleteAllBookMark(bookId: String) {
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookMarkDao.queryBuilder()
+                .where(BookMarkDao.Properties.BookId.eq(bookId))
+                .buildDelete()
+                .forCurrentThread()
+                .executeDeleteWithoutDetachingEntities()
+            bookMarkChangeListenerHub.getEventListeners().forEach {
+                it.onBookMarkChange(bookId)
+            }
+        })
+    }
+
+    fun deleteBookMarksFor(bookId: String) {
+        dbRunner.asyncRun(Runnable {
+            daoSession.bookMarkDao.queryBuilder()
+                .where(BookMarkDao.Properties.BookId.eq(bookId))
+                .buildDelete()
+                .forCurrentThread()
+                .executeDeleteWithoutDetachingEntities()
+            bookMarkChangeListenerHub.getEventListeners().forEach {
+                it.onBookMarkChange(bookId)
             }
         })
     }
@@ -121,6 +175,14 @@ class BookShelfOpenHelper private constructor() :
     fun deleteBookFile(id: String, async: Boolean = true, callback: () -> Unit = {}) {
         val command = Runnable {
             daoSession.runInTx {
+                daoSession.bookFileDao.load(id)?.run {
+                    File(realPath).delete()
+                }
+                daoSession.bookMarkDao.queryBuilder()
+                    .where(BookChapterDao.Properties.BookId.eq(id))
+                    .buildDelete()
+                    .forCurrentThread()
+                    .executeDeleteWithoutDetachingEntities()
                 daoSession.bookReadRecordDao.deleteByKey(id)
                 daoSession.bookCollectDao.deleteByKey(id)
                 daoSession.bookChapterDao.queryBuilder()
