@@ -2,9 +2,9 @@ package com.lyc.easyreader.bookshelf.reader.bookmark
 
 import android.R
 import android.view.View
-import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.widget.FrameLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.lyc.easyreader.api.book.BookMark
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
@@ -29,9 +29,9 @@ class BookMarkAdapter(
         }
     }
 
-    override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {
-        parent.background = getDrawableAttrRes(R.attr.selectableItemBackground)
-        return BookMarkItemView(parent.context).apply {
+    override fun onCreateItemView(itemWrapper: FrameLayout, viewType: Int): View {
+        itemWrapper.background = getDrawableAttrRes(R.attr.selectableItemBackground)
+        return BookMarkItemView(itemWrapper.context).apply {
             layoutParams = RecyclerView.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
         }
     }

@@ -3,7 +3,6 @@ package com.lyc.easyreader.bookshelf.scan
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
@@ -52,10 +51,10 @@ class BookScanAdapter(
         return VIEW_TYPE_EMPTY_ITEM
     }
 
-    override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {
+    override fun onCreateItemView(itemWrapper: FrameLayout, viewType: Int): View {
         return if (viewType == VIEW_TYPE_EMPTY_ITEM) {
-            FrameLayout(parent.context).apply {
-                addView(TextView(parent.context).apply {
+            FrameLayout(itemWrapper.context).apply {
+                addView(TextView(itemWrapper.context).apply {
                     setPadding(dp2px(16))
                     gravity = Gravity.CENTER
 
@@ -77,7 +76,7 @@ class BookScanAdapter(
                 layoutParams = RecyclerView.LayoutParams(MATCH_PARENT, MATCH_PARENT)
             }
         } else {
-            BookScanItemView(parent.context, positionSelectController).apply {
+            BookScanItemView(itemWrapper.context, positionSelectController).apply {
                 layoutParams = RecyclerView.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
             }
         }

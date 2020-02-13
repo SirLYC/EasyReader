@@ -198,27 +198,29 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
         payloads: MutableList<Any>
     )
 
-    abstract fun onCreateItemView(parent: ViewGroup, viewType: Int): View
+    abstract fun onCreateItemView(itemWrapper: FrameLayout, viewType: Int): View
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val itemView = FrameLayout(parent.context)
         val contentView = onCreateItemView(itemView, viewType)
-        when (val childLp = contentView.layoutParams) {
-            is RecyclerView.LayoutParams -> {
-                itemView.layoutParams = childLp
-                contentView.layoutParams = FrameLayout.LayoutParams(childLp)
-            }
-            is ViewGroup.MarginLayoutParams -> {
-                itemView.layoutParams = RecyclerView.LayoutParams(childLp)
-                contentView.layoutParams = FrameLayout.LayoutParams(childLp)
-            }
-            else -> {
-                itemView.layoutParams = childLp
-                contentView.layoutParams =
-                    (childLp?.let { FrameLayout.LayoutParams(it) } ?: FrameLayout.LayoutParams(
-                        MATCH_PARENT,
-                        WRAP_CONTENT
-                    ))
+        if (itemView.layoutParams == null) {
+            when (val childLp = contentView.layoutParams) {
+                is RecyclerView.LayoutParams -> {
+                    itemView.layoutParams = childLp
+                    contentView.layoutParams = FrameLayout.LayoutParams(childLp)
+                }
+                is ViewGroup.MarginLayoutParams -> {
+                    itemView.layoutParams = RecyclerView.LayoutParams(childLp)
+                    contentView.layoutParams = FrameLayout.LayoutParams(childLp)
+                }
+                else -> {
+                    itemView.layoutParams = childLp
+                    contentView.layoutParams =
+                        (childLp?.let { FrameLayout.LayoutParams(it) } ?: FrameLayout.LayoutParams(
+                            MATCH_PARENT,
+                            WRAP_CONTENT
+                        ))
+                }
             }
         }
         itemView.addView(contentView)
