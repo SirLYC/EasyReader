@@ -6,6 +6,8 @@ import androidx.documentfile.provider.DocumentFile
 import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.utils.LogUtils
+import org.mozilla.universalchardet.CharsetListener
+import org.mozilla.universalchardet.UniversalDetector
 import java.io.RandomAccessFile
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
@@ -92,6 +94,26 @@ fun Uri?.detectCharset(): Charset {
     }
 
     return APP_DEFAULT_CHARSET
+}
+
+fun RandomAccessFile?.detectCharsetUseLib(): Charset {
+    if (this == null) {
+        return APP_DEFAULT_CHARSET
+    }
+
+    val detector = UniversalDetector(CharsetListener { var1 -> println("charset = $var1") })
+    val buffer = ByteArray(4096)
+    var len: Int
+    while (read(buffer).also { len = it } > 0 && !detector.isDone) {
+        detector.handleData(buffer, 0, len)
+    }
+    detector.dataEnd()
+    LogUtils.d(TAG, "Charset=${detector.detectedCharset}")
+    return if (detector.detectedCharset == null) {
+        APP_DEFAULT_CHARSET
+    } else {
+        safeCharsetForName(detector.detectedCharset)
+    }
 }
 
 fun RandomAccessFile?.detectCharset(): Charset {

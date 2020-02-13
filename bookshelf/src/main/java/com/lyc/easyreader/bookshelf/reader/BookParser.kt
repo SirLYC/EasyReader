@@ -7,7 +7,7 @@ import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.thread.CancelToken
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 import com.lyc.easyreader.bookshelf.utils.ByteCountingLineReader
-import com.lyc.easyreader.bookshelf.utils.detectCharset
+import com.lyc.easyreader.bookshelf.utils.detectCharsetUseLib
 import com.lyc.easyreader.bookshelf.utils.toFileSizeString
 import java.io.File
 import java.io.FileInputStream
@@ -97,7 +97,7 @@ class BookParser(private val bookFile: BookFile) {
 
         try {
             RandomAccessFile(file, "r").use { bookStream ->
-                val charset = bookStream.detectCharset()
+                val charset = bookStream.detectCharsetUseLib()
 
                 if (cancelToken.canceld) {
                     return@use
