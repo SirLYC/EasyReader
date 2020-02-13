@@ -474,6 +474,9 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
             itemCount,
             if (anim) PAYLOAD_EDIT_MODE_ANIM else PAYLOAD_EDIT_MODE_NO_ANIM
         )
+        if (checkAllLiveData.value) {
+            checkAllLiveData.value = false
+        }
         return true
     }
 
