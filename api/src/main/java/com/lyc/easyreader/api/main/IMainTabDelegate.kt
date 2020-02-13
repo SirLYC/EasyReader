@@ -33,6 +33,8 @@ interface IMainTabDelegate : Comparable<IMainTabDelegate> {
 
     fun onThisTabClick()
 
+    fun onBackPressed(): Boolean
+
     @DrawableRes
     fun getIconDrawableResId(): Int
 

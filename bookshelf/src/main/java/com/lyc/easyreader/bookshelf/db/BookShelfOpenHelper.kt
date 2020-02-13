@@ -175,22 +175,7 @@ class BookShelfOpenHelper private constructor() :
     fun deleteBookFile(id: String, async: Boolean = true, callback: () -> Unit = {}) {
         val command = Runnable {
             daoSession.runInTx {
-                daoSession.bookFileDao.load(id)?.run {
-                    File(realPath).delete()
-                }
-                daoSession.bookMarkDao.queryBuilder()
-                    .where(BookChapterDao.Properties.BookId.eq(id))
-                    .buildDelete()
-                    .forCurrentThread()
-                    .executeDeleteWithoutDetachingEntities()
-                daoSession.bookReadRecordDao.deleteByKey(id)
-                daoSession.bookCollectDao.deleteByKey(id)
-                daoSession.bookChapterDao.queryBuilder()
-                    .where(BookChapterDao.Properties.BookId.eq(id))
-                    .buildDelete()
-                    .forCurrentThread()
-                    .executeDeleteWithoutDetachingEntities()
-                daoSession.bookFileDao.deleteByKey(id)
+                deleteOneBook(id)
                 callback()
             }
         }
@@ -199,6 +184,41 @@ class BookShelfOpenHelper private constructor() :
         } else {
             dbRunner.awaitRun(command)
         }
+    }
+
+    fun deleteBookFiles(ids: Iterable<String>, async: Boolean = true, callback: () -> Unit = {}) {
+        val command = Runnable {
+            daoSession.runInTx {
+                ids.forEach {
+                    deleteOneBook(it)
+                }
+                callback()
+            }
+        }
+        if (async) {
+            dbRunner.asyncRun(command)
+        } else {
+            dbRunner.awaitRun(command)
+        }
+    }
+
+    private fun deleteOneBook(id: String) {
+        daoSession.bookFileDao.load(id)?.run {
+            File(realPath).delete()
+        }
+        daoSession.bookMarkDao.queryBuilder()
+            .where(BookMarkDao.Properties.BookId.eq(id))
+            .buildDelete()
+            .forCurrentThread()
+            .executeDeleteWithoutDetachingEntities()
+        daoSession.bookReadRecordDao.deleteByKey(id)
+        daoSession.bookCollectDao.deleteByKey(id)
+        daoSession.bookChapterDao.queryBuilder()
+            .where(BookChapterDao.Properties.BookId.eq(id))
+            .buildDelete()
+            .forCurrentThread()
+            .executeDeleteWithoutDetachingEntities()
+        daoSession.bookFileDao.deleteByKey(id)
     }
 
     /**

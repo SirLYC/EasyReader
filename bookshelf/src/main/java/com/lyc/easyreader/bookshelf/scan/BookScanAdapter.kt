@@ -37,7 +37,7 @@ class BookScanAdapter(
     ) {
         if (viewType == VIEW_TYPE_SCAN_ITEM) {
             (data as? BookScanItem)?.let { itemData ->
-                (holder.itemView as? BookScanItemView)?.bindData(itemData, position)
+                (holder.contentView as? BookScanItemView)?.bindData(itemData, position)
             }
         }
     }

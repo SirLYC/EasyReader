@@ -36,7 +36,9 @@ abstract class AbstractMainTabFragment : BaseFragment() {
         rootView?.isVisible = false
     }
 
-    fun onThisTabClick() {
+    open fun onThisTabClick() {
 
     }
+
+    open fun onBackPressed() = false
 }

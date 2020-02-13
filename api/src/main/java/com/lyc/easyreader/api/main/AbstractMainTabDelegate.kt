@@ -36,6 +36,10 @@ abstract class AbstractMainTabDelegate<T : AbstractMainTabFragment> : IMainTabDe
         fragment?.onThisTabClick()
     }
 
+    override fun onBackPressed(): Boolean {
+        return visible == true && fragment?.onBackPressed() == true
+    }
+
     final override fun createFragment(): BaseFragment {
         val result = fragment ?: newFragmentInstance().also { fragment = it }
         result.arguments =

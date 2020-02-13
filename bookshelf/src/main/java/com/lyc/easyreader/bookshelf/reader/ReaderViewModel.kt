@@ -219,7 +219,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
 
     override fun onBooksImported(list: List<BookFile>) {}
 
-    override fun onBookDeleted(id: String) {}
+    override fun onBookDeleted() {}
 
     override fun onBookCollectChange(id: String, collect: Boolean) {
         handler.post {

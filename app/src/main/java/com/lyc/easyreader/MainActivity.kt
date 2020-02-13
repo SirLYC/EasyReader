@@ -12,6 +12,7 @@ import android.widget.FrameLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.util.forEach
+import androidx.core.util.valueIterator
 import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.api.main.IMainActivityDelegate
 import com.lyc.easyreader.api.main.IMainTabDelegate
@@ -212,6 +213,15 @@ class MainActivity : BaseActivity(), ITabChangeListener {
         return null
     }
 
+    override fun onBackPressed() {
+        for (tabDelegate in mainTabs.valueIterator()) {
+            if (tabDelegate.onBackPressed()) {
+                return
+            }
+        }
+        super.onBackPressed()
+    }
+
     override fun onDestroy() {
         MainActivityDelegate.instance.removeTabChangeListener(this)
         super.onDestroy()
@@ -252,5 +262,6 @@ class MainActivity : BaseActivity(), ITabChangeListener {
                 tabId
             )}"
         )
+        mainTabs[tabId]?.onThisTabClick()
     }
 }

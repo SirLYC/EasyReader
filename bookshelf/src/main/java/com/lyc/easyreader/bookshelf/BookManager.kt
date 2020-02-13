@@ -123,7 +123,16 @@ class BookManager private constructor() : IBookManager {
     override fun deleteBook(id: String, async: Boolean) {
         BookShelfOpenHelper.instance.deleteBookFile(id, async) {
             eventHub.getEventListeners().forEach {
-                it.onBookDeleted(id)
+                it.onBookDeleted()
+                ReaderToast.showToast("已删除")
+            }
+        }
+    }
+
+    override fun deleteBooks(ids: Iterable<String>, async: Boolean) {
+        BookShelfOpenHelper.instance.deleteBookFiles(ids, async) {
+            eventHub.getEventListeners().forEach {
+                it.onBookDeleted()
                 ReaderToast.showToast("已删除")
             }
         }

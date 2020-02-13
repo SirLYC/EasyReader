@@ -25,7 +25,7 @@ class BookMarkAdapter(
         payloads: MutableList<Any>
     ) {
         (data as? BookMark)?.let { bookMark ->
-            (holder.itemView as? BookMarkItemView)?.bindData(bookMark, position)
+            (holder.contentView as? BookMarkItemView)?.bindData(bookMark, position)
         }
     }
 

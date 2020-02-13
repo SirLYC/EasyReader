@@ -29,6 +29,9 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
     val list = ObservableList(arrayListOf<BookShelfBook>())
     var firstLoadFinish = false
         private set
+    val editModeLiveData = NonNullLiveData(false)
+    val checkedIds = arrayListOf<String>()
+    var afterDataUpdate: (() -> Unit)? = null
 
     init {
         BookManager.instance.addBookChangeListener(this)
@@ -40,6 +43,11 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
             return
         }
         refreshList()
+    }
+
+    fun getCheckItems(): List<BookShelfBook> {
+        val set = checkedIds.toSet()
+        return list.filter { set.contains(it.id) }
     }
 
     @MainThread
@@ -54,8 +62,17 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
             val shelfBooks = BookShelfOpenHelper.instance.loadBookShelfBookList()
             val diffResultRef = AtomicReference<DiffUtil.DiffResult>(null)
             val hasChange = AtomicBoolean(true)
+            val newBookIds = shelfBooks.map { it.id }.toSet()
             val mainTask = Runnable {
                 val diffResult: DiffUtil.DiffResult? = diffResultRef.get()
+                checkedIds.iterator().let {
+                    while (it.hasNext()) {
+                        val id = it.next()
+                        if (!newBookIds.contains(id)) {
+                            it.remove()
+                        }
+                    }
+                }
                 if (diffResult == null) {
                     if (hasChange.get()) {
                         list.replaceAll(shelfBooks)
@@ -78,6 +95,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
                 firstLoadFinish = true
                 isLoadingLiveData.value = false
                 checkUpdateHasData()
+                afterDataUpdate?.invoke()
             }
 
             if (currentList.isNotEmpty() && shelfBooks.isNotEmpty()) {
@@ -157,7 +175,7 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
         }
     }
 
-    override fun onBookDeleted(id: String) {
+    override fun onBookDeleted() {
         handler.post { refreshList(fromCallback = true) }
     }
 

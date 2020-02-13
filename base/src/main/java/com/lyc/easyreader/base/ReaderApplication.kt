@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
+import android.view.ContextThemeWrapper
 import com.lyc.easyreader.base.app.IApplicationOnCreateListener
 import com.lyc.easyreader.base.utils.LogUtils
 
@@ -19,6 +20,13 @@ class ReaderApplication : Application() {
 
         fun appContext() =
             context
+
+        val appThemeContext: Context by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+            ContextThemeWrapper(
+                context,
+                R.style.AppTheme
+            )
+        }
     }
 
     override fun onCreate() {

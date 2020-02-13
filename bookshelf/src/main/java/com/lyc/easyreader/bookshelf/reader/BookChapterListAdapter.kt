@@ -32,7 +32,7 @@ class BookChapterListAdapter(
         payloads: MutableList<Any>
     ) {
         val chapter = data as? BookChapter
-        val view = holder.itemView as? ChapterItemView
+        val view = holder.contentView as? ChapterItemView
         chapter?.let { view?.bindData(data, viewModel.currentChapter.value) }
     }
 

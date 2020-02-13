@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.graphics.drawable.PaintDrawable
 import android.util.TypedValue
 import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
@@ -28,10 +27,7 @@ import java.util.*
  *
  * Created by Liu Yuchuan on 2020/1/28.
  */
-class BookShelfItemView(
-    context: Context,
-    private val onItemClickListener: BookShelfListAdapter.OnItemClickListener
-) : FrameLayout(context), View.OnClickListener, View.OnLongClickListener {
+class BookShelfItemView(context: Context) : FrameLayout(context) {
 
     private val filenameTv = TextView(context)
     private val coverImageView = ImageView(context)
@@ -46,8 +42,6 @@ class BookShelfItemView(
         background = buildCommonButtonBg(Color.WHITE)
         setPadding(dp2px(16), dp2px(8), dp2px(16), dp2px(8))
         initView()
-        setOnClickListener(this)
-        setOnLongClickListener(this)
     }
 
     private fun initView() {
@@ -125,23 +119,5 @@ class BookShelfItemView(
             }
             fileTypeTv.text = data.fileExt.toUpperCase(Locale.ENGLISH)
         }
-    }
-
-    override fun onClick(v: View?) {
-        val data = this.data
-        val position = this.position
-        if (data != null && position >= 0) {
-            onItemClickListener.onBookShelfItemClick(position, this)
-        }
-    }
-
-    override fun onLongClick(v: View?): Boolean {
-        val data = this.data
-        val position = this.position
-        if (data != null && position >= 0) {
-            onItemClickListener.onBookShelfItemLongClick(position, this)
-            return true
-        }
-        return false
     }
 }

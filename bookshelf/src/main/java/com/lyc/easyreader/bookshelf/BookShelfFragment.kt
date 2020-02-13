@@ -4,6 +4,7 @@ import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -15,7 +16,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
@@ -31,10 +31,13 @@ import com.lyc.easyreader.base.ui.bottomsheet.LinearDialogBottomSheet
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_light_blue
+import com.lyc.easyreader.base.ui.theme.color_primary_text
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
+import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
+import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
 import com.lyc.easyreader.bookshelf.utils.detectCharset
@@ -47,22 +50,24 @@ import java.io.FileInputStream
  */
 class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     SwipeRefreshLayout.OnRefreshListener,
-    BookShelfListAdapter.OnItemClickListener {
+    ReactiveAdapter.ItemClickListener, ReactiveAdapter.ItemCheckListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var refreshLayout: SwipeRefreshLayout
     private lateinit var viewModel: BookShelfViewModel
+    private var toolBar: View? = null
+    private var editToolBar: SimpleToolbar? = null
+    private var deleteButton: View? = null
+    private var adapter: ReactiveAdapter? = null
     private val emptyViewList = hashSetOf<View>()
-    private var menu: PopupMenu? = null
 
     companion object {
-        const val MENU_ID_ADD_FROM_LOCAL = 1
-        const val MENU_ID_SCAN_LOCAL = 4
-
         val REQUEST_CODE_FILE = generateNewRequestCode()
         val REQUEST_CODE_DIR = generateNewRequestCode()
         val REQUEST_CODE_SCAN = generateNewRequestCode()
 
+        val VIEW_ID_EDIT_MORE = generateNewViewId()
+        val VIEW_ID_DELETE = generateNewViewId()
         val VIEW_ID_ADD_FILE = generateNewViewId()
         val VIEW_ID_SCAN_FOLDER = generateNewViewId()
 
@@ -74,11 +79,43 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     override fun newViewInstance(container: ViewGroup?): View? {
         val ctx = context!!
         val rootView = FrameLayout(ctx)
-        val toolBar = SimpleToolbar(ctx, R.drawable.ic_more_horiz_24dp)
+        val toolBar = SimpleToolbar(ctx, R.drawable.ic_more_horiz_24dp).also { this.toolBar = it }
         toolBar.setTitle("我的书架")
         toolBar.leftButton?.isVisible = false
         toolBar.setBarClickListener(this)
         rootView.addView(toolBar, FrameLayout.LayoutParams(MATCH_PARENT, toolBar.getViewHeight()))
+        val editToolBar =
+            SimpleToolbar(ctx, R.drawable.ic_more_horiz_24dp).also { this.editToolBar = it }
+        editToolBar.titleTv.run {
+            gravity = Gravity.LEFT or Gravity.CENTER
+            ellipsize = TextUtils.TruncateAt.END
+            layoutParams = (layoutParams as FrameLayout.LayoutParams).apply {
+                leftMargin = dp2px(56)
+                rightMargin = dp2px(112)
+            }
+        }
+        editToolBar.addView(ImageView(context).apply {
+            deleteButton = this
+            setPadding(dp2px(16), dp2px(12), dp2px(16), dp2px(12))
+            scaleType = ImageView.ScaleType.CENTER
+            id = VIEW_ID_DELETE
+            getDrawableRes(R.drawable.ic_delete_24dp)?.let {
+                it.changeToColor(color_primary_text)
+                setImageDrawable(it)
+            }
+            getDrawableAttrRes(android.R.attr.selectableItemBackground)?.let {
+                background = it
+            }
+            setOnClickListener(this@BookShelfFragment)
+        }, FrameLayout.LayoutParams(BaseToolBar.BAR_HEIGHT, BaseToolBar.BAR_HEIGHT).apply {
+            gravity = Gravity.RIGHT
+            rightMargin = dp2px(56)
+        })
+        editToolBar.setBarClickListener(this)
+        rootView.addView(
+            editToolBar,
+            FrameLayout.LayoutParams(MATCH_PARENT, editToolBar.getViewHeight())
+        )
         refreshLayout = SwipeRefreshLayout(ctx)
         val contentLayout = LinearLayout(ctx)
         contentLayout.gravity = Gravity.CENTER
@@ -170,8 +207,24 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         viewModel = provideViewModel()
-        recyclerView.adapter = BookShelfListAdapter(viewModel.list, this).apply {
+        recyclerView.adapter = BookShelfListAdapter(viewModel.list).apply {
+            itemCheckListener = this@BookShelfFragment
+            itemClickListener = this@BookShelfFragment
             observe(this@BookShelfFragment)
+            val selectAllDrawable = getDrawableRes(R.drawable.ic_select_all)?.apply {
+                changeToColor(
+                    color_primary_text
+                )
+            }
+            val selectDrawable = getDrawableRes(R.drawable.ic_select)?.apply {
+                changeToColor(
+                    color_primary_text
+                )
+            }
+            checkAllLiveData.observe(this@BookShelfFragment, Observer {
+                editToolBar?.rightButton?.setImageDrawable(if (it) selectAllDrawable else selectDrawable)
+            })
+            adapter = this
         }
         viewModel.isLoadingLiveData.observe(this, Observer { isLoading ->
             refreshLayout.isRefreshing = isLoading
@@ -185,6 +238,38 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             }
         })
         viewModel.firstLoadIfNeeded()
+        viewModel.editModeLiveData.observe(this, Observer {
+            refreshLayout.isEnabled = !it
+            toolBar?.isVisible = !it
+            editToolBar?.isVisible = it
+            applyCheckCountChange()
+        })
+        viewModel.afterDataUpdate = {
+            if (adapter?.editMode == true) {
+                adapter?.itemCheckListener = null
+                adapter?.uncheckAll()
+                viewModel.checkedIds.forEach { id ->
+                    val list = viewModel.list.map { it.id }
+                    adapter?.checkPosition(list.indexOf(id))
+                }
+                adapter?.itemCheckListener = this
+                applyCheckCountChange()
+            }
+        }
+        if (savedInstanceState != null) {
+            if (viewModel.editModeLiveData.value) {
+                setEditMode(true, anim = false)
+                viewModel.afterDataUpdate?.invoke()
+            }
+        }
+    }
+
+    private fun applyCheckCountChange() {
+        val checkCount = adapter?.checkCount()
+        editToolBar?.run {
+            setTitle("已选择${checkCount ?: 0}项")
+        }
+        deleteButton?.isVisible = checkCount != 0
     }
 
     override fun onResume() {
@@ -195,20 +280,33 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     override fun onClick(v: View?) {
         when (v?.id) {
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
-                activity?.run {
-                    val dialog = LinearDialogBottomSheet(this)
-                    val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
-                    val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
-                    val batchId = dialog.addItem("批量管理", R.drawable.ic_format_list_bulleted_24dp)
-                    dialog.show()
-                    dialog.itemClickListener = { id, _ ->
-                        when (id) {
-                            importFileId -> performFileSearch()
-                            scanDirId -> performDirSearch()
-                            batchId -> toggleEditMode()
+                if (adapter?.editMode == true) {
+                    adapter?.toggleCheckAll()
+                } else {
+                    activity?.run {
+                        val dialog = LinearDialogBottomSheet(this)
+                        val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
+                        val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
+                        val batchId =
+                            dialog.addItem("批量管理", R.drawable.ic_format_list_bulleted_24dp)
+                        dialog.show()
+                        dialog.itemClickListener = { id, _ ->
+                            when (id) {
+                                importFileId -> performFileSearch()
+                                scanDirId -> performDirSearch()
+                                batchId -> {
+                                    if (!viewModel.isLoadingLiveData.value) {
+                                        setEditMode(true)
+                                    }
+                                }
+                            }
                         }
                     }
+
                 }
+            }
+            BaseToolBar.VIEW_ID_LEFT_BUTTON -> {
+                setEditMode(false)
             }
             VIEW_ID_ADD_FILE -> {
                 performFileSearch()
@@ -216,7 +314,41 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             VIEW_ID_SCAN_FOLDER -> {
                 performDirSearch()
             }
+            VIEW_ID_EDIT_MORE -> {
+
+            }
+            VIEW_ID_DELETE -> {
+                val list = viewModel.getCheckItems()
+                if (list.isNotEmpty()) {
+                    activity?.run {
+                        AlertDialog.Builder(this)
+                            .setMessage("要删除这${list.size}项吗？")
+                            .setPositiveButton("是") { _, _ ->
+                                adapter?.uncheckAll()
+                                BookManager.instance.deleteBooks(list.map { it.id }, true)
+                                setEditMode(false)
+                            }
+                            .setNegativeButton("否", null)
+                            .showWithNightMode()
+                    }
+                }
+            }
         }
+    }
+
+    private fun setEditMode(enter: Boolean, anim: Boolean = true): Boolean {
+        if (enter) {
+            if (adapter?.enterEditMode(anim) == true) {
+                viewModel.editModeLiveData.value = true
+                return true
+            }
+        } else {
+            if (adapter?.exitEditMode(anim) == true) {
+                viewModel.editModeLiveData.value = false
+                return true
+            }
+        }
+        return false
     }
 
     override fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
@@ -304,8 +436,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         startActivityForResult(intent, REQUEST_CODE_FILE)
     }
 
-    private fun toggleEditMode() {}
-
     private fun performDirSearch() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
         startActivityForResult(intent, REQUEST_CODE_DIR)
@@ -315,14 +445,17 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         viewModel.refreshList()
     }
 
-    override fun onBookShelfItemClick(
-        pos: Int,
-        view: BookShelfItemView
-    ) {
-        if (pos < 0 || pos >= viewModel.list.size) {
+    override fun onItemClick(position: Int, view: View, editMode: Boolean) {
+        if (position < 0 || position >= viewModel.list.size) {
             return
         }
-        val data = viewModel.list[pos]
+
+        if (editMode) {
+            adapter?.toggleCheck(position)
+            return
+        }
+
+        val data = viewModel.list[position]
         val file = File(data.realPath)
         if (!file.exists()) {
             activity?.run {
@@ -340,20 +473,18 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         }
     }
 
-    override fun onBookShelfItemLongClick(
-        pos: Int,
-        view: BookShelfItemView
-    ) {
-        if (pos < 0 || pos >= viewModel.list.size) {
+    override fun onItemLongClick(position: Int, view: View, editMode: Boolean) {
+        if (editMode || position < 0 || position >= viewModel.list.size) {
             return
         }
-        val data = viewModel.list[pos]
+        val data = viewModel.list[position]
         activity?.run {
             val menu = ReaderPopupMenu(this, view)
 
             val renameId = 1
             val deleteId = 5
             val collectId = 9
+            val batchId = 15
 
             menu.addItem(
                 renameId,
@@ -374,6 +505,10 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     "收藏"
                 )
             }
+            menu.addItem(
+                batchId,
+                "批量管理"
+            )
             menu.setIconEnable(true)
             menu.gravity = Gravity.RIGHT
             menu.show()
@@ -397,10 +532,53 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                             RenameDialog.show(supportFragmentManager, data)
                         }
                     }
+                    batchId -> {
+                        setEditMode(true)
+                    }
                 }
 
                 return@setOnMenuItemClickListener true
             }
         }
+    }
+
+    override fun onItemCheckChange(position: Int, check: Boolean) {
+        if (position < 0 || position >= viewModel.list.size) {
+            return
+        }
+        val value = viewModel.list[position]
+        viewModel.checkedIds.apply {
+            if (check) {
+                viewModel.checkedIds.add(value.id)
+            } else {
+                viewModel.checkedIds.remove(value.id)
+            }
+        }
+        applyCheckCountChange()
+    }
+
+    override fun onItemCheckAllChange(checkAll: Boolean) {
+
+    }
+
+    override fun onInvisible() {
+        super.onInvisible()
+        setEditMode(enter = false, anim = false)
+    }
+
+    override fun onDestroy() {
+        viewModel.afterDataUpdate = null
+        super.onDestroy()
+    }
+
+    override fun onThisTabClick() {
+        viewModel.refreshList()
+    }
+
+    override fun onBackPressed(): Boolean {
+        if (setEditMode(false)) {
+            return true
+        }
+        return false
     }
 }

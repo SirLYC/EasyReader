@@ -13,6 +13,8 @@ interface IBookManager {
 
     fun deleteBook(id: String, async: Boolean = true)
 
+    fun deleteBooks(ids: Iterable<String>, async: Boolean = true)
+
     fun updateBookCollect(id: String, collect: Boolean, async: Boolean = true)
 
     fun addBookChangeListener(listener: IBookChangeListener)
@@ -25,7 +27,7 @@ interface IBookManager {
 
         fun onBooksImported(list: List<BookFile>)
 
-        fun onBookDeleted(id: String)
+        fun onBookDeleted()
 
         fun onBookCollectChange(id: String, collect: Boolean)
 

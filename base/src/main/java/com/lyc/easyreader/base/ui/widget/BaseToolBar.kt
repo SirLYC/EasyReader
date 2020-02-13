@@ -22,7 +22,7 @@ import com.lyc.easyreader.base.utils.*
  */
 open class BaseToolBar(context: Context) :
     FrameLayout(context) {
-    protected val titleTv = TextView(context)
+    val titleTv = TextView(context)
     var leftButton: ImageView? = null
         protected set
     var drawDivideLine = true
