@@ -13,7 +13,6 @@ import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
 import android.widget.FrameLayout
 import android.widget.ImageView
-import androidx.annotation.CallSuper
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -202,8 +201,8 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
     abstract fun onCreateItemView(parent: ViewGroup, viewType: Int): View
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val contentView = onCreateItemView(parent, viewType)
         val itemView = FrameLayout(parent.context)
+        val contentView = onCreateItemView(itemView, viewType)
         when (val childLp = contentView.layoutParams) {
             is RecyclerView.LayoutParams -> {
                 itemView.layoutParams = childLp
@@ -223,8 +222,6 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
             }
         }
         itemView.addView(contentView)
-        itemView.background = contentView.background
-        contentView.background = null
         return ViewHolder(
             itemView,
             contentView
@@ -237,12 +234,10 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
         payloads: MutableList<Any>
     ) {
         if (position < 0 || position >= list.size) {
-            holder.currentPosition = -1
             return
         }
         val viewType = getItemViewType(position)
         val data = getDataAt(position)
-        holder.currentPosition = position
         holder.listener = itemClickListener
         val canEnterEditMode = canEnterEditMode(position)
         LogUtils.d("AAA", "Payloads=${payloads}")
@@ -341,12 +336,6 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
             }
         }
         onBindViewHolder(holder, position, viewType, data, payloads)
-        holder.run {
-            if (itemView.background != contentView.background && contentView.background != null) {
-                itemView.background = contentView.background
-                contentView.background = null
-            }
-        }
     }
 
     protected open fun onBindEditModeContentViewLayout(
@@ -508,12 +497,6 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
         }
     }
 
-    @CallSuper
-    override fun onViewRecycled(holder: ViewHolder) {
-        super.onViewRecycled(holder)
-        holder.currentPosition = -1
-    }
-
     fun toggleCheckAll() {
         if (checkAllLiveData.value) {
             uncheckAll()
@@ -524,7 +507,6 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
 
     class ViewHolder(itemView: FrameLayout, val contentView: View) :
         RecyclerView.ViewHolder(itemView), View.OnClickListener, View.OnLongClickListener {
-        var currentPosition = -1
         var editMode = false
         var checkBox: View? = null
         var listener: ItemClickListener? = null
@@ -536,27 +518,27 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
 
         override fun onClick(v: View) {
             listener?.run {
-                if (currentPosition >= 0) {
-                    onItemClick(currentPosition, v, editMode)
+                val pos = adapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    onItemClick(pos, v, editMode)
                 }
             }
         }
 
         override fun onLongClick(v: View): Boolean {
-            var handled = false
             listener?.run {
-                if (currentPosition >= 0) {
-                    onItemLongClick(currentPosition, v, editMode)
-                    handled = true
+                val pos = adapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    return onItemLongClick(pos, v, editMode)
                 }
             }
-            return handled
+            return false
         }
     }
 
     interface ItemClickListener {
         fun onItemClick(position: Int, view: View, editMode: Boolean)
-        fun onItemLongClick(position: Int, view: View, editMode: Boolean)
+        fun onItemLongClick(position: Int, view: View, editMode: Boolean): Boolean
     }
 
     interface ItemCheckListener {

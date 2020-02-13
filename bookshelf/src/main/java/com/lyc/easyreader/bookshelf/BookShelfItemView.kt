@@ -16,7 +16,6 @@ import com.lyc.easyreader.base.ui.theme.color_orange
 import com.lyc.easyreader.base.ui.theme.color_primary_text
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
 import com.lyc.easyreader.base.utils.addColorAlpha
-import com.lyc.easyreader.base.utils.buildCommonButtonBg
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
 import com.lyc.easyreader.bookshelf.db.BookShelfBook
@@ -39,7 +38,6 @@ class BookShelfItemView(context: Context) : FrameLayout(context) {
     private var position = -1
 
     init {
-        background = buildCommonButtonBg(Color.WHITE)
         setPadding(dp2px(16), dp2px(8), dp2px(16), dp2px(8))
         initView()
     }

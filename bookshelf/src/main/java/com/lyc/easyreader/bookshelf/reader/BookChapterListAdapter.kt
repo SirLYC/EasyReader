@@ -1,5 +1,6 @@
 package com.lyc.easyreader.bookshelf.reader
 
+import android.R
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -7,14 +8,14 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.recyclerview.widget.RecyclerView
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.base.ReaderApplication
+import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 
 /**
  * Created by Liu Yuchuan on 2020/2/9.
  */
 class BookChapterListAdapter(
-    private val viewModel: ReaderViewModel,
-    private val onItemClick: (pos: Int, bookChapter: BookChapter, view: View) -> Unit
+    private val viewModel: ReaderViewModel
 ) : ReactiveAdapter(viewModel.bookChapterList) {
     var reverse = false
         set(value) {
@@ -37,7 +38,8 @@ class BookChapterListAdapter(
     }
 
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {
-        return ChapterItemView(ReaderApplication.appContext(), onItemClick).apply {
+        parent.background = getDrawableAttrRes(R.attr.selectableItemBackground)
+        return ChapterItemView(ReaderApplication.appContext()).apply {
             layoutParams = RecyclerView.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
         }
     }

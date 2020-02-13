@@ -17,6 +17,7 @@ import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.bottomsheet.BaseBottomSheet
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.utils.*
+import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -24,7 +25,7 @@ import kotlin.math.roundToInt
 /**
  * Created by Liu Yuchuan on 2020/2/9.
  */
-class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
+class ChapterDialog : BaseBottomSheet(), View.OnClickListener, ReactiveAdapter.ItemClickListener {
     companion object {
         const val TAG = "ChapterDialog"
 
@@ -107,11 +108,8 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
 
         rv.adapter = BookChapterListAdapter(
             readerViewModel
-        ) { index, item, _ ->
-            LogUtils.d(TAG, "On chapter item click! Chapter pos=$index, title=${item.title}")
-            dismiss()
-            readerViewModel.changeChapterCall.value = index
-        }.apply {
+        ).apply {
+            itemClickListener = this@ChapterDialog
             readerViewModel.chapterReverse.observe(this@ChapterDialog, Observer {
                 reverse = it
             })
@@ -139,5 +137,15 @@ class ChapterDialog : BaseBottomSheet(), View.OnClickListener {
                 readerViewModel.chapterReverse.value = !readerViewModel.chapterReverse.value
             }
         }
+    }
+
+    override fun onItemClick(position: Int, view: View, editMode: Boolean) {
+        LogUtils.d(TAG, "On chapter item click! Chapter pos=$position")
+        dismiss()
+        readerViewModel.changeChapterCall.value = position
+    }
+
+    override fun onItemLongClick(position: Int, view: View, editMode: Boolean): Boolean {
+        return false
     }
 }

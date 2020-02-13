@@ -1,10 +1,12 @@
 package com.lyc.easyreader.bookshelf
 
+import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.recyclerview.widget.RecyclerView
+import com.lyc.easyreader.base.utils.buildCommonButtonBg
 import com.lyc.easyreader.base.utils.rv.ObservableList
 import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 import com.lyc.easyreader.bookshelf.db.BookShelfBook
@@ -26,6 +28,7 @@ class BookShelfListAdapter(
     }
 
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {
+        parent.background = buildCommonButtonBg(Color.WHITE)
         return BookShelfItemView(parent.context).apply {
             layoutParams = RecyclerView.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
         }

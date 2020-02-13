@@ -473,12 +473,12 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         }
     }
 
-    override fun onItemLongClick(position: Int, view: View, editMode: Boolean) {
+    override fun onItemLongClick(position: Int, view: View, editMode: Boolean): Boolean {
         if (editMode || position < 0 || position >= viewModel.list.size) {
-            return
+            return false
         }
         val data = viewModel.list[position]
-        activity?.run {
+        activity?.apply {
             val menu = ReaderPopupMenu(this, view)
 
             val renameId = 1
@@ -539,7 +539,8 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
 
                 return@setOnMenuItemClickListener true
             }
-        }
+        } ?: return false
+        return true
     }
 
     override fun onItemCheckChange(position: Int, check: Boolean) {

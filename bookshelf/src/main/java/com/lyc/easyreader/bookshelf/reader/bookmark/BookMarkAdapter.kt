@@ -1,11 +1,13 @@
 package com.lyc.easyreader.bookshelf.reader.bookmark
 
+import android.R
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.recyclerview.widget.RecyclerView
 import com.lyc.easyreader.api.book.BookMark
+import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.utils.rv.ObservableList
 import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 
@@ -13,9 +15,7 @@ import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
  * Created by Liu Yuchuan on 2020/2/12.
  */
 class BookMarkAdapter(
-    list: ObservableList<BookMark>,
-    private val onItemClick: (Int, View) -> Unit,
-    private val onItemLongClick: (Int, View) -> Unit
+    list: ObservableList<BookMark>
 ) : ReactiveAdapter(list) {
     override fun onBindViewHolder(
         holder: ViewHolder,
@@ -30,7 +30,8 @@ class BookMarkAdapter(
     }
 
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): View {
-        return BookMarkItemView(parent.context, onItemClick, onItemLongClick).apply {
+        parent.background = getDrawableAttrRes(R.attr.selectableItemBackground)
+        return BookMarkItemView(parent.context).apply {
             layoutParams = RecyclerView.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
         }
     }

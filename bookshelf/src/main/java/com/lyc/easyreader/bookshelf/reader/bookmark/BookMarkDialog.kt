@@ -24,6 +24,7 @@ import com.lyc.easyreader.base.ui.bottomsheet.LinearDialogBottomSheet
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.utils.*
+import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 import com.lyc.easyreader.bookshelf.reader.ReaderViewModel
@@ -34,7 +35,7 @@ import kotlin.math.roundToInt
 /**
  * Created by Liu Yuchuan on 2020/2/9.
  */
-class BookMarkDialog : BaseBottomSheet(), View.OnClickListener {
+class BookMarkDialog : BaseBottomSheet(), View.OnClickListener, ReactiveAdapter.ItemClickListener {
     companion object {
         const val TAG = "BookMarkDialog"
 
@@ -141,59 +142,11 @@ class BookMarkDialog : BaseBottomSheet(), View.OnClickListener {
             )
         })
 
-        rv.adapter = BookMarkAdapter(readerViewModel.bookMarkList,
-            { index, _ ->
-                handleItemClick(index)
-            }, { index, _ ->
-                handleItemLongClick(index)
-            }).apply {
+        rv.adapter = BookMarkAdapter(readerViewModel.bookMarkList).apply {
             observe(this@BookMarkDialog)
+            itemClickListener = this@BookMarkDialog
         }
     }
-
-    private fun handleItemClick(index: Int) {
-        if (index < 0 || index >= readerViewModel.bookMarkList.size) {
-            dismiss()
-            return
-        }
-        val bookMark = readerViewModel.bookMarkList[index]
-        if (bookMark.chapter < 0 || bookMark.offsetStart < 0 || bookMark.offsetEnd < 0 || bookMark.offsetStart > bookMark.offsetEnd) {
-            dismiss()
-            return
-        }
-        readerViewModel.skipBookMarkCall.value =
-            Triple(bookMark.chapter, bookMark.offsetStart, bookMark.offsetEnd)
-        dismiss()
-    }
-
-    private fun handleItemLongClick(index: Int) {
-        if (index < 0 || index >= readerViewModel.bookMarkList.size) {
-            dismiss()
-            return
-        }
-        val bookMark = readerViewModel.bookMarkList[index]
-        val context = activity
-        if (context == null) {
-            dismiss()
-            return
-        }
-        val bottomSheet = LinearDialogBottomSheet(context)
-        bottomSheet.bgColor = ReaderSettings.currentPageStyle.bgColor
-        val deleteId = bottomSheet.addItem("删除", color = ReaderSettings.currentPageStyle.fontColor)
-        val jumpId = bottomSheet.addItem("跳转至", color = ReaderSettings.currentPageStyle.fontColor)
-        bottomSheet.itemClickListener = { id, _ ->
-            when (id) {
-                deleteId -> {
-                    BookShelfOpenHelper.instance.deleteBookMark(bookMark)
-                }
-                jumpId -> {
-                    handleItemClick(index)
-                }
-            }
-        }
-        bottomSheet.show()
-    }
-
 
     private fun applyChapterLoadingStateChange(isLoading: Boolean, isEmpty: Boolean) {
         rv.isVisible = !isLoading && !isEmpty
@@ -220,5 +173,49 @@ class BookMarkDialog : BaseBottomSheet(), View.OnClickListener {
                 }
             }
         }
+    }
+
+    override fun onItemClick(position: Int, view: View, editMode: Boolean) {
+        if (position < 0 || position >= readerViewModel.bookMarkList.size) {
+            dismiss()
+            return
+        }
+        val bookMark = readerViewModel.bookMarkList[position]
+        if (bookMark.chapter < 0 || bookMark.offsetStart < 0 || bookMark.offsetEnd < 0 || bookMark.offsetStart > bookMark.offsetEnd) {
+            dismiss()
+            return
+        }
+        readerViewModel.skipBookMarkCall.value =
+            Triple(bookMark.chapter, bookMark.offsetStart, bookMark.offsetEnd)
+        dismiss()
+    }
+
+    override fun onItemLongClick(position: Int, view: View, editMode: Boolean): Boolean {
+        if (position < 0 || position >= readerViewModel.bookMarkList.size) {
+            dismiss()
+            return false
+        }
+        val bookMark = readerViewModel.bookMarkList[position]
+        val context = activity
+        if (context == null) {
+            dismiss()
+            return false
+        }
+        val bottomSheet = LinearDialogBottomSheet(context)
+        bottomSheet.bgColor = ReaderSettings.currentPageStyle.bgColor
+        val deleteId = bottomSheet.addItem("删除", color = ReaderSettings.currentPageStyle.fontColor)
+        val jumpId = bottomSheet.addItem("跳转至", color = ReaderSettings.currentPageStyle.fontColor)
+        bottomSheet.itemClickListener = { id, _ ->
+            when (id) {
+                deleteId -> {
+                    BookShelfOpenHelper.instance.deleteBookMark(bookMark)
+                }
+                jumpId -> {
+                    onItemClick(position, view, editMode)
+                }
+            }
+        }
+        bottomSheet.show()
+        return true
     }
 }
