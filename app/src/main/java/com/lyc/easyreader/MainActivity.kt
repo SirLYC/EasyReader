@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.util.forEach
 import androidx.core.util.valueIterator
 import androidx.core.view.isVisible
+import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.api.main.IMainActivityDelegate
 import com.lyc.easyreader.api.main.IMainTabDelegate
@@ -32,7 +33,8 @@ import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.generateNewRequestCode
 import com.lyc.easyreader.base.utils.generateNewViewId
 
-class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback {
+class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback,
+    IBookManager.IBookChangeListener {
 
     companion object {
         const val TAG = "MainActivity"
@@ -129,6 +131,7 @@ class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback {
         }
 
         bottomBar.changeTab(targetTabId)
+        bookManager?.addBookChangeListener(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -178,7 +181,7 @@ class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback {
             }
         }
 
-        bookManager?.importBooks(listOf(uri))
+        bookManager?.importBookAndOpen(uri)
         return true
     }
 
@@ -198,7 +201,7 @@ class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback {
             bookManager?.run {
                 pendingImportUri?.let {
                     if (it.scheme == "file") {
-                        bookManager?.importBooks(listOf(it))
+                        bookManager?.importBookAndOpen(it)
                     }
                 }
             }
@@ -242,6 +245,7 @@ class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback {
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         MainActivityDelegate.instance.removeTabChangeListener(this)
+        bookManager?.removeBookChangeListener(this)
         super.onDestroy()
     }
 
@@ -291,5 +295,22 @@ class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback {
         }
 
         return true
+    }
+
+    override fun onBooksImported(list: List<BookFile>) {
+        if (list.size == 1) {
+            handler.post {
+
+            }
+        }
+    }
+
+    override fun onBookDeleted() {
+    }
+
+    override fun onBookCollectChange(id: String, collect: Boolean) {
+    }
+
+    override fun onBookInfoUpdate(id: String) {
     }
 }

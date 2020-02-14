@@ -130,6 +130,10 @@ class BookShelfOpenHelper private constructor() :
         })
     }
 
+    fun loadBookFileById(id: String): BookFile? {
+        return daoSession.bookFileDao.load(id)
+    }
+
     fun loadBookRecordOrNew(bookFile: BookFile): BookReadRecord {
         return daoSession.bookReadRecordDao.load(bookFile.id) ?: BookReadRecord(
             bookFile.id,

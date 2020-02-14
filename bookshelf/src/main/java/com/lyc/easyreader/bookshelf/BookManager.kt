@@ -148,7 +148,7 @@ class BookManager private constructor() : IBookManager {
                         )
                         handleImportBooksFinished(faiCnt, repeatCnt, newBooks.toList())
                     }
-                }, {
+                }, { _, _ ->
                     repeatCount.incrementAndGet()
                     if (progressCount.decrementAndGet() == 0) {
                         val faiCnt = failCount.get()
@@ -162,6 +162,26 @@ class BookManager private constructor() : IBookManager {
                 })
             }
         }
+    }
+
+    override fun importBookAndOpen(uri: Uri) {
+        ExecutorFactory.IO_EXECUTOR.execute {
+            doImportOneBook(uri, { bookFile, _ ->
+                ReaderToast.showToast("导入成功")
+                ExecutorFactory.MAIN_EXECUTOR.execute {
+                    ReaderActivity.openBookFile(bookFile)
+                }
+            }, { _, _ ->
+                ReaderHeadsUp.showHeadsUp("导入失败")
+            }, { _, bookFile ->
+                if (bookFile != null) {
+                    ExecutorFactory.MAIN_EXECUTOR.execute {
+                        ReaderActivity.openBookFile(bookFile)
+                    }
+                }
+            })
+        }
+
     }
 
     override fun updateBookCollect(id: String, collect: Boolean, async: Boolean) {
@@ -229,7 +249,7 @@ class BookManager private constructor() : IBookManager {
         uri: Uri,
         onFinish: (BookFile, Uri) -> Unit,
         onError: (String, Uri) -> Unit,
-        onRepeatImport: (Uri) -> Unit
+        onRepeatImport: (Uri, BookFile?) -> Unit
     ): Boolean {
 
         val startTime = SystemClock.elapsedRealtime()
@@ -317,7 +337,7 @@ class BookManager private constructor() : IBookManager {
                     onFinish(newBookFile, uri)
                     finish = true
                 } else {
-                    onRepeatImport(uri)
+                    onRepeatImport(uri, BookShelfOpenHelper.instance.loadBookFileById(md5))
                 }
             }
         } catch (e: Exception) {

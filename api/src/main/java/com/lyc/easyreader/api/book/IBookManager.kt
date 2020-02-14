@@ -11,6 +11,8 @@ interface IBookManager {
 
     fun importBooks(uriList: List<Uri>)
 
+    fun importBookAndOpen(uri: Uri)
+
     fun deleteBook(id: String, async: Boolean = true)
 
     fun deleteBooks(ids: Iterable<String>, async: Boolean = true)

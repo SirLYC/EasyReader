@@ -37,7 +37,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
 
-            <intent-filter>
+            <intent-filter android:label="小说阅读">
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.SEND" />
 
