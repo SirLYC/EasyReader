@@ -307,6 +307,49 @@ class BookShelfOpenHelper private constructor() :
         return list
     }
 
+    fun loadCollectBookList(): MutableList<BookShelfBook> {
+        val sb = StringBuilder("select ")
+        SqlUtils.appendColumns(
+            sb,
+            "t",
+            daoMaster.daoConfigMap()[BookFileDao::class.java]!!.allColumns
+        )
+        sb.append(", j1.${BookReadRecordDao.Properties.Desc.columnName}, j2.${BookCollectDao.Properties.BookId.columnName}")
+        sb.append(" from ${BookFileDao.TABLENAME} t left join ${BookReadRecordDao.TABLENAME} j1 on t.${BookFileDao.Properties.Id.columnName}=j1.${BookReadRecordDao.Properties.BookId.columnName} left join ${BookCollectDao.TABLENAME} j2 on t.${BookFileDao.Properties.Id.columnName}=j2.${BookCollectDao.Properties.BookId.columnName}")
+            .append(" where t.${BookFileDao.Properties.Status.columnName}=\"${BookFile.Status.NORMAL.name}\" and j2.${BookCollectDao.Properties.Collected.columnName} != 0 and j2.${BookCollectDao.Properties.Collected.columnName} is not null")
+            .append(" order by ${BookCollectDao.Properties.CollectTime.columnName} desc")
+        Log.d(TAG, "loadCollectBookList sql=$sb")
+
+        val list = mutableListOf<BookShelfBook>()
+        try {
+            writableDatabase.rawQuery(sb.toString(), null).use {
+                val bookFileOffset = 0
+                val recordOffset =
+                    daoMaster.daoConfigMap()[BookFileDao::class.java]!!.allColumns.size
+                if (it.moveToFirst()) {
+                    do {
+                        val bookFile = daoSession.bookFileDao.readEntity(
+                            it,
+                            bookFileOffset
+                        )
+                        list.add(
+                            BookShelfBook(
+                                if (it.isNull(recordOffset)) null else it.getString(
+                                    recordOffset
+                                ), true, bookFile
+                            )
+                        )
+                    } while (it.moveToNext())
+                }
+            }
+
+        } catch (e: Exception) {
+            LogUtils.e(TAG, ex = e)
+        }
+
+        return list
+    }
+
     fun queryBookCollect(bookFile: BookFile): BookCollect? {
         if (bookFile.id == null) {
             return null

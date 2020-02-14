@@ -40,11 +40,11 @@ class BookScanItemView(
     private val fileInfoTv = TextView(context)
 
     private val checkedDrawable =
-        getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_check_circle_24dp)?.apply {
+        getDrawableRes(com.lyc.easyreader.base.R.drawable.ic_check_circle_24dp)?.apply {
             colorFilter = PorterDuffColorFilter(color_orange, PorterDuff.Mode.SRC_ATOP)
         }
     private val uncheckDrawable =
-        getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_radio_button_unchecked_24dp)?.apply {
+        getDrawableRes(com.lyc.easyreader.base.R.drawable.ic_radio_button_unchecked_24dp)?.apply {
             colorFilter = PorterDuffColorFilter(color_orange, PorterDuff.Mode.SRC_ATOP)
         }
 

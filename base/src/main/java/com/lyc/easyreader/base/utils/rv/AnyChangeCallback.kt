@@ -10,7 +10,5 @@ interface AnyChangeCallback : ListUpdateCallbackExt {
     override fun onInserted(position: Int, count: Int) = anyListUpdate()
     override fun onRemoved(position: Int, count: Int) = anyListUpdate()
 
-    fun anyListUpdate() {
-
-    }
+    fun anyListUpdate()
 }

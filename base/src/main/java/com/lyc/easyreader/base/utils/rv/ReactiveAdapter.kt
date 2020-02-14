@@ -543,7 +543,7 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
 
     interface ItemClickListener {
         fun onItemClick(position: Int, view: View, editMode: Boolean)
-        fun onItemLongClick(position: Int, view: View, editMode: Boolean): Boolean
+        fun onItemLongClick(position: Int, view: View, editMode: Boolean) = false
     }
 
     interface ItemCheckListener {
@@ -553,7 +553,7 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
 
     private class DefaultCheckBox(context: Context?) : ImageView(context) {
         private val drawableChecked by lazy {
-            getDrawableRes(R.drawable.ic_radio_button_checked_24dp)?.apply {
+            getDrawableRes(R.drawable.ic_check_circle_24dp)?.apply {
                 changeToColor(color_orange)
             }
         }

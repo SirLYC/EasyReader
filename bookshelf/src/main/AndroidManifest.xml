@@ -11,5 +11,8 @@
         <activity
             android:name=".reader.settings.ReaderSettingsActivity"
             android:launchMode="singleTop" />
+        <activity
+            android:name=".collect.CollectActivity"
+            android:launchMode="singleTop" />
     </application>
 </manifest>

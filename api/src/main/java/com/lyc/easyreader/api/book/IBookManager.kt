@@ -23,6 +23,10 @@ interface IBookManager {
 
     fun alterBookName(id: String, newName: String, async: Boolean = true)
 
+    fun shareBookFile(bookFile: BookFile)
+
+    fun openBookFileByOther(bookFile: BookFile)
+
     interface IBookChangeListener {
 
         fun onBooksImported(list: List<BookFile>)

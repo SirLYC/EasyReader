@@ -38,6 +38,7 @@ import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
+import com.lyc.easyreader.bookshelf.collect.CollectActivity
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
 import com.lyc.easyreader.bookshelf.utils.detectCharset
@@ -60,6 +61,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     private var deleteButton: View? = null
     private var adapter: ReactiveAdapter? = null
     private val emptyViewList = hashSetOf<View>()
+    private var openBookFile = false
 
     companion object {
         val REQUEST_CODE_FILE = generateNewRequestCode()
@@ -274,6 +276,10 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
 
     override fun onResume() {
         super.onResume()
+        if (openBookFile) {
+            recyclerView.scrollToPosition(0)
+            openBookFile = false
+        }
         activity?.window.statusBarBlackText(true)
     }
 
@@ -285,19 +291,24 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                 } else {
                     activity?.run {
                         val dialog = LinearDialogBottomSheet(this)
+                        val collectId = dialog.addItem("收藏夹", R.drawable.ic_star_border_24dp)
                         val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
                         val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
                         val batchId =
                             dialog.addItem("批量管理", R.drawable.ic_format_list_bulleted_24dp)
+                        val settingId = dialog.addItem("设置", R.drawable.ic_settings_24dp)
                         dialog.show()
                         dialog.itemClickListener = { id, _ ->
                             when (id) {
+                                collectId -> CollectActivity.start()
                                 importFileId -> performFileSearch()
                                 scanDirId -> performDirSearch()
                                 batchId -> {
                                     if (!viewModel.isLoadingLiveData.value) {
                                         setEditMode(true)
                                     }
+                                }
+                                settingId -> {
                                 }
                             }
                         }
@@ -469,6 +480,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     .show()
             }
         } else {
+            openBookFile = true
             ReaderActivity.openBookFile(data)
         }
     }
@@ -485,6 +497,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             val deleteId = 5
             val collectId = 9
             val batchId = 15
+            val shareId = 18
 
             menu.addItem(
                 renameId,
@@ -508,6 +521,10 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             menu.addItem(
                 batchId,
                 "批量管理"
+            )
+            menu.addItem(
+                shareId,
+                "分享"
             )
             menu.setIconEnable(true)
             menu.gravity = Gravity.RIGHT
@@ -534,6 +551,9 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     }
                     batchId -> {
                         setEditMode(true)
+                    }
+                    shareId -> {
+                        BookManager.instance.shareBookFile(data)
                     }
                 }
 

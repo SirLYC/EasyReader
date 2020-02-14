@@ -1,16 +1,20 @@
 package com.lyc.easyreader.bookshelf
 
+import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
 import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
+import androidx.core.content.FileProvider
 import com.lyc.appinject.CreateMethod
 import com.lyc.appinject.annotations.ServiceImpl
 import com.lyc.common.EventHubFactory
 import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.book.IBookManager
+import com.lyc.easyreader.api.main.Schema
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.ui.ReaderHeadsUp
 import com.lyc.easyreader.base.ui.ReaderToast
@@ -18,6 +22,7 @@ import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.getMd5
 import com.lyc.easyreader.base.utils.toHexString
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
+import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.utils.toFileSizeString
 import java.io.File
 import java.io.FileInputStream
@@ -56,6 +61,54 @@ class BookManager private constructor() : IBookManager {
             eventHub.getEventListeners().forEach {
                 it.onBookInfoUpdate(id)
             }
+        }
+    }
+
+    override fun shareBookFile(bookFile: BookFile) {
+        val context = ReaderApplication.appContext()
+        val uri = FileProvider.getUriForFile(
+            context,
+            Schema.FILE_PROVIDER_AUTH,
+            File(bookFile.realPath)
+        )
+        val intent = Intent().apply {
+            setDataAndType(
+                uri,
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
+            )
+            action = Intent.ACTION_SEND
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            context.startActivity(Intent.createChooser(intent, "分享到...").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        } catch (e: Exception) {
+            LogUtils.e(ReaderActivity.TAG, ex = e)
+        }
+    }
+
+    override fun openBookFileByOther(bookFile: BookFile) {
+        val context = ReaderApplication.appContext()
+        val uri = FileProvider.getUriForFile(
+            context,
+            Schema.FILE_PROVIDER_AUTH,
+            File(bookFile.realPath)
+        )
+        val intent = Intent().apply {
+            setDataAndType(
+                uri,
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
+            )
+            action = Intent.ACTION_VIEW
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            context.startActivity(Intent.createChooser(intent, "选择APP打开").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        } catch (e: Exception) {
+            LogUtils.e(ReaderActivity.TAG, ex = e)
         }
     }
 

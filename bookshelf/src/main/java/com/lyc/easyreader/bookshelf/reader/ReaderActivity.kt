@@ -24,16 +24,13 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
-import android.webkit.MimeTypeMap
 import android.widget.*
-import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.book.BookChapter
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.book.BookMark
-import com.lyc.easyreader.api.main.Schema
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.app.NotchCompat
 import com.lyc.easyreader.base.arch.provideViewModel
@@ -45,6 +42,7 @@ import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
+import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.db.BookShelfOpenHelper
 import com.lyc.easyreader.bookshelf.reader.bookmark.BookMarkDialog
@@ -52,7 +50,6 @@ import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageView
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettingsDialog
-import java.io.File
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -938,48 +935,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     }
 
     private fun openBookFileByOtherApp() {
-        viewModel.bookFileLiveData.value?.run {
-            val uri = FileProvider.getUriForFile(
-                this@ReaderActivity,
-                Schema.FILE_PROVIDER_AUTH,
-                File(realPath)
-            )
-            val intent = Intent().apply {
-                setDataAndType(
-                    uri,
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExt)
-                )
-                action = Intent.ACTION_VIEW
-            }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            try {
-                startActivity(Intent.createChooser(intent, "选择APP打开"))
-            } catch (e: Exception) {
-                LogUtils.e(TAG, ex = e)
-            }
-        }
+        viewModel.bookFileLiveData.value?.let { BookManager.instance.openBookFileByOther(it) }
     }
 
     private fun shareBookFileByOtherApp() {
-        viewModel.bookFileLiveData.value?.run {
-            val uri = FileProvider.getUriForFile(
-                this@ReaderActivity,
-                Schema.FILE_PROVIDER_AUTH,
-                File(realPath)
-            )
-            val intent = Intent().apply {
-                setDataAndType(
-                    uri,
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExt)
-                )
-                action = Intent.ACTION_SEND
-            }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            try {
-                startActivity(Intent.createChooser(intent, "分享到..."))
-            } catch (e: Exception) {
-                LogUtils.e(TAG, ex = e)
-            }
-        }
+        viewModel.bookFileLiveData.value?.let { BookManager.instance.shareBookFile(it) }
     }
 }

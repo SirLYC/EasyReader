@@ -14,7 +14,7 @@ import com.lyc.easyreader.bookshelf.db.BookShelfBook
 /**
  * Created by Liu Yuchuan on 2020/1/28.
  */
-class BookShelfListAdapter(
+open class BookShelfListAdapter(
     list: ObservableList<BookShelfBook>
 ) : ReactiveAdapter(list) {
     override fun onBindViewHolder(
