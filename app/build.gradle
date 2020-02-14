@@ -6,6 +6,9 @@ apply plugin: 'kotlin-android-extensions'
 
 apply plugin: "com.lyc.app-inject"
 
+def showHomeBottomBar = (commonProp['showHomeBottomBar'] == "true")
+println("showHomeBottomBar=${showHomeBottomBar}")
+
 android {
     compileSdkVersion buildInfo['compileSdkVersion']
     buildToolsVersion buildInfo['buildToolsVersion']
@@ -17,6 +20,7 @@ android {
         versionCode buildInfo['versionCode']
         versionName buildInfo['versionName']
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("Boolean", "SHOW_HOME_BOTTOM_BAR", showHomeBottomBar.toString())
     }
 
     signingConfigs {
@@ -51,8 +55,10 @@ dependencies {
     implementation project(":base")
     implementation project(":api")
     implementation project(":app-inject")
-    implementation project(":usercenter")
-    implementation project(":discover")
+    if (showHomeBottomBar) {
+        implementation project(":usercenter")
+        implementation project(":discover")
+    }
     implementation project(":bookshelf")
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'

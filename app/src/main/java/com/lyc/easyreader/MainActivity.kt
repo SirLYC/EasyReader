@@ -5,6 +5,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
 import android.util.SparseArray
 import android.view.Gravity
 import android.view.ViewGroup
@@ -13,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.util.forEach
 import androidx.core.util.valueIterator
+import androidx.core.view.isVisible
 import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.api.main.IMainActivityDelegate
 import com.lyc.easyreader.api.main.IMainTabDelegate
@@ -28,7 +32,7 @@ import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.generateNewRequestCode
 import com.lyc.easyreader.base.utils.generateNewViewId
 
-class MainActivity : BaseActivity(), ITabChangeListener {
+class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback {
 
     companion object {
         const val TAG = "MainActivity"
@@ -37,8 +41,14 @@ class MainActivity : BaseActivity(), ITabChangeListener {
 
         const val KEY_CURRENT_TAB_ID = "KEY_CURRENT_TAB_ID"
 
+        const val MSG_RESET_EXIT = 2
+        const val RESET_EXIT_DELAY = 2000L
+
         val REQUEST_CODE_IMPORT_FILE_SCHEMA_URI = generateNewRequestCode()
     }
+
+    private val handler = Handler(Looper.getMainLooper(), this)
+    private var shouldInterceptExit = true
 
     private lateinit var container: FrameLayout
     private lateinit var bottomBar: HomeBottomBar
@@ -64,11 +74,12 @@ class MainActivity : BaseActivity(), ITabChangeListener {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             ).apply {
-                bottomMargin = dp56
+                bottomMargin = if (BuildConfig.SHOW_HOME_BOTTOM_BAR) dp56 else 0
             })
         rootView.addView(
             HomeBottomBar(this).also {
                 bottomBar = it
+                it.isVisible = BuildConfig.SHOW_HOME_BOTTOM_BAR
             },
             FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -219,10 +230,17 @@ class MainActivity : BaseActivity(), ITabChangeListener {
                 return
             }
         }
+        if (shouldInterceptExit) {
+            shouldInterceptExit = false
+            ReaderToast.showToast("再按一次返回键退出")
+            handler.sendEmptyMessageDelayed(MSG_RESET_EXIT, RESET_EXIT_DELAY)
+            return
+        }
         super.onBackPressed()
     }
 
     override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null)
         MainActivityDelegate.instance.removeTabChangeListener(this)
         super.onDestroy()
     }
@@ -263,5 +281,15 @@ class MainActivity : BaseActivity(), ITabChangeListener {
             )}"
         )
         mainTabs[tabId]?.onThisTabClick()
+    }
+
+    override fun handleMessage(msg: Message): Boolean {
+        when (msg.what) {
+            MSG_RESET_EXIT -> {
+                shouldInterceptExit = true
+            }
+        }
+
+        return true
     }
 }

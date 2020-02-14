@@ -1,8 +1,23 @@
-include ':app', ':common', ':base', ':app-inject', ':api', ':bookshelf', ':discover', ':usercenter'
+final commonProp = new Properties()
+commonProp.load(new FileInputStream(new File(rootDir, "common.properties")))
+println "From settings.gradle: prop=${commonProp}"
+include ':common', ':app-inject'
+
+if (commonProp['showHomeBottomBar'] == "true") {
+    // 这两个tab目前还没实现，根据参数看是否打包进去
+    include(":discover", ":usercenter")
+}
+
 rootProject.name = 'EasyReader'
 
-// 这个是app-inject的gradle插件工程
-// 平常调试没必要打开
-//include ':app-inject-plugin'
-// 平常不用可以关掉
-//include ':readertestapp'
+if (commonProp["debugAppInject"] == "true") {
+    // 平常调试没必要打开
+    include ':app-inject-plugin'
+} else {
+    include ':app', ':base', ':api', ':bookshelf'
+}
+
+if (commonProp['runTestApp'] == "true") {
+    // 平常不用可以关掉
+    include ':readertestapp'
+}
