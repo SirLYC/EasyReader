@@ -20,10 +20,12 @@
             android:id="@+id/et"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="过滤关键字，每行一个"
+            android:hint="请输入新书名"
+            android:maxLines="1"
+            android:singleLine="true"
             android:textColor="@color/colorPrimaryText"
             android:textSize="16sp"
-            tools:text="测试测试dasfs" />
+            tools:text="测试测试" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
@@ -45,7 +47,7 @@
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="完成"
+            android:text="确定"
             android:textColor="@color/colorLightBlue" />
     </LinearLayout>
 </LinearLayout>

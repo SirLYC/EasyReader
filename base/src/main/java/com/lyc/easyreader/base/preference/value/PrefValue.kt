@@ -31,7 +31,7 @@ abstract class PrefValue<T>(
                         newVal
                     ) == 0 else it == newVal
                     if (!equals) {
-                        this.value = newVal
+                        this.postValue(value)
                         return@observeForever
                     }
                 }

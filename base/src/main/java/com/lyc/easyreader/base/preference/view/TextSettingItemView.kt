@@ -4,6 +4,7 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.TextView
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
+import com.lyc.easyreader.base.utils.buildCommonButtonTextColor
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.textSizeInDp
 
@@ -16,7 +17,7 @@ class TextSettingItemView(
     contentTv: String = ""
 ) : BaseSettingItemView(title, desc) {
     val contentTv = TextView(context).apply {
-        setTextColor(color_secondary_text)
+        setTextColor(buildCommonButtonTextColor(color_secondary_text))
         textSizeInDp = 14f
         text = contentTv
         gravity = Gravity.CENTER

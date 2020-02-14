@@ -31,7 +31,7 @@ class ReaderSettingsActivity : BaseActivity(), View.OnClickListener {
         super.afterBaseOnCreate(savedInstanceState, rootView)
         val topBar = BaseToolBar(this)
         topBar.setBarClickListener(this)
-        topBar.setTitle("更多设置")
+        topBar.setTitle("更多阅读设置")
         rootView.addView(topBar, FrameLayout.LayoutParams(MATCH_PARENT, topBar.getViewHeight()))
         val nestedScrollView = NestedScrollView(this)
         // 配置改变时保留scrollPosition

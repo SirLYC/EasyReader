@@ -96,15 +96,13 @@ class BookShelfOpenHelper private constructor() :
         })
     }
 
-    fun deleteAllBookMark(bookId: String) {
+    fun deleteAllReadRecord(callback: () -> Unit = {}) {
         dbRunner.asyncRun(Runnable {
-            daoSession.bookMarkDao.queryBuilder()
-                .where(BookMarkDao.Properties.BookId.eq(bookId))
-                .buildDelete()
-                .forCurrentThread()
-                .executeDeleteWithoutDetachingEntities()
-            bookMarkChangeListenerHub.getEventListeners().forEach {
-                it.onBookMarkChange(bookId)
+            daoSession.bookReadRecordDao.deleteAll()
+            writableDatabase.execSQL("update ${BookFileDao.TABLENAME} set ${BookFileDao.Properties.LastAccessTime.columnName}=0")
+            callback()
+            bookFileInfoUpdateListenerHub.getEventListeners().forEach {
+                it.onBookInfoUpdate()
             }
         })
     }

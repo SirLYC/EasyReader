@@ -1,7 +1,6 @@
 package com.lyc.easyreader.bookshelf.reader.settings
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.PaintDrawable
@@ -411,11 +410,7 @@ class ReaderSettingsDialog : BaseBottomSheet(), View.OnClickListener {
             }
             VIEW_ID_MORE_SETTING -> {
                 dismiss()
-                ReaderApplication.appContext().apply {
-                    startActivity(Intent(this, ReaderSettingsActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    })
-                }
+                ReaderApplication.openActivity(ReaderSettingsActivity::class)
             }
             VIEW_ID_SCREEN_ON -> {
                 settings.keepScreenOn.flip()

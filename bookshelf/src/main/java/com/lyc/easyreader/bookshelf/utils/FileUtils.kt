@@ -181,10 +181,6 @@ fun DocumentFile.forEach(
         return
     }
 
-    if (maxDepth <= 0) {
-        throw IllegalArgumentException("Param \"maxDepth\" must be positive!")
-    }
-
     if (fastMode) {
         forEachFileRecursivelyFastMode(func, onlyFile, maxDepth, cancelToken)
     } else {
@@ -234,7 +230,7 @@ private fun DocumentFile.forEachFileRecursivelyFastMode(
                     if (documentFile.isDirectory) {
                         if (!onlyFile) {
                             func(documentFile)
-                        } else if (currentDepth < maxDepth) {
+                        } else if (currentDepth < maxDepth || maxDepth <= 0) {
                             list.addAll(documentFile.listFiles())
                         }
                     } else {
@@ -268,7 +264,7 @@ private inline fun DocumentFile.forEachFileRecursivelyBfs(
         if (!onlyFile || (onlyFile && !file.isDirectory)) {
             func(file)
         }
-        if (file.isDirectory && cur.first < maxDepth) {
+        if (file.isDirectory && (cur.first < maxDepth || maxDepth <= 0)) {
             val nextDepth = cur.first + 1
             list.addAll(file.listFiles().map { Pair(nextDepth, it) })
         }

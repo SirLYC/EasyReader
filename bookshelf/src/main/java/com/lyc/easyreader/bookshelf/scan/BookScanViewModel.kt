@@ -10,7 +10,6 @@ import com.lyc.easyreader.base.ui.ReaderHeadsUp
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.rv.ObservableList
 import com.lyc.easyreader.bookshelf.utils.forEach
-import com.lyc.easyreader.bookshelf.utils.getExt
 import com.lyc.easyreader.bookshelf.utils.treeDocumentFile
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -52,15 +51,27 @@ class BookScanViewModel : ViewModel() {
             return
         }
 
+        val scanInvisibleFile = ScanSettings.scanInvisibleFile.value
+        val enableFilter = ScanSettings.enableFilter.value
+        val filters = ScanSettings.filterSet.value.toSet()
+        val depth = ScanSettings.scanDepth.value.depth
         ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
             val lock = ReentrantLock()
             val tmpList = LinkedList<BookScanItem>()
             treeDocumentFile(uriLocal).forEach({ file ->
-                val ext = file.getExt()
+                val filename = file.name ?: return@forEach
+                if (!scanInvisibleFile && filename.startsWith(".")) {
+                    return@forEach
+                }
+                val lowerCase = filename.toLowerCase(Locale.ENGLISH)
+                if (enableFilter && filters.any { lowerCase.contains(it) }) {
+                    return@forEach
+                }
+                val ext = filename.substringAfterLast(".", "")
                 val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
                 if (mimeType?.startsWith("text/") == true && file.length() > 0) {
                     val bookScanItem =
-                        BookScanItem(file.name, ext, file.uri, file.lastModified(), file.length())
+                        BookScanItem(filename, ext, file.uri, file.lastModified(), file.length())
                     LogUtils.d(TAG, "Scan a book: $bookScanItem")
                     lock.withLock {
                         tmpList.add(bookScanItem)
@@ -69,7 +80,7 @@ class BookScanViewModel : ViewModel() {
                         }
                     }
                 }
-            }, cancelToken = idle)
+            }, maxDepth = depth, cancelToken = idle)
             idle.set(true)
             if (tmpList.isNotEmpty()) {
                 notifyAppendList(tmpList)

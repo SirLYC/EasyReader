@@ -1,12 +1,15 @@
 package com.lyc.easyreader.base
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.view.ContextThemeWrapper
 import com.lyc.easyreader.base.app.IApplicationOnCreateListener
 import com.lyc.easyreader.base.utils.LogUtils
+import kotlin.reflect.KClass
 
 /**
  * Created by Liu Yuchuan on 2020/1/7.
@@ -26,6 +29,12 @@ class ReaderApplication : Application() {
                 context,
                 R.style.AppTheme
             )
+        }
+
+        fun openActivity(kClass: KClass<out Activity>) {
+            context.startActivity(Intent(context, kClass.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
         }
     }
 

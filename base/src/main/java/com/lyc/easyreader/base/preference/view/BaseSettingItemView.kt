@@ -17,6 +17,7 @@ import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.theme.color_divider
 import com.lyc.easyreader.base.ui.theme.color_primary_text
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
+import com.lyc.easyreader.base.utils.buildCommonButtonTextColor
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.textSizeInDp
 
@@ -28,12 +29,12 @@ open class BaseSettingItemView(
     desc: String = ""
 ) : LinearLayout(ReaderApplication.appContext()) {
     val titleTv = TextView(context).apply {
-        setTextColor(color_primary_text)
+        setTextColor(buildCommonButtonTextColor(color_primary_text))
         textSizeInDp = 16f
         text = title
     }
     val descTv = TextView(context).apply {
-        setTextColor(color_secondary_text)
+        setTextColor(buildCommonButtonTextColor(color_secondary_text))
         textSizeInDp = 14f
         text = desc
     }

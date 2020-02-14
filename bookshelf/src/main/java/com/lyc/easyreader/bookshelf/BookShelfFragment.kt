@@ -23,8 +23,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.lyc.easyreader.api.main.AbstractMainTabFragment
+import com.lyc.easyreader.api.settings.ISettingService
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
+import com.lyc.easyreader.base.getAppService
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.ui.bottomsheet.LinearDialogBottomSheet
@@ -247,7 +249,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             applyCheckCountChange()
         })
         viewModel.afterDataUpdate = {
-            if (adapter?.editMode == true) {
+            if (adapter?.editMode == true && viewModel.list.isEmpty()) {
                 adapter?.itemCheckListener = null
                 adapter?.uncheckAll()
                 viewModel.checkedIds.forEach { id ->
@@ -256,6 +258,8 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                 }
                 adapter?.itemCheckListener = this
                 applyCheckCountChange()
+            } else {
+                setEditMode(enter = false, anim = false)
             }
         }
         if (savedInstanceState != null) {
@@ -294,13 +298,16 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                         val collectId = dialog.addItem("收藏夹", R.drawable.ic_star_border_24dp)
                         val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
                         val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
-                        val batchId =
+                        val batchId = if (viewModel.list.isNotEmpty()) {
                             dialog.addItem("批量管理", R.drawable.ic_format_list_bulleted_24dp)
+                        } else {
+                            -1
+                        }
                         val settingId = dialog.addItem("设置", R.drawable.ic_settings_24dp)
                         dialog.show()
                         dialog.itemClickListener = { id, _ ->
                             when (id) {
-                                collectId -> CollectActivity.start()
+                                collectId -> ReaderApplication.openActivity(CollectActivity::class)
                                 importFileId -> performFileSearch()
                                 scanDirId -> performDirSearch()
                                 batchId -> {
@@ -309,6 +316,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                                     }
                                 }
                                 settingId -> {
+                                    getAppService<ISettingService>()?.openSettingActivity()
                                 }
                             }
                         }
@@ -349,7 +357,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
 
     private fun setEditMode(enter: Boolean, anim: Boolean = true): Boolean {
         if (enter) {
-            if (adapter?.enterEditMode(anim) == true) {
+            if (viewModel.list.isNotEmpty() && adapter?.enterEditMode(anim) == true) {
                 viewModel.editModeLiveData.value = true
                 return true
             }
@@ -417,7 +425,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
     }
 
     private fun testLogUri(uri: Uri) {
-        if ("release" == BuildConfig.BUILD_TYPE) {
+        if (true) {
             return
         }
         val documentFile = singleUriDocumentFile(uri)

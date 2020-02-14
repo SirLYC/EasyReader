@@ -1,6 +1,5 @@
 package com.lyc.easyreader.bookshelf.collect
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
@@ -16,7 +15,6 @@ import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.getDrawableRes
@@ -38,15 +36,6 @@ import com.lyc.easyreader.bookshelf.reader.ReaderActivity
  */
 class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.ItemClickListener {
     private lateinit var collectViewModel: CollectViewModel
-
-    companion object {
-        fun start() {
-            val context = ReaderApplication.appContext()
-            context.startActivity(Intent(context, CollectActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        }
-    }
 
     override fun beforeBaseOnCreate(savedInstanceState: Bundle?) {
         super.beforeBaseOnCreate(savedInstanceState)
