@@ -40,3 +40,16 @@ fun Long.formatReaderTime(): String {
     return readerTimeFormatThreadLocal.getOrSet { SimpleDateFormat("HH:mm", Locale.ENGLISH) }
         .format(this)
 }
+
+fun Long.millisToString(): String {
+    val minute = this / 60000
+    if (minute <= 0) {
+        return "不足1分钟"
+    }
+
+    if (minute < 60) {
+        return "${minute}分钟"
+    }
+
+    return "%.1f小时".format(minute / 60f)
+}

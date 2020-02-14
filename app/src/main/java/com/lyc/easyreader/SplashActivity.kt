@@ -41,6 +41,7 @@ class SplashActivity : BaseActivity() {
         handler.postDelayed({
             startActivity(Intent(this, MainActivity::class.java))
             finish()
+            overridePendingTransition(0, R.anim.splash_fade_out)
         }, 1500)
     }
 

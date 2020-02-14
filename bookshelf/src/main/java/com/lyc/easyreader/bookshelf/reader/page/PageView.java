@@ -115,6 +115,7 @@ public class PageView extends View {
 
     private void startPageAnim(PageAnimation.Direction direction) {
         if (mTouchListener == null) return;
+        if (pageAnim == null) return;
         //是否正在执行动画
         abortAnimation();
         if (direction == PageAnimation.Direction.NEXT) {
@@ -165,6 +166,7 @@ public class PageView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
+        if (pageAnim == null) return false;
 
         if (!canTouch && event.getAction() != MotionEvent.ACTION_DOWN) return true;
 
@@ -239,18 +241,22 @@ public class PageView extends View {
 
     @Override
     public void computeScroll() {
-        //进行滑动
-        pageAnim.scrollAnim();
+        if (pageAnim != null) {
+            //进行滑动
+            pageAnim.scrollAnim();
+        }
         super.computeScroll();
     }
 
     //如果滑动状态没有停止就取消状态，重新设置Anim的触碰点
     public void abortAnimation() {
-        pageAnim.abortAnim();
+        if (pageAnim != null) {
+            pageAnim.abortAnim();
+        }
     }
 
     public boolean isRunning() {
-        return pageAnimMode != null && pageAnim.isRunning;
+        return pageAnimMode != null && pageAnim != null && pageAnim.isRunning;
     }
 
     public boolean isPrepare() {
@@ -262,7 +268,7 @@ public class PageView extends View {
     }
 
     public void drawNextPage() {
-        if (!isPrepare) return;
+        if (!isPrepare || pageAnim == null || pageLoader == null) return;
 
         pageAnim.changePage();
         pageLoader.drawPage(getNextBitmap(), false);

@@ -123,6 +123,22 @@ fun getScreenOrientation(): Int {
     }
 }
 
+
+fun Window?.navigationBarBlackText(isBlack: Boolean) {
+    if (Build.VERSION.SDK_INT >= 26) {
+        this?.let { window ->
+            window.decorView.run {
+                systemUiVisibility =
+                    if (isBlack) {
+                        View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR or systemUiVisibility
+                    } else {
+                        systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+                    }
+            }
+        }
+    }
+}
+
 // -------------------------------------------- status bar -------------------------------------------- //
 
 private val statusBarHeightLock = ReentrantLock()
@@ -152,8 +168,10 @@ fun statusBarHeight(forceRetrieve: Boolean = false): Int {
 fun Window?.statusBarBlackText(isBlack: Boolean) {
     if (Build.VERSION.SDK_INT >= 23) {
         this?.let { window ->
-            window.decorView.systemUiVisibility =
-                if (isBlack) View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR else View.SYSTEM_UI_FLAG_VISIBLE
+            window.decorView.run {
+                systemUiVisibility =
+                    if (isBlack) View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or systemUiVisibility else systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+            }
         }
     }
 }

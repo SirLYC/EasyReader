@@ -50,6 +50,7 @@ import com.lyc.easyreader.bookshelf.reader.page.PageLoader
 import com.lyc.easyreader.bookshelf.reader.page.PageView
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettings
 import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettingsDialog
+import com.lyc.easyreader.bookshelf.utils.millisToString
 
 /**
  * Created by Liu Yuchuan on 2020/1/30.
@@ -496,15 +497,24 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
         val topBar = SimpleToolbar(this, com.lyc.easyreader.api.R.drawable.ic_more_horiz_24dp)
         topBar.setBarClickListener(this)
-        topBar.setTitle("")
         settingContentView.addView(
             topBar,
             LinearLayout.LayoutParams(MATCH_PARENT, topBar.getViewHeight())
         )
 
+        ReaderTimeManager.readTimeThisSession.observe(this, Observer {
+            LogUtils.d(TAG, "本次阅读时间更新：${it.millisToString()}")
+        })
+
+        ReaderTimeManager.readTimeTodayLiveData.observe(this, Observer {
+            topBar.setTitle("今日已读：${it.millisToString()}")
+        })
+
+
         val themeChangeCallback = {
             val currentPageStyle = ReaderSettings.currentPageStyle
             topBar.setBackgroundColor(currentPageStyle.bgColor)
+            topBar.titleTv.setTextColor(currentPageStyle.fontColor)
             val fontColor = currentPageStyle.fontColor
             topBar.leftButton?.drawable?.changeToColor(fontColor)
             topBar.rightButton.drawable?.changeToColor(fontColor)
@@ -537,6 +547,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
         viewModel.showMenu.observeState(this, Observer {
             applyStatusBarColorChange()
+            applyFullscreen()
             topBar.isVisible = it
             topBar.paddingStatusBar = marginExtra[1] > 0
             bottomMenu.isVisible = it
@@ -552,12 +563,12 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             }
         })
 
-        settings.fullscreen.observe(this, Observer { fullscreen ->
-            applyFullscreen(fullscreen)
+        settings.fullscreen.observe(this, Observer {
+            applyFullscreen()
         })
 
         settings.screenOrientation.observe(this, Observer {
-            autoFitPageViewMargin(settings.fullscreen.value)
+            applyFullscreen()
         })
 
         settings.fontSizeInDp.observe(this, Observer { sizeInDp ->
@@ -612,11 +623,12 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         })
 
         settings.readerMargin.observe(this, Observer {
-            applyFullscreen(settings.fullscreen.value)
+            applyFullscreen()
         })
 
         NightModeManager.nightMode.observe(this, Observer {
             pageLoader?.setNightMode(it)
+            applyStatusBarColorChange()
         })
     }
 
@@ -624,11 +636,12 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         isResume = true
         applyKeepScreenOnChange()
         super.onResume()
-        applyFullscreen(ReaderSettings.instance.fullscreen.value)
-        applyStatusBarColorChange()
+        applyFullscreen()
+        ReaderTimeManager.enterRead()
     }
 
     override fun onPause() {
+        ReaderTimeManager.exitRead()
         isResume = false
         applyKeepScreenOnChange()
         super.onPause()
@@ -643,23 +656,21 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     }
 
     private fun applyStatusBarColorChange() {
-        val settings = ReaderSettings.instance
-        if (settings.fullscreen.value) {
-            return
-        }
-
-        if (NightModeManager.nightModeEnable) {
-            window.statusBarBlackText(false)
-        } else {
-            window.statusBarBlackText(settings.pageStyle.value.statusBarBlack)
-        }
+        val pageStyle = ReaderSettings.currentPageStyle
+        window.navigationBarColor = pageStyle.bgColor
+        window.statusBarBlackText(pageStyle.statusBarBlack)
+        window.navigationBarBlackText(pageStyle.statusBarBlack)
     }
 
-    private fun applyFullscreen(fullscreen: Boolean) {
-        if (fullscreen) {
+    private fun applyFullscreen() {
+        val fullscreen = ReaderSettings.instance.fullscreen.value
+        if (fullscreen && !viewModel.showMenu.state) {
             enterFullscreen()
         } else {
             exitFullscreen()
+        }
+        window.decorView.run {
+            systemUiVisibility = 0
         }
         autoFitPageViewMargin(fullscreen)
         applyStatusBarColorChange()

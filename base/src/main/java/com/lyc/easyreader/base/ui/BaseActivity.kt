@@ -66,8 +66,7 @@ abstract class BaseActivity : AppCompatActivity() {
         window.run {
             clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
             decorView.run {
-                systemUiVisibility =
-                    systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION.inv() and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY.inv()
+                systemUiVisibility = 0
             }
         }
     }
