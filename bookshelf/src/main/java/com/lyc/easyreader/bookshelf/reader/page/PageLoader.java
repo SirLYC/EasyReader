@@ -32,9 +32,8 @@ import java.util.List;
 
 
 /**
- * Created by newbiechen on 17-7-1.
+ * Created by Liu Yuchuan on 2020/2/2.
  */
-
 public abstract class PageLoader implements Handler.Callback {
     public static final int TEXT_SIZE_MIN_VALUE_DP = 12;
     public static final int TEXT_SIZE_MAX_VALUE_DP = 32;
@@ -190,7 +189,9 @@ public abstract class PageLoader implements Handler.Callback {
     private Drawable getChargeDrawable() {
         if (chargeDrawable == null) {
             chargeDrawable = ReaderResourcesKt.getDrawableRes(com.lyc.easyreader.api.R.drawable.ic_thunder);
-            ViewUtilsKt.changeToColor(chargeDrawable, bgColor);
+            if (chargeDrawable != null) {
+                ViewUtilsKt.changeToColor(chargeDrawable, contentTextPaint.getColor());
+            }
         }
         return chargeDrawable;
     }
@@ -885,7 +886,7 @@ public abstract class PageLoader implements Handler.Callback {
 
         batteryCapRect.right = batteryCapRect.left + (batteryCapRect.width() * batteryLevel / 100.0f);
 
-        float chargeCenterX = batteryCapRect.centerX();
+        float chargeCenterX = batteryFrameRect.centerX();
         float chargeCenterY = batteryCapRect.centerY();
         float chargeHeightHalf = batteryCapRect.height() * 0.5f;
         float charWidthHalf = CHARGE_WIDTH * chargeHeightHalf / CHARGE_HEIGHT;
