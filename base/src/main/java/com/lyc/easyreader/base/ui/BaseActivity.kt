@@ -17,6 +17,8 @@ import com.lyc.easyreader.base.BuildConfig
 import com.lyc.easyreader.base.ui.theme.NightModeManager
 import com.lyc.easyreader.base.ui.theme.NightModeManager.NIGHT_MODE_MASK_COLOR
 import com.lyc.easyreader.base.ui.theme.color_bg
+import com.lyc.easyreader.base.utils.addSystemUiVisibility
+import com.lyc.easyreader.base.utils.clearSystemUiVisibility
 import com.lyc.easyreader.base.utils.notch.NotchTools
 
 /**
@@ -55,19 +57,22 @@ abstract class BaseActivity : AppCompatActivity() {
     fun enterFullscreen() {
         window.run {
             addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-            decorView.run {
-                systemUiVisibility =
-                    systemUiVisibility or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            }
+            decorView.addSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN,
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION,
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+            )
         }
     }
 
     fun exitFullscreen() {
         window.run {
             clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-            decorView.run {
-                systemUiVisibility = 0
-            }
+            decorView.clearSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN,
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION,
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+            )
         }
     }
 

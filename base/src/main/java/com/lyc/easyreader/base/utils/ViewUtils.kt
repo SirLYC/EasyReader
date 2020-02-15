@@ -131,7 +131,7 @@ fun isLightColor(color: Int): Boolean {
 }
 
 private val paint by lazy { Paint() }
-fun measureSingleLineTextHeight(text: String, size: Float): Float {
+fun measureSingleLineTextHeight(size: Float): Float {
     paint.textSize = size
     return paint.fontMetrics.run { descent - ascent }
 }
@@ -169,4 +169,20 @@ fun AlertDialog.Builder.showWithNightMode(): AlertDialog {
         dialog.show()
         return dialog
     }
+}
+
+fun View.addSystemUiVisibility(vararg flags: Int) {
+    var result = systemUiVisibility
+    flags.forEach {
+        result = result or it
+    }
+    systemUiVisibility = result
+}
+
+fun View.clearSystemUiVisibility(vararg flags: Int) {
+    var result = systemUiVisibility
+    flags.forEach {
+        result = result and it.inv()
+    }
+    systemUiVisibility = result
 }

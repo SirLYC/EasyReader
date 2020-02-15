@@ -535,7 +535,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         NightModeManager.nightMode.observe(this, Observer { themeChangeCallback() })
 
         viewModel.showMenu.observeEvent(this, Observer {
-            topBar.paddingStatusBar = marginExtra[1] > 0
             if (it) {
                 topBar.startAnimation(topInAnim)
                 bottomMenu.startAnimation(bottomInAnim)
@@ -549,7 +548,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             applyStatusBarColorChange()
             applyFullscreen()
             topBar.isVisible = it
-            topBar.paddingStatusBar = marginExtra[1] > 0
             bottomMenu.isVisible = it
             settingBlankView.isVisible = it
         })
@@ -669,9 +667,10 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         } else {
             exitFullscreen()
         }
-        window.decorView.run {
-            systemUiVisibility = 0
-        }
+        window.decorView.clearSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION,
+            View.SYSTEM_UI_FLAG_IMMERSIVE
+        )
         autoFitPageViewMargin(fullscreen)
         applyStatusBarColorChange()
     }

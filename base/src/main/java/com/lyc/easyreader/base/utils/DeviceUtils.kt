@@ -128,12 +128,11 @@ fun Window?.navigationBarBlackText(isBlack: Boolean) {
     if (Build.VERSION.SDK_INT >= 26) {
         this?.let { window ->
             window.decorView.run {
-                systemUiVisibility =
-                    if (isBlack) {
-                        View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR or systemUiVisibility
-                    } else {
-                        systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-                    }
+                if (isBlack) {
+                    addSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
+                } else {
+                    clearSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
+                }
             }
         }
     }
@@ -169,8 +168,11 @@ fun Window?.statusBarBlackText(isBlack: Boolean) {
     if (Build.VERSION.SDK_INT >= 23) {
         this?.let { window ->
             window.decorView.run {
-                systemUiVisibility =
-                    if (isBlack) View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or systemUiVisibility else systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+                if (isBlack) {
+                    addSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+                } else {
+                    clearSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+                }
             }
         }
     }
