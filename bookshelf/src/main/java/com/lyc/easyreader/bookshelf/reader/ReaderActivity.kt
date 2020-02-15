@@ -82,7 +82,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
         private const val SETTING_ANIM_TIME = 300L
 
-        private val VIEW_ID_SETTING_BLANK = generateNewViewId()
         private val VIEW_ID_PRE_CHAP = generateNewViewId()
         private val VIEW_ID_NEXT_CHAP = generateNewViewId()
         private val VIEW_ID_BTN_CATEGORY = generateNewViewId()
@@ -258,7 +257,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         return super.onKeyDown(keyCode, event)
     }
 
+
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            if (viewModel.showMenu.changeState(true)) {
+                return true
+            }
+        }
+
         val control = ReaderSettings.instance.volumeControlPage.value
 
         if (!control) {
@@ -283,6 +289,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         }
 
         return super.onKeyUp(keyCode, event)
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            viewModel.showMenu.changeState(true)
+            return true
+        }
+        return super.onKeyLongPress(keyCode, event)
     }
 
     override fun onStart() {
@@ -317,8 +331,8 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             settingBlankView,
             FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
         )
-        settingBlankView.id = VIEW_ID_SETTING_BLANK
-        settingBlankView.setOnClickListener(this)
+        settingBlankView.isFocusable = false
+        settingBlankView.isClickable = false
 
         val bottomButtons = arrayOf(
             Triple(VIEW_ID_BTN_CATEGORY, R.drawable.ic_format_list_bulleted_24dp, "目录"),
@@ -753,12 +767,16 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
     }
 
-    override fun onTouch(): Boolean {
+    override fun handlePageViewClick(): Boolean {
+        return viewModel.showMenu.changeState(false)
+    }
+
+    override fun canTouch(): Boolean {
         return true
     }
 
-    override fun center() {
-        viewModel.showMenu.state = true
+    override fun centerClick() {
+        viewModel.showMenu.changeState(true)
     }
 
     override fun cancel() {
@@ -820,10 +838,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
     override fun onClick(v: View?) {
         when (v?.id) {
-            VIEW_ID_SETTING_BLANK -> {
-                viewModel.showMenu.state = false
-            }
-
             VIEW_ID_NEXT_CHAP -> {
                 pageLoader?.skipNextChapter()
             }
@@ -841,22 +855,22 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             }
 
             VIEW_ID_BTN_SETTINGS -> {
-                viewModel.showMenu.state = false
+                viewModel.showMenu.changeState(false)
                 ReaderSettingsDialog().showOneTag(supportFragmentManager)
             }
 
             VIEW_ID_BTN_CATEGORY -> {
-                viewModel.showMenu.state = false
+                viewModel.showMenu.changeState(false)
                 ChapterDialog().showOneTag(supportFragmentManager)
             }
 
             VIEW_ID_BTN_BOOK_MARK -> {
-                viewModel.showMenu.state = false
+                viewModel.showMenu.changeState(false)
                 BookMarkDialog().showOneTag(supportFragmentManager)
             }
 
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
-                viewModel.showMenu.state = false
+                viewModel.showMenu.changeState(false)
                 val pageStyle = ReaderSettings.currentPageStyle
                 val dialog = LinearDialogBottomSheet(this)
                 val collected: Boolean

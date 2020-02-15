@@ -22,6 +22,14 @@ class LiveState<T>(initValue: T) {
             liveState.value = value
         }
 
+    fun changeState(newVal: T): Boolean {
+        if (state != newVal) {
+            state = newVal
+            return true
+        }
+        return false
+    }
+
     @AnyThread
     fun postState(value: T) {
         liveState.postValue(value)

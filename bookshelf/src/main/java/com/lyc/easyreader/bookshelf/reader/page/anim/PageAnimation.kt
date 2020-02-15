@@ -248,6 +248,10 @@ abstract class PageAnimation internal constructor(
                     view?.invalidate()
                 }
             }
+            MotionEvent.ACTION_CANCEL -> {
+                isCancel = true
+                listener.pageCancel()
+            }
         }
     }
 

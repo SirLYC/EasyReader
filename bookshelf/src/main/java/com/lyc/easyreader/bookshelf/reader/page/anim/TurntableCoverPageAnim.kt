@@ -4,7 +4,6 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.view.View
 import androidx.core.graphics.withSave
-import com.lyc.easyreader.base.utils.LogUtils
 import java.lang.Math.PI
 import kotlin.math.tan
 
@@ -55,7 +54,6 @@ class TurntableCoverPageAnim(
         val curAngle = -(INIT_ROTATE_DEGREE * interpolator).toFloat()
         val nextAngle = (curAngle + INIT_ROTATE_DEGREE).toFloat()
 
-        LogUtils.d("AAA", "Cur=$curAngle next=$nextAngle")
 
         // next
         canvas.withSave {

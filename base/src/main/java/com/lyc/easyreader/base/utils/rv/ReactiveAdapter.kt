@@ -21,7 +21,6 @@ import com.lyc.easyreader.base.R
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_orange
-import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.changeToColor
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
@@ -242,7 +241,6 @@ abstract class ReactiveAdapter(protected val list: ObservableList<out Any>) :
         val data = getDataAt(position)
         holder.listener = itemClickListener
         val canEnterEditMode = canEnterEditMode(position)
-        LogUtils.d("AAA", "Payloads=${payloads}")
         var handled = false
         payloads.mapNotNull { it as? Int }.forEach { payload ->
             when {

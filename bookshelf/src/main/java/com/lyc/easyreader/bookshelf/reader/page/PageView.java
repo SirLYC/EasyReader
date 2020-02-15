@@ -173,11 +173,16 @@ public class PageView extends View {
         int x = (int) event.getX();
         int y = (int) event.getY();
         switch (event.getAction()) {
+            case MotionEvent.ACTION_CANCEL:
+                if (isMove) {
+                    pageAnim.handleTouchEvent(event);
+                }
+                break;
             case MotionEvent.ACTION_DOWN:
                 startX = x;
                 startY = y;
                 isMove = false;
-                canTouch = mTouchListener.onTouch();
+                canTouch = mTouchListener == null || mTouchListener.canTouch();
                 pageAnim.handleTouchEvent(event);
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -194,6 +199,11 @@ public class PageView extends View {
                 break;
             case MotionEvent.ACTION_UP:
                 if (!isMove) {
+                    // 点击事件是最高优先级
+                    if (mTouchListener != null && mTouchListener.handlePageViewClick()) {
+                        return true;
+                    }
+
                     //设置中间区域范围
                     if (mCenterRect == null) {
                         mCenterRect = new RectF(viewWidth / 5f, viewHeight / 5f,
@@ -203,7 +213,7 @@ public class PageView extends View {
                     //是否点击了中间
                     if (mCenterRect.contains(x, y)) {
                         if (mTouchListener != null) {
-                            mTouchListener.center();
+                            mTouchListener.centerClick();
                         }
                         return true;
                     }
@@ -315,9 +325,11 @@ public class PageView extends View {
     }
 
     public interface TouchListener {
-        boolean onTouch();
+        boolean canTouch();
 
-        void center();
+        boolean handlePageViewClick();
+
+        void centerClick();
 
         void prePage();
 
