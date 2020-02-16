@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorBg"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <RadioGroup
+        android:id="@+id/rg"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <RadioButton
+            android:id="@+id/rbtn_bg"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:checked="true"
+            android:text="背景" />
+
+        <RadioButton
+            android:id="@+id/rbtn_font"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="文字" />
+    </RadioGroup>
+
+    <com.lyc.colorpicker.SVColorPickerView
+        android:id="@+id/cpv"
+        android:layout_width="0dp"
+        android:layout_height="180dp"
+        android:layout_marginLeft="16dp"
+        android:layout_weight="1" />
+
+    <com.lyc.colorpicker.HueBarView
+        android:id="@+id/hpv"
+        android:layout_width="wrap_content"
+        android:layout_height="180dp"
+        android:layout_marginLeft="16dp"
+        app:orientation="vertical" />
+
+</LinearLayout>
