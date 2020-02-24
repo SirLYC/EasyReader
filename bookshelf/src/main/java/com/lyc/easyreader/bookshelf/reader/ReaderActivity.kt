@@ -847,7 +847,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             }
 
             BaseToolBar.VIEW_ID_LEFT_BUTTON -> {
-                onBackPressed()
+                finish()
             }
 
             VIEW_ID_BTN_NIGHT_MODE -> {
@@ -901,6 +901,12 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 }
 
             }
+        }
+    }
+
+    override fun onBackPressed() {
+        if (!viewModel.showMenu.changeState(false)) {
+            super.onBackPressed()
         }
     }
 

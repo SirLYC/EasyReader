@@ -230,7 +230,9 @@ private fun DocumentFile.forEachFileRecursivelyFastMode(
                     if (documentFile.isDirectory) {
                         if (!onlyFile) {
                             func(documentFile)
-                        } else if (currentDepth < maxDepth || maxDepth <= 0) {
+                        }
+
+                        if (currentDepth < maxDepth || maxDepth <= 0) {
                             list.addAll(documentFile.listFiles())
                         }
                     } else {
