@@ -9,7 +9,7 @@ import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
 import androidx.core.content.FileProvider
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ServiceImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.common.EventHubFactory
 import com.lyc.common.thread.ExecutorFactory
 import com.lyc.easyreader.api.book.BookFile
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Created by Liu Yuchuan on 2020/1/26.
  */
-@ServiceImpl(service = IBookManager::class, createMethod = CreateMethod.GET_INSTANCE)
+@InjectApiImpl(api = IBookManager::class, createMethod = CreateMethod.GET_INSTANCE)
 class BookManager private constructor() : IBookManager {
     companion object {
         @JvmStatic

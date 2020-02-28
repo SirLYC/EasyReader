@@ -3,17 +3,17 @@ package com.lyc.easyreader
 import android.util.SparseArray
 import androidx.core.util.contains
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ServiceImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.common.EventHubFactory
 import com.lyc.easyreader.api.main.IMainActivityDelegate
 import com.lyc.easyreader.api.main.IMainTabDelegate
 import com.lyc.easyreader.api.main.ITabChangeListener
-import com.lyc.easyreader.base.getAppExtensions
+import com.lyc.easyreader.base.getOneToManyApiList
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
  */
-@ServiceImpl(service = IMainActivityDelegate::class, createMethod = CreateMethod.GET_INSTANCE)
+@InjectApiImpl(api = IMainActivityDelegate::class, createMethod = CreateMethod.GET_INSTANCE)
 class MainActivityDelegate private constructor() : IMainActivityDelegate {
     private val id2NameMap = SparseArray<String>()
 
@@ -23,7 +23,7 @@ class MainActivityDelegate private constructor() : IMainActivityDelegate {
     }
 
     init {
-        for (tabDelegate in getAppExtensions<IMainTabDelegate>()) {
+        for (tabDelegate in getOneToManyApiList<IMainTabDelegate>()) {
             id2NameMap.put(tabDelegate.getId(), tabDelegate.getName())
         }
     }

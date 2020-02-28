@@ -1,7 +1,7 @@
 package com.lyc.easyreader.bookshelf.scan
 
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ExtensionImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.api.settings.ISettings
 import com.lyc.easyreader.base.preference.PreferenceManager
 import com.lyc.easyreader.base.preference.value.BooleanPrefValue
@@ -13,7 +13,7 @@ import com.lyc.easyreader.bookshelf.utils.fullToHalf
 /**
  * Created by Liu Yuchuan on 2020/2/14.
  */
-@ExtensionImpl(extension = ISettings::class, createMethod = CreateMethod.GET_INSTANCE)
+@InjectApiImpl(api = ISettings::class, createMethod = CreateMethod.GET_INSTANCE)
 object ScanSettings : ISettings {
     @JvmStatic
     val instance = ScanSettings

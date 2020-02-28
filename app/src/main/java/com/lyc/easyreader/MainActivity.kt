@@ -23,8 +23,8 @@ import com.lyc.easyreader.api.main.IMainActivityDelegate
 import com.lyc.easyreader.api.main.IMainTabDelegate
 import com.lyc.easyreader.api.main.ITabChangeListener
 import com.lyc.easyreader.api.main.Schema
-import com.lyc.easyreader.base.getAppExtensions
-import com.lyc.easyreader.base.getAppService
+import com.lyc.easyreader.base.getOneToManyApiList
+import com.lyc.easyreader.base.getSingleApi
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.BaseFragment
 import com.lyc.easyreader.base.ui.ReaderToast
@@ -56,11 +56,11 @@ class MainActivity : BaseActivity(), ITabChangeListener, Handler.Callback,
     private lateinit var bottomBar: HomeBottomBar
     private var pendingImportUri: Uri? = null
     private val mainTabs = SparseArray<IMainTabDelegate>().apply {
-        for (tabDelegate in getAppExtensions<IMainTabDelegate>()) {
+        for (tabDelegate in getOneToManyApiList<IMainTabDelegate>()) {
             put(tabDelegate.getId(), tabDelegate)
         }
     }
-    private val bookManager by lazy { getAppService<IBookManager>() }
+    private val bookManager by lazy { getSingleApi<IBookManager>() }
 
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
         container = FrameLayout(this)

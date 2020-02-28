@@ -5,7 +5,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ExtensionImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.api.settings.ISettingGroup
 import com.lyc.easyreader.base.preference.view.BaseSettingItemView
 import com.lyc.easyreader.base.preference.view.SwitchSettingItemView
@@ -17,7 +17,7 @@ import com.lyc.easyreader.bookshelf.ScanFilterEditDialog
 /**
  * Created by Liu Yuchuan on 2020/2/14.
  */
-@ExtensionImpl(extension = ISettingGroup::class, createMethod = CreateMethod.GET_INSTANCE)
+@InjectApiImpl(api = ISettingGroup::class, createMethod = CreateMethod.GET_INSTANCE)
 object ScanSettingGroup : ISettingGroup {
     @JvmStatic
     val instance = ScanSettingGroup

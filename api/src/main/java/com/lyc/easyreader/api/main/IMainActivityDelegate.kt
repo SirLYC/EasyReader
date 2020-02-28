@@ -1,12 +1,12 @@
 package com.lyc.easyreader.api.main
 
-import com.lyc.appinject.annotations.Service
+import com.lyc.appinject.annotations.InjectApi
 import com.lyc.easyreader.base.utils.generateNewViewId
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
  */
-@Service
+@InjectApi
 interface IMainActivityDelegate {
     companion object {
         val ID_BOOK_SHELF = generateNewViewId()

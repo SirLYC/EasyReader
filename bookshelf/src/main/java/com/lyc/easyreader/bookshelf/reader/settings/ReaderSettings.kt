@@ -1,7 +1,7 @@
 package com.lyc.easyreader.bookshelf.reader.settings
 
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ExtensionImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.api.settings.ISettings
 import com.lyc.easyreader.base.preference.PreferenceManager
 import com.lyc.easyreader.base.preference.value.BooleanPrefValue
@@ -16,7 +16,7 @@ import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode
 /**
  * Created by Liu Yuchuan on 2020/2/6.
  */
-@ExtensionImpl(extension = ISettings::class, createMethod = CreateMethod.GET_INSTANCE)
+@InjectApiImpl(api = ISettings::class, createMethod = CreateMethod.GET_INSTANCE)
 class ReaderSettings private constructor() : ISettings {
     companion object {
         @JvmStatic

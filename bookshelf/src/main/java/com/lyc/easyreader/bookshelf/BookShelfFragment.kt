@@ -26,7 +26,7 @@ import com.lyc.easyreader.api.main.AbstractMainTabFragment
 import com.lyc.easyreader.api.settings.ISettingService
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
-import com.lyc.easyreader.base.getAppService
+import com.lyc.easyreader.base.getSingleApi
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.ui.bottomsheet.LinearDialogBottomSheet
@@ -316,7 +316,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                                     }
                                 }
                                 settingId -> {
-                                    getAppService<ISettingService>()?.openSettingActivity()
+                                    getSingleApi<ISettingService>()?.openSettingActivity()
                                 }
                             }
                         }

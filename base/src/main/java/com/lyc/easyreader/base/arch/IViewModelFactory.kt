@@ -1,12 +1,12 @@
 package com.lyc.easyreader.base.arch
 
 import androidx.lifecycle.ViewModel
-import com.lyc.appinject.annotations.Extension
+import com.lyc.appinject.annotations.InjectApi
 
 /**
  * Created by Liu Yuchuan on 2020/1/18.
  */
-@Extension
+@InjectApi(oneToMany = true)
 interface IViewModelFactory {
 
     fun <T : ViewModel> createViewMode(modelClass: Class<T>): T?

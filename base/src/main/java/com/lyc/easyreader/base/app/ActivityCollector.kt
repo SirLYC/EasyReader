@@ -4,7 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ExtensionImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.notch.NotchTools
@@ -12,8 +12,8 @@ import com.lyc.easyreader.base.utils.notch.NotchTools
 /**
  * Created by Liu Yuchuan on 2020/1/16.
  */
-@ExtensionImpl(
-    extension = IApplicationOnCreateListener::class,
+@InjectApiImpl(
+    api = IApplicationOnCreateListener::class,
     createMethod = CreateMethod.GET_INSTANCE
 )
 class ActivityCollector private constructor() : IApplicationOnCreateListener,

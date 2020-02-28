@@ -4,7 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.app.ActivityCollector
-import com.lyc.easyreader.base.getAppExtensions
+import com.lyc.easyreader.base.getOneToManyApiList
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.utils.LogUtils
 
@@ -17,7 +17,7 @@ object AppRoute {
 
     fun jumpToUrl(urlParams: UrlParams, activityFrom: BaseActivity? = null) {
         LogUtils.i(TAG, "start jumpToUrl: $urlParams")
-        for (appExtension in getAppExtensions<IUrlInterceptor>()) {
+        for (appExtension in getOneToManyApiList<IUrlInterceptor>()) {
             if (appExtension.acceptUrl(urlParams.url) and appExtension.handleUrl(urlParams)) {
                 LogUtils.i(TAG, "$urlParams intercepted by ${appExtension.javaClass.name}")
                 return

@@ -1,11 +1,12 @@
 package com.lyc.easyreader.api.settings
 
-import com.lyc.appinject.annotations.Extension
+import com.lyc.appinject.annotations.InjectApi
+
 
 /**
  * Created by Liu Yuchuan on 2020/2/6.
  */
-@Extension
+@InjectApi(oneToMany = true)
 interface ISettings {
     fun applyDefaultSettings()
 }

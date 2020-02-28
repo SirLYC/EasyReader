@@ -10,7 +10,7 @@ import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.settings.ISettingGroup
 import com.lyc.easyreader.api.settings.ISettings
-import com.lyc.easyreader.base.getAppExtensions
+import com.lyc.easyreader.base.getOneToManyApiList
 import com.lyc.easyreader.base.preference.view.SettingGroupView
 import com.lyc.easyreader.base.preference.view.SwitchSettingItemView
 import com.lyc.easyreader.base.preference.view.TextSettingItemView
@@ -30,11 +30,11 @@ class SettingActivity : BaseActivity(), View.OnClickListener {
     companion object {
         private val VIEW_ID_SCROLL_VIEW = generateNewViewId()
         private const val TAG = "SettingActivity"
-        private val settings = getAppExtensions<ISettings>().apply {
+        private val settings = getOneToManyApiList<ISettings>().apply {
             LogUtils.i(TAG, "RegisteredSettings: $this")
         }
 
-        private val settingGroups = getAppExtensions<ISettingGroup>().sortedByDescending {
+        private val settingGroups = getOneToManyApiList<ISettingGroup>().sortedByDescending {
             it.priority()
         }.apply {
             LogUtils.i(TAG, "RegisteredSettingGroups: $this")

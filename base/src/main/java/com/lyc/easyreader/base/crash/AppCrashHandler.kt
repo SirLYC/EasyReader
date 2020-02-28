@@ -1,14 +1,14 @@
 package com.lyc.easyreader.base.crash
 
 import android.app.Application
-import com.lyc.appinject.annotations.ExtensionImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.base.app.IApplicationOnCreateListener
 import com.lyc.easyreader.base.utils.LogUtils
 
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
-@ExtensionImpl(extension = IApplicationOnCreateListener::class)
+@InjectApiImpl(api = IApplicationOnCreateListener::class)
 internal class AppCrashHandler : Thread.UncaughtExceptionHandler,
     IApplicationOnCreateListener {
 

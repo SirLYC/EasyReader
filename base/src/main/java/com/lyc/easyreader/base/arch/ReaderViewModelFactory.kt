@@ -2,7 +2,7 @@ package com.lyc.easyreader.base.arch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.lyc.easyreader.base.getAppExtensions
+import com.lyc.easyreader.base.getOneToManyApiList
 import com.lyc.easyreader.base.utils.LogUtils
 
 /**
@@ -19,7 +19,7 @@ object ReaderViewModelFactory : ViewModelProvider.NewInstanceFactory() {
         }
 
         val extensions =
-            getAppExtensions<IViewModelFactory>()
+            getOneToManyApiList<IViewModelFactory>()
         for (extension in extensions) {
             val viewModel = extension.createViewMode(modelClass)
             if (viewModel != null) {

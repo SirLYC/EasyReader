@@ -1,7 +1,7 @@
 package  com.lyc.easyreader.bookshelf
 
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ExtensionImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.api.R
 import com.lyc.easyreader.api.main.AbstractMainTabDelegate
 import com.lyc.easyreader.api.main.IMainActivityDelegate
@@ -10,7 +10,7 @@ import com.lyc.easyreader.api.main.IMainTabDelegate
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
-@ExtensionImpl(extension = IMainTabDelegate::class, createMethod = CreateMethod.GET_INSTANCE)
+@InjectApiImpl(api = IMainTabDelegate::class, createMethod = CreateMethod.GET_INSTANCE)
 class BookShelfMainTabDelegate : AbstractMainTabDelegate<BookShelfFragment>(), IMainTabDelegate {
     companion object {
         @JvmStatic

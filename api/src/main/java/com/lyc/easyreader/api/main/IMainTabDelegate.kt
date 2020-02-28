@@ -2,13 +2,13 @@ package com.lyc.easyreader.api.main
 
 import androidx.annotation.DrawableRes
 import androidx.fragment.app.Fragment
-import com.lyc.appinject.annotations.Extension
+import com.lyc.appinject.annotations.InjectApi
 import com.lyc.easyreader.base.ui.BaseFragment
 
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
-@Extension
+@InjectApi(oneToMany = true)
 interface IMainTabDelegate : Comparable<IMainTabDelegate> {
 
     companion object {

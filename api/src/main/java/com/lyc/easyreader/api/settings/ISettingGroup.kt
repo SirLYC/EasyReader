@@ -1,13 +1,13 @@
 package com.lyc.easyreader.api.settings
 
 import android.view.View
-import com.lyc.appinject.annotations.Extension
+import com.lyc.appinject.annotations.InjectApi
 import com.lyc.easyreader.base.ui.BaseActivity
 
 /**
  * Created by Liu Yuchuan on 2020/2/14.
  */
-@Extension
+@InjectApi(oneToMany = true)
 interface ISettingGroup {
 
     fun attach(activity: BaseActivity)

@@ -44,7 +44,7 @@ class ReaderApplication : Application() {
         StrictMode.setVmPolicy(VmPolicy.Builder().detectAll().penaltyLog().build())
         LogUtils.startTiming("Application Querying extensions")
         val extensions =
-            getAppExtensions<IApplicationOnCreateListener>()
+            getOneToManyApiList<IApplicationOnCreateListener>()
         LogUtils.debugLogTiming(
             TAG,
             "App finish query IApplicationOnCreateListener extensions.",

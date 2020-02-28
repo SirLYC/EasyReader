@@ -3,7 +3,7 @@ package com.lyc.easyreader.bookshelf.reader
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import com.lyc.appinject.CreateMethod
-import com.lyc.appinject.annotations.ExtensionImpl
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.api.settings.ISettingGroup
 import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.preference.view.TextSettingItemView
@@ -16,7 +16,7 @@ import com.lyc.easyreader.bookshelf.reader.settings.ReaderSettingsActivity
 /**
  * Created by Liu Yuchuan on 2020/2/14.
  */
-@ExtensionImpl(extension = ISettingGroup::class, createMethod = CreateMethod.GET_INSTANCE)
+@InjectApiImpl(api = ISettingGroup::class, createMethod = CreateMethod.GET_INSTANCE)
 object ReaderSettingGroup : ISettingGroup {
     @JvmStatic
     val instance = ReaderSettingGroup

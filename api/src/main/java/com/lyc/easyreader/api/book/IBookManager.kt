@@ -1,12 +1,12 @@
 package com.lyc.easyreader.api.book
 
 import android.net.Uri
-import com.lyc.appinject.annotations.Service
+import com.lyc.appinject.annotations.InjectApi
 
 /**
  * Created by Liu Yuchuan on 2020/1/27.
  */
-@Service
+@InjectApi
 interface IBookManager {
 
     fun importBooks(uriList: List<Uri>)

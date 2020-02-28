@@ -4,7 +4,7 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
-apply plugin: "com.lyc.app-inject"
+apply plugin: "com.lyc.app-inject-plugin"
 
 def showHomeBottomBar = (commonProp['showHomeBottomBar'] == "true")
 println("showHomeBottomBar=${showHomeBottomBar}")
@@ -54,7 +54,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(":base")
     implementation project(":api")
-    implementation project(":app-inject")
+    implementation 'com.lyc:app-inject:latest.release'
     if (showHomeBottomBar) {
         implementation project(":usercenter")
         implementation project(":discover")

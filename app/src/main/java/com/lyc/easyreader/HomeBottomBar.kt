@@ -14,7 +14,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.setPadding
 import com.lyc.easyreader.api.main.IMainTabDelegate
-import com.lyc.easyreader.base.getAppExtensions
+import com.lyc.easyreader.base.getOneToManyApiList
 import com.lyc.easyreader.base.ui.getDrawableAttrRes
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_gray
@@ -47,7 +47,7 @@ class HomeBottomBar(context: Context) : LinearLayout(context), View.OnClickListe
         setBackgroundColor(Color.WHITE)
         elevation = dp2pxf(8f)
         orientation = HORIZONTAL
-        val tabSet = TreeSet<IMainTabDelegate>(getAppExtensions<IMainTabDelegate>())
+        val tabSet = TreeSet<IMainTabDelegate>(getOneToManyApiList<IMainTabDelegate>())
         tabSet.forEach {
             val button = BottomBarButton(
                 context,

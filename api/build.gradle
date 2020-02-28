@@ -35,7 +35,7 @@ greendao {}
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation project(":app-inject")
+    implementation 'com.lyc:app-inject:latest.release'
     implementation project(":base")
     api "org.greenrobot:greendao:$green_dao_version"
     testImplementation 'junit:junit:4.12'

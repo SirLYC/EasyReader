@@ -31,7 +31,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation project(":api")
     implementation project(":base")
-    implementation project(":app-inject")
+    implementation 'com.lyc:app-inject:latest.release'
     implementation 'com.github.SirLYC:ColorPicker:0.1.1'
     implementation 'com.google.android.material:material:1.1.0'
     testImplementation 'junit:junit:4.12'
