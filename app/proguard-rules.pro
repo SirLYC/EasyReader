@@ -139,10 +139,7 @@
 
 
 # for app-inject
--keepclasseswithmembers @com.lyc.appinject.annotations.ServiceImpl class * {
-    public static * getInstance();
-}
--keepclasseswithmembers @com.lyc.appinject.annotations.ExtensionImpl class * {
+-keepclasseswithmembers @com.lyc.appinject.annotations.InjectApiImpl class * {
     public static * getInstance();
 }
 
