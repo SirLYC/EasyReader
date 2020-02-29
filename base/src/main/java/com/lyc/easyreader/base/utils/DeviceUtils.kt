@@ -1,6 +1,8 @@
 package com.lyc.easyreader.base.utils
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
@@ -22,8 +24,14 @@ import kotlin.math.roundToInt
  */
 private const val TAG = "DeviceUtils"
 
-fun deviceWidth() = ReaderApplication.appContext().resources.displayMetrics.widthPixels
+inline fun copyPlainText(text: String, callback: () -> Unit = {}) {
+    (ReaderApplication.appContext().getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)?.run {
+        setPrimaryClip(ClipData.newPlainText(null, text))
+        callback()
+    }
+}
 
+fun deviceWidth() = ReaderApplication.appContext().resources.displayMetrics.widthPixels
 
 fun deviceHeight() = ReaderApplication.appContext().resources.displayMetrics.heightPixels
 

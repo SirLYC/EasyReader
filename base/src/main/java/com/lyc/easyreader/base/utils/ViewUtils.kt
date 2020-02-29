@@ -121,6 +121,16 @@ fun blendColor(bg: Int, fg: Int): Int {
     return ((colorR shl 16) + (colorG shl 8) + colorB) or (0xff000000.toInt())
 }
 
+fun getCenterColor(color1: Int, color2: Int): Int {
+    val r1 = Color.red(color1)
+    val g1 = Color.green(color1)
+    val b1 = Color.blue(color1)
+    val r2 = Color.red(color2)
+    val g2 = Color.green(color2)
+    val b2 = Color.blue(color2)
+    return Color.rgb((r1 + r2) / 2, (g1 + g2) / 2, (b1 + b2) / 2)
+}
+
 fun isLightColor(color: Int): Boolean {
     // RGB 转 YUV
     val darkness: Double =

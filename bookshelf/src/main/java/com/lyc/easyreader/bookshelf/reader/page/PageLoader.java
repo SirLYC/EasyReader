@@ -15,6 +15,7 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Size;
 
 import com.lyc.common.thread.ExecutorFactory;
 import com.lyc.easyreader.api.book.BookChapter;
@@ -24,6 +25,7 @@ import com.lyc.easyreader.base.ui.theme.NightModeManager;
 import com.lyc.easyreader.base.utils.DeviceUtilsKt;
 import com.lyc.easyreader.base.utils.LogUtils;
 import com.lyc.easyreader.base.utils.ViewUtilsKt;
+import com.lyc.easyreader.bookshelf.reader.SelectTextTabDrawable;
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode;
 import com.lyc.easyreader.bookshelf.utils.StringUtilsKt;
 
@@ -161,6 +163,7 @@ public abstract class PageLoader implements Handler.Callback {
     private boolean isCharging;
     // 当前页面的背景
     private int bgColor;
+    private final Rect rect = new Rect();
     // 上一章的记录
     private int mLastChapterPos = 0;
     // 缩进
@@ -173,16 +176,24 @@ public abstract class PageLoader implements Handler.Callback {
 
     private final Paint.FontMetrics finalFontMetrics = new Paint.FontMetrics();
     private PageCharPositions pageCharPositions;
+    private final int hitTestSlop = DeviceUtilsKt.dp2px(8);
+    private final float halfTabSize = DeviceUtilsKt.dp2pxf(12f);
+    private int selectColor;
+    private boolean isSelectMode;
+    private int[] selectIndexes = new int[2];
+    private SelectTextTabDrawable[] selectTextTabDrawables = {new SelectTextTabDrawable(), new SelectTextTabDrawable()};
+    private int hitTestIndex = 0;
 
     private Handler handler = new Handler(this);
 
     private boolean drawTextBound;
+    private boolean isDragTab = false;
+    private boolean canOperateSelectText = false;
 
     PageLoader(PageView pageView, BookFile bookFile) {
         this.pageView = pageView;
         this.bookFile = bookFile;
         chapterList = new ArrayList<>(1);
-
         setIndent(2, true);
         lineSpaceFactor = 0.5f;
         paraSpaceFactor = 1.0f;
@@ -193,14 +204,352 @@ public abstract class PageLoader implements Handler.Callback {
         mLastChapterPos = curChapterPos;
     }
 
+    void setCanOperateSelectTextAndNotify(boolean canOperateSelectText) {
+        if (this.canOperateSelectText != canOperateSelectText) {
+            this.canOperateSelectText = canOperateSelectText;
+            if (mPageChangeListener != null) {
+                mPageChangeListener.onCanOperateSelectTextChange(canOperateSelectText);
+            }
+        }
+    }
+
+    public void getSelectPositions(@Size(8) float[] pos) {
+        if (currentPageMeasured()) {
+            int index0 = selectIndexes[0];
+            if (index0 >= 0 && index0 < pageCharPositions.positions.size()) {
+                CharPosition charPosition = pageCharPositions.positions.get(index0);
+                pos[0] = charPosition.x;
+                pos[1] = charPosition.y;
+                pos[2] = charPosition.x + charPosition.width;
+                pos[3] = charPosition.y + charPosition.height;
+            }
+            int index1 = selectIndexes[1];
+            if (index1 >= 0 && index1 < pageCharPositions.positions.size()) {
+                CharPosition charPosition = pageCharPositions.positions.get(index1);
+                pos[4] = charPosition.x;
+                pos[5] = charPosition.y;
+                pos[6] = charPosition.x + charPosition.width;
+                pos[7] = charPosition.y + charPosition.height;
+            }
+        }
+    }
+
+    public String getSelectedTextAndExitSelectMode() {
+        if (!isSelectMode) {
+            return null;
+        }
+
+        isSelectMode = false;
+        isDragTab = false;
+        pageView.drawCurPage(false);
+        setCanOperateSelectTextAndNotify(false);
+
+        int startIndex = Math.min(selectIndexes[0], selectIndexes[1]);
+        int endIndex = Math.max(selectIndexes[0], selectIndexes[1]);
+        if (currentPageMeasured()) {
+            CharPosition startPosition = pageCharPositions.positions.get(startIndex);
+            CharPosition endPosition = pageCharPositions.positions.get(endIndex);
+            List<String> lines = curPage.lines;
+            if (lines == null || lines.isEmpty()) {
+                return null;
+            }
+
+            if (startPosition.line < 0 || endPosition.line < 0 || startPosition.line >= lines.size() || endPosition.line >= lines.size()) {
+                return null;
+            }
+
+            if (startPosition.line == endPosition.line) {
+                return lines.get(startPosition.line).substring(startPosition.charOffset, endPosition.charOffset + 1);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = startPosition.line; i <= endPosition.line; i++) {
+                if (i == startPosition.line) {
+                    sb.append(lines.get(i).substring(startPosition.charOffset));
+                } else if (i == endPosition.line) {
+                    sb.append(lines.get(i).substring(0, endPosition.charOffset + 1));
+                } else {
+                    sb.append(lines.get(i));
+                }
+            }
+            return sb.toString();
+        }
+
+        return null;
+    }
+
+    boolean hitTestSelectTab(int x, int y) {
+
+        int hitTestCnt = 0;
+        Rect rect = new Rect();
+        for (int i = 0; i < selectTextTabDrawables.length; i++) {
+            rect.set(selectTextTabDrawables[i].getBounds());
+            rect.inset(-hitTestSlop, -hitTestSlop);
+            if (rect.contains(x, y)) {
+                hitTestIndex = i;
+                hitTestCnt++;
+            }
+        }
+
+        if (hitTestCnt == 2) {
+            Rect rect0 = selectTextTabDrawables[0].getBounds();
+            Rect rect1 = selectTextTabDrawables[1].getBounds();
+            double s0 = Math.pow(x - rect0.centerX(), 2) + Math.pow(y - rect0.centerY(), 2);
+            double s1 = Math.pow((x - rect1.centerX()), 2) + Math.pow(y - rect1.centerY(), 2);
+            if (s0 > s1) {
+                hitTestIndex = 1;
+            } else {
+                hitTestIndex = 0;
+            }
+        }
+
+        isDragTab = hitTestCnt > 0;
+        return isDragTab;
+    }
+
+    boolean isDragTab() {
+        return isSelectMode && isDragTab;
+    }
+
+    boolean exitDrag() {
+        if (isSelectMode) {
+            if (isDragTab) {
+                isDragTab = false;
+                return true;
+            }
+        }
+
+        isDragTab = false;
+        return false;
+    }
+
+    void onDragTab(float x, float y) {
+        if (isDragTab && isSelectMode) {
+            // 给更多的控件让用户看到选择文字
+            y -= halfTabSize * 2 + hitTestSlop;
+            int[] indexes = new int[2];
+            if (!binaryFindLineIndex(indexes, y)) {
+                return;
+            }
+
+            int newPosition = binaryFindPositionInLine(indexes, x);
+
+            int anotherIndex = hitTestIndex == 0 ? 1 : 0;
+
+            if (selectIndexes[hitTestIndex] != newPosition) {
+                boolean hitTestIndexBefore = hitTestIndex == 0;
+                boolean newIndexBefore;
+                if (newPosition < selectIndexes[anotherIndex]) {
+                    newIndexBefore = true;
+                } else if (newPosition == selectIndexes[anotherIndex]) {
+                    newIndexBefore = hitTestIndex == 0;
+                } else {
+                    newIndexBefore = false;
+                }
+                if (newIndexBefore && !hitTestIndexBefore) {
+                    hitTestIndex = 0;
+                    selectIndexes[1] = Math.max(selectIndexes[anotherIndex] - 1, 0);
+                } else if (!newIndexBefore && hitTestIndexBefore) {
+                    hitTestIndex = 1;
+                    selectIndexes[0] = Math.min(selectIndexes[anotherIndex] + 1, pageCharPositions.positions.size() - 1);
+                }
+                selectIndexes[hitTestIndex] = newPosition;
+                pageView.drawCurPage(false);
+            }
+        }
+    }
+
+    private int binaryFindPositionInLine(@Size(2) int[] indexes, float x) {
+        if (pageCharPositions == null || pageCharPositions.positions.isEmpty()) {
+            return -1;
+        }
+        List<CharPosition> positions = pageCharPositions.positions;
+        for (int index : indexes) {
+            if (index < 0 || index >= positions.size()) {
+                return -1;
+            }
+        }
+
+        if (x <= positions.get(indexes[0]).x) {
+            return indexes[0];
+        }
+
+        if (x >= positions.get(indexes[1]).x) {
+            return indexes[1];
+        }
+
+        int low = indexes[0];
+        int high = indexes[1];
+        int mid;
+
+        while (low <= high) {
+            mid = (low + high) >> 1;
+            CharPosition midVal = positions.get(mid);
+            float midValLeft = midVal.x;
+            float midValRight = midValLeft + midVal.width;
+            if (x >= midValLeft && x < midValRight) {
+                return mid;
+            }
+
+            if (x < midValLeft) {
+                high = mid - 1;
+                continue;
+            }
+
+            low = mid + 1;
+        }
+
+        return -1;
+    }
+
+    private boolean binaryFindLineIndex(@Size(2) int[] indexes, float y) {
+        if (pageCharPositions == null || pageCharPositions.positions.isEmpty()) {
+            return false;
+        }
+
+        List<CharPosition> positions = pageCharPositions.positions;
+
+        if (y < positions.get(0).y) {
+            int i = 0;
+            indexes[0] = 0;
+            while (i < positions.size() && positions.get(i).line == 0) {
+                indexes[1] = i++;
+            }
+            return true;
+        }
+
+        CharPosition lastChar = positions.get(positions.size() - 1);
+        if (y >= lastChar.y) {
+            int i = positions.size() - 1;
+            indexes[1] = i;
+            while (i >= 0 && positions.get(i).line == lastChar.line) {
+                indexes[0] = i--;
+            }
+            return true;
+        }
+
+        int low = 0;
+        int high = positions.size() - 1;
+        int mid;
+
+        int index = -1;
+
+        while (low <= high) {
+            mid = (low + high) >> 1;
+            CharPosition midVal = positions.get(mid);
+            float midValTop = midVal.y;
+            float midValBottom = midValTop + midVal.height;
+            if (y >= midValTop && y < midValBottom) {
+                index = mid;
+                break;
+            }
+
+            if (y < midValTop) {
+                high = mid - 1;
+                continue;
+            }
+            low = mid + 1;
+        }
+
+        if (index == -1) {
+            return false;
+        }
+
+        int i = index;
+        int line = positions.get(index).line;
+        while (i >= 0 && positions.get(i).line == line) {
+            indexes[0] = i--;
+        }
+        i = index;
+        while (i < positions.size() && positions.get(i).line == line) {
+            indexes[1] = i++;
+        }
+
+
+        return true;
+    }
+
+    private int binaryFindCharacterAt(float x, float y) {
+        if (pageCharPositions == null) {
+            return -1;
+        }
+
+        List<CharPosition> positions = pageCharPositions.positions;
+
+        int low = 0;
+        int high = positions.size() - 1;
+        int mid;
+
+        while (low <= high) {
+            mid = (low + high) >> 1;
+            CharPosition midVal = positions.get(mid);
+            float midValLeft = midVal.x;
+            float midValTop = midVal.y;
+            float midValRight = midValLeft + midVal.width;
+            float midValBottom = midValTop + midVal.height;
+            if (x >= midValLeft && y >= midValTop && x <= midValRight && y <= midValBottom) {
+                return mid;
+            }
+
+            if (y < midValTop || (y <= midValBottom && x < midValLeft)) {
+                high = mid - 1;
+                continue;
+            }
+
+            low = mid + 1;
+        }
+
+        return -1;
+    }
+
+    boolean isSelectMode() {
+        return isSelectMode;
+    }
+
+    boolean enterSelectMode(float x, float y) {
+        if (isSelectMode) {
+            return false;
+        }
+
+        if (!measureTextIfNeeded()) {
+            return false;
+        }
+
+        int index = binaryFindCharacterAt(x, y);
+        if (index == -1) {
+            LogUtils.d(TAG, "没有找到在(" + x + ", " + y + ")的文字，跳过选择！");
+            return false;
+        }
+
+        CharPosition charPosition = pageCharPositions.positions.get(index);
+        LogUtils.d(TAG, "长按文字在第" + charPosition.line + "行第" + charPosition.charOffset + "列");
+        selectIndexes[0] = selectIndexes[1] = index;
+
+        DeviceUtilsKt.vibrate(50);
+        isSelectMode = true;
+        isDragTab = false;
+        pageView.drawCurPage(false);
+        LogUtils.d(TAG, "进入选择模式");
+        return true;
+    }
+
+    boolean exitSelectMode() {
+        if (!isSelectMode) {
+            return false;
+        }
+
+        isSelectMode = false;
+        pageView.drawCurPage(false);
+        LogUtils.d(TAG, "退出选择模式");
+        return true;
+    }
+
     private boolean measureTextIfNeeded() {
         if (curPage == null || curPage.lines == null || curChapterPos < 0 || curChapterPos >= chapterList.size() || curPageList == null || curPage.position < 0 || curPage.position >= curPageList.size()) {
             return false;
         }
 
-        if (pageCharPositions != null && pageCharPositions.isCurrentPagePosition(curChapterPos, curPage.position, contentWidth, contentHeight, indentString, contentTextSize, lineSpaceFactor, paraSpaceFactor)) {
-            return true;
-        }
+        if (currentPageMeasured()) return true;
 
         long start = SystemClock.elapsedRealtime();
         pageCharPositions = new PageCharPositions(curChapterPos, curPage.position, contentWidth, contentHeight, indentString, contentTextSize, lineSpaceFactor, paraSpaceFactor);
@@ -221,7 +570,7 @@ public abstract class PageLoader implements Handler.Callback {
         String line;
 
         //对标题进行测量
-        List<CharPosition> positions = pageCharPositions.getPositions();
+        List<CharPosition> positions = pageCharPositions.positions;
         for (int i = 0; i < curPage.titleLines; ++i) {
             line = curPage.lines.get(i);
 
@@ -234,7 +583,7 @@ public abstract class PageLoader implements Handler.Callback {
                     continue;
                 }
                 float textWidth = titlePaint.measureText(String.valueOf(c));
-                CharPosition charPosition = new CharPosition(currentLine, j, currentX, currentY, textWidth, titleLineHeight);
+                CharPosition charPosition = new CharPosition(currentLine, j, currentX, currentY, textWidth, titleInterval, titleLineHeight);
                 positions.add(charPosition);
                 currentX += textWidth;
             }
@@ -260,7 +609,7 @@ public abstract class PageLoader implements Handler.Callback {
                     continue;
                 }
                 float textWidth = contentTextPaint.measureText(String.valueOf(c));
-                CharPosition charPosition = new CharPosition(currentLine, j, currentX, currentY, textWidth, contentLineHeight);
+                CharPosition charPosition = new CharPosition(currentLine, j, currentX, currentY, textWidth, interval, contentLineHeight);
                 positions.add(charPosition);
                 currentX += textWidth;
                 if (j - 1 >= 0 && (c == '“' || c == '‘' || c == '”' || c == '’') && StringUtilsKt.isChinesePunctuation(line.charAt(j - 1))) {
@@ -269,9 +618,9 @@ public abstract class PageLoader implements Handler.Callback {
                     if (size > 1) {
                         CharPosition lastPosition = positions.get(size - 2);
                         float lastCharWidth = composedTextWidth - textWidth;
-                        float lastCharX = lastPosition.getX();
-                        lastPosition.setWidth(lastCharWidth);
-                        charPosition.setX(lastCharX + lastCharWidth);
+                        float lastCharX = lastPosition.x;
+                        lastPosition.width = lastCharWidth;
+                        charPosition.x = lastCharX + lastCharWidth;
                         currentX = lastCharX + composedTextWidth;
                     }
                 }
@@ -285,6 +634,10 @@ public abstract class PageLoader implements Handler.Callback {
         }
         LogUtils.d(TAG, "Measure PageCharPositions" + " costs " + (SystemClock.elapsedRealtime() - start) + "ms.");
         return true;
+    }
+
+    private boolean currentPageMeasured() {
+        return curPage != null && pageCharPositions != null && pageCharPositions.isCurrentPagePosition(curChapterPos, curPage.position, contentWidth, contentHeight, indentString, contentTextSize, lineSpaceFactor, paraSpaceFactor);
     }
 
     private Drawable getChargeDrawable() {
@@ -762,6 +1115,10 @@ public abstract class PageLoader implements Handler.Callback {
         // 设置当前颜色样式
         textColor = pageStyle.getFontColor();
         bgColor = pageStyle.getBgColor();
+        selectColor = ViewUtilsKt.getCenterColor(textColor, bgColor);
+        for (SelectTextTabDrawable selectTextTabDrawable : selectTextTabDrawables) {
+            selectTextTabDrawable.paint.setColor(selectColor);
+        }
 
         tipPaint.setColor(ViewUtilsKt.addColorAlpha(textColor, TIP_ALPHA));
         titlePaint.setColor(textColor);
@@ -1175,6 +1532,38 @@ public abstract class PageLoader implements Handler.Callback {
                     baseline += interval;
                 }
             }
+
+            if (isSelectMode && currentPageMeasured()) {
+                List<CharPosition> positions = pageCharPositions.positions;
+                if (selectIndexes[0] >= 0 && selectIndexes[0] < positions.size() && selectIndexes[1] >= 0 && selectIndexes[1] < positions.size()) {
+                    int startIndex = Math.min(selectIndexes[0], selectIndexes[1]);
+                    int endIndex = Math.max(selectIndexes[0], selectIndexes[1]);
+                    int color = contentTextPaint.getColor();
+                    contentTextPaint.setColor(selectColor);
+                    contentTextPaint.setAlpha((int) (0.3f * 0xff));
+                    LogUtils.d(TAG, "Start=" + startIndex + ", end=" + endIndex);
+                    for (int i = startIndex; i <= endIndex; i++) {
+                        CharPosition position = positions.get(i);
+                        canvas.drawRect(position.x, position.y, position.x + position.width, position.y + position.drawHeight, contentTextPaint);
+                    }
+                    contentTextPaint.setAlpha(0xff);
+
+
+                    CharPosition position0 = positions.get(selectIndexes[0]);
+                    boolean isPosition0Start = selectIndexes[0] == startIndex;
+                    float x0 = isPosition0Start ? position0.x : position0.x + position0.width;
+                    canvas.drawLine(x0, position0.y, x0, position0.y + position0.drawHeight, contentTextPaint);
+                    selectTextTabDrawables[0].setBounds((int) (x0 - halfTabSize), (int) (position0.y + position0.drawHeight), (int) (x0 + halfTabSize), (int) (position0.y + position0.drawHeight + halfTabSize + halfTabSize));
+                    selectTextTabDrawables[0].draw(canvas);
+                    CharPosition position1 = positions.get(selectIndexes[1]);
+                    float x1 = isPosition0Start ? position1.x + position1.width : position1.x;
+                    canvas.drawLine(x1, position1.y, x1, position1.y + position1.drawHeight, contentTextPaint);
+                    selectTextTabDrawables[1].setBounds((int) (x1 - halfTabSize), (int) (position1.y + position1.drawHeight), (int) (x1 + halfTabSize), (int) (position1.y + position1.drawHeight + halfTabSize + halfTabSize));
+                    selectTextTabDrawables[1].draw(canvas);
+
+                    contentTextPaint.setColor(color);
+                }
+            }
         }
     }
 
@@ -1183,8 +1572,8 @@ public abstract class PageLoader implements Handler.Callback {
         Paint.Style style = contentTextPaint.getStyle();
         contentTextPaint.setStyle(Paint.Style.STROKE);
         if (pageCharPositions != null) {
-            for (CharPosition position : pageCharPositions.getPositions()) {
-                canvas.drawRect(position.getX(), position.getY(), position.getX() + position.getWidth(), position.getY() + position.getHeight(), contentTextPaint);
+            for (CharPosition position : pageCharPositions.positions) {
+                canvas.drawRect(position.x, position.y, position.x + position.width, position.y + position.drawHeight, contentTextPaint);
             }
         }
         contentTextPaint.setStyle(style);
@@ -1782,6 +2171,8 @@ public abstract class PageLoader implements Handler.Callback {
          * @param chapters：返回章节目录
          */
         void onCategoryFinish(List<BookChapter> chapters);
+
+        void onCanOperateSelectTextChange(boolean canOperateSelectText);
 
         /**
          * 作用：章节页码数量改变之后的回调。==> 字体大小的调整，或者是否关闭虚拟按钮功能都会改变页面的数量。

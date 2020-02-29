@@ -57,6 +57,23 @@ public class PageView extends View {
         }
     };
 
+    private static final long LONG_PRESS_DELAY = ViewConfiguration.getLongPressTimeout();
+    private boolean isSelectModeWhenTouchDown = false;
+    private boolean isDragTab = false;
+    private boolean handledLongPressed = false;
+    private float pendingX;
+    private float pendingY;
+
+    private final Runnable longPressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!isMove && pageLoader != null && pageLoader.enterSelectMode(pendingX, pendingY)) {
+                handledLongPressed = true;
+                return;
+            }
+        }
+    };
+
     public PageView(Context context) {
         this(context, null);
     }
@@ -174,18 +191,49 @@ public class PageView extends View {
         int y = (int) event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_CANCEL:
+                if (pageLoader != null) {
+                    pageLoader.setCanOperateSelectTextAndNotify(pageLoader.isSelectMode());
+                    if (pageLoader.exitDrag()) {
+                        return true;
+                    }
+                }
                 if (isMove) {
                     pageAnim.handleTouchEvent(event);
                 }
+                removeCallbacks(longPressRunnable);
                 break;
             case MotionEvent.ACTION_DOWN:
                 startX = x;
                 startY = y;
+                pendingX = event.getX();
+                pendingY = event.getY();
                 isMove = false;
                 canTouch = mTouchListener == null || mTouchListener.canTouch();
                 pageAnim.handleTouchEvent(event);
+                handledLongPressed = false;
+                isSelectModeWhenTouchDown = pageLoader != null && pageLoader.isSelectMode();
+                if (isSelectModeWhenTouchDown && pageLoader.hitTestSelectTab(x, y)) {
+                    if (pageLoader != null) {
+                        pageLoader.setCanOperateSelectTextAndNotify(false);
+                    }
+                    return true;
+                }
+
+                if (pageLoader != null && !pageLoader.isSelectMode()) {
+                    postDelayed(longPressRunnable, LONG_PRESS_DELAY);
+                }
+                if (pageLoader != null) {
+                    pageLoader.setCanOperateSelectTextAndNotify(false);
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
+                if (pageLoader != null && pageLoader.isDragTab()) {
+                    pageLoader.onDragTab(event.getX(), event.getY());
+                    return true;
+                }
+                if (isSelectModeWhenTouchDown) {
+                    return true;
+                }
                 // 判断是否大于最小滑动值。
                 int slop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
                 if (!isMove) {
@@ -194,12 +242,33 @@ public class PageView extends View {
 
                 // 如果滑动了，则进行翻页。
                 if (isMove) {
+                    // 移除长按检测
+                    removeCallbacks(longPressRunnable);
                     pageAnim.handleTouchEvent(event);
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                if (pageLoader != null && pageLoader.exitDrag()) {
+                    pageLoader.setCanOperateSelectTextAndNotify(true);
+                    return true;
+                }
+
                 if (!isMove) {
-                    // 点击事件是最高优先级
+                    if (handledLongPressed && pageLoader != null && pageLoader.isSelectMode()) {
+                        pageLoader.setCanOperateSelectTextAndNotify(true);
+                        return true;
+                    }
+
+                    if (pageLoader != null && pageLoader.isSelectMode()) {
+                        pageLoader.setCanOperateSelectTextAndNotify(false);
+                    }
+
+                    if (!handledLongPressed && pageLoader != null && pageLoader.exitSelectMode()) {
+                        return true;
+                    }
+
+                    removeCallbacks(longPressRunnable);
+
                     if (mTouchListener != null && mTouchListener.handlePageViewClick()) {
                         return true;
                     }
@@ -217,7 +286,11 @@ public class PageView extends View {
                         }
                         return true;
                     }
+                } else {
+                    pageLoader.setCanOperateSelectTextAndNotify(false);
                 }
+
+                removeCallbacks(longPressRunnable);
                 pageAnim.handleTouchEvent(event);
                 break;
         }
@@ -297,6 +370,7 @@ public class PageView extends View {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        removeCallbacks(longPressRunnable);
         pageAnim.abortAnim();
         pageAnim.clear();
 

@@ -17,6 +17,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.view.View.*
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
@@ -55,7 +56,7 @@ import com.lyc.easyreader.bookshelf.utils.millisToString
 /**
  * Created by Liu Yuchuan on 2020/1/30.
  */
-class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListener,
+class ReaderActivity : BaseActivity(), PageView.TouchListener, OnClickListener,
     PageLoader.OnPageChangeListener {
     companion object {
         private const val KEY_BOOK_FILE = "KEY_BOOK_FILE"
@@ -88,6 +89,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         private val VIEW_ID_BTN_BOOK_MARK = generateNewViewId()
         private val VIEW_ID_BTN_NIGHT_MODE = generateNewViewId()
         private val VIEW_ID_BTN_SETTINGS = generateNewViewId()
+        private val VIEW_ID_COPY_SELECT = generateNewViewId()
     }
 
     private lateinit var viewModel: ReaderViewModel
@@ -99,6 +101,9 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     // left -> top -> right -> bottom
     private val marginExtra = IntArray(4)
     private var isResume = false
+    private var copySelectView: View? = null
+    private var selectViewWidth = 0
+    private var selectViewHeight = 0
 
     private val bottomInAnim by lazy {
         TranslateAnimation(
@@ -191,6 +196,29 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
 
         contentView = FrameLayout(this)
         rootView.addView(contentView)
+
+        copySelectView = TextView(this@ReaderActivity).apply {
+            text = "复制"
+            setPadding(dp2px(8), dp2px(4), dp2px(8), dp2px(4))
+            textSizeInDp = 16f
+            background = buildCommonButtonBg(Color.BLACK)
+            setTextColor(
+                if (NightModeManager.nightModeEnable) blendColor(
+                    Color.WHITE,
+                    NightModeManager.NIGHT_MODE_MASK_COLOR
+                ) else Color.WHITE
+            )
+            id = VIEW_ID_COPY_SELECT
+            setOnClickListener(this@ReaderActivity)
+            contentView.addView(this, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+            isVisible = false
+            measure(
+                MeasureSpec.makeMeasureSpec((1 shl 30) - 1, MeasureSpec.AT_MOST),
+                MeasureSpec.makeMeasureSpec((1 shl 30) - 1, MeasureSpec.AT_MOST)
+            )
+            selectViewWidth = measuredWidth
+            selectViewHeight = measuredHeight
+        }
 
         val page = PageView(this).apply {
             setTouchListener(this@ReaderActivity)
@@ -692,8 +720,8 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             exitFullscreen()
         }
         window.decorView.clearSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION,
-            View.SYSTEM_UI_FLAG_IMMERSIVE
+            SYSTEM_UI_FLAG_HIDE_NAVIGATION,
+            SYSTEM_UI_FLAG_IMMERSIVE
         )
         autoFitPageViewMargin(fullscreen)
         applyStatusBarColorChange()
@@ -879,6 +907,18 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
                 BookMarkDialog().showOneTag(supportFragmentManager)
             }
 
+            VIEW_ID_COPY_SELECT -> {
+                val string = pageLoader?.selectedTextAndExitSelectMode
+                if (string == null) {
+                    LogUtils.w(TAG, "Select nothing")
+                } else {
+                    copyPlainText(string) {
+                        ReaderToast.showToast("已复制到剪贴板")
+                        LogUtils.d(TAG, "Copy text=$string")
+                    }
+                }
+            }
+
             SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> {
                 viewModel.showMenu.changeState(false)
                 val pageStyle = ReaderSettings.currentPageStyle
@@ -960,6 +1000,53 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
     }
 
     override fun onCategoryFinish(chapters: MutableList<BookChapter>?) {
+    }
+
+    override fun onCanOperateSelectTextChange(canOperateSelectText: Boolean) {
+        if (!canOperateSelectText) {
+            copySelectView?.isVisible = false
+        } else {
+            val pos = floatArrayOf(-1f, -1f, -1f, -1f, -1f, -1f, -1f, -1f)
+            pageLoader?.getSelectPositions(pos)
+            if (pos.all { it > 0 }) {
+                copySelectView?.isVisible = true
+                copySelectView?.bringToFront()
+                var xOffset = 0f
+                var yOffset: Float
+                var findPosition = false
+                if ((pos[1] - selectViewHeight - dp2pxf(6f)).also { yOffset = it } > 0) {
+                    // 可以显示在前面选择tab的上面
+                    // 在上面找一个合适的位置
+                    findPosition = true
+                    xOffset = if (pos[0] + selectViewWidth < contentView.width) {
+                        pos[0]
+                    } else {
+                        (contentView.width - selectViewWidth).toFloat()
+                    }
+                }
+
+                if (!findPosition && (pos[7] + dp2pxf(24f) + selectViewHeight).also {
+                        yOffset = it - selectViewHeight
+                    } < contentView.height) {
+                    // 可以显示在后面选择tab的下面
+                    // 在上面找一个合适的位置
+                    findPosition = true
+                    xOffset = if (pos[4] + selectViewWidth < contentView.width) {
+                        pos[4]
+                    } else {
+                        (contentView.width - selectViewWidth).toFloat()
+                    }
+                }
+
+                if (!findPosition) {
+                    // 还没找到位置就直接居中了...
+                    yOffset = (pos[5] + pos[1]) * 0.5f
+                    xOffset = (contentView.width - selectViewWidth) * 0.5f
+                }
+                copySelectView?.translationX = xOffset
+                copySelectView?.translationY = yOffset
+            }
+        }
     }
 
     override fun onChapterChange(pos: Int) {
