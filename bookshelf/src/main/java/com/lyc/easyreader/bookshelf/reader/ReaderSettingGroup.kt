@@ -31,6 +31,7 @@ object ReaderSettingGroup : ISettingGroup {
     override fun createSettingViews(): List<View> {
         val clearReadHistorySettingView = TextSettingItemView("清除阅读历史", "清除所有书架书籍的阅读记录")
         val otherReaderSettingView = TextSettingItemView("其他阅读设置", "部分阅读设置需要在阅读界面设置")
+        otherReaderSettingView.drawDivider = false
 
         otherReaderSettingView.setOnClickListener {
             ReaderApplication.openActivity(ReaderSettingsActivity::class)
@@ -63,5 +64,5 @@ object ReaderSettingGroup : ISettingGroup {
 
     }
 
-    override fun priority() = 1
+    override fun priority() = 10
 }

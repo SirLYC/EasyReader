@@ -180,7 +180,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
         }
 
         val desc = bookChapterList[chapter].title
-        bookFileLiveData.value?.let {
+        bookFileLiveData.value?.let { bookFile ->
             val record = bookReadRecord?.apply {
                 this.chapter = chapter
                 this.page = page
@@ -188,13 +188,13 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
                 this.offsetEnd = charOffsets[1]
                 this.desc = desc
             } ?: BookReadRecord(
-                it.id,
+                bookFile.id,
                 chapter,
                 charOffsets[0],
                 charOffsets[1],
                 page,
                 desc
-            )
+            ).also { this.bookReadRecord = it }
             BookShelfOpenHelper.instance.asyncUpdateBookReadRecord(record)
         }
     }

@@ -67,7 +67,7 @@ object ScanSettingGroup : ISettingGroup {
             activity?.let { activity ->
                 ScanSettings.enableFilter.observe(activity, Observer {
                     switch.isChecked = it
-                    drawDivider = !it
+                    drawDivider = it
                 })
             }
         }

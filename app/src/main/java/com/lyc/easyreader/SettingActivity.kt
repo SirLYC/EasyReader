@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Observer
 import com.lyc.easyreader.api.settings.ISettingGroup
@@ -42,6 +43,8 @@ class SettingActivity : BaseActivity(), View.OnClickListener {
     }
 
     private var settingsContainer: ViewGroup? = null
+    private var attachExperimentalViews = false
+    private val experimentalSettingViews = mutableListOf<View>()
 
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
         super.afterBaseOnCreate(savedInstanceState, rootView)
@@ -107,6 +110,26 @@ class SettingActivity : BaseActivity(), View.OnClickListener {
                 }
             }
         }
+
+        ExperimentalSettings.show.observe(this, Observer { show ->
+            if (show) {
+                if (!attachExperimentalViews) {
+                    attachExperimentalViews = true
+                    ExperimentalSettings.attach(this)
+                    val list = ExperimentalSettings.createSettingViews()
+                    if (list.isNotEmpty()) {
+                        settingsContainer.addView(SettingGroupView(ExperimentalSettings.getGroupTitle()).also {
+                            experimentalSettingViews.add(it)
+                        })
+                        list.forEach { settingView ->
+                            experimentalSettingViews.add(settingView)
+                            settingsContainer.addView(settingView)
+                        }
+                    }
+                }
+            }
+            experimentalSettingViews.forEach { it.isVisible = show }
+        })
     }
 
     override fun onResume() {
@@ -118,6 +141,12 @@ class SettingActivity : BaseActivity(), View.OnClickListener {
         settingGroups.forEach {
             it.detach(this)
             it.destroy()
+        }
+        if (attachExperimentalViews) {
+            ExperimentalSettings.settings.forEach {
+                it.detach(this)
+                it.destroy()
+            }
         }
         // 防止内存泄露
         this.settingsContainer?.removeAllViews()

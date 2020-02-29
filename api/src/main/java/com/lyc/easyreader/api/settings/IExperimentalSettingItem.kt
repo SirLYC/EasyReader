@@ -5,20 +5,17 @@ import com.lyc.appinject.annotations.InjectApi
 import com.lyc.easyreader.base.ui.BaseActivity
 
 /**
- * Created by Liu Yuchuan on 2020/2/14.
+ * Created by Liu Yuchuan on 2020/2/29.
  */
 @InjectApi(oneToMany = true)
-interface ISettingGroup {
-
+interface IExperimentalSettingItem {
     fun attach(activity: BaseActivity)
 
-    fun getGroupTitle(): String
-
-    fun createSettingViews(): List<View>
+    fun createSettingItemView(): View
 
     fun detach(activity: BaseActivity)
 
     fun destroy()
 
-    fun priority() = 1
+    fun priority() = 0
 }

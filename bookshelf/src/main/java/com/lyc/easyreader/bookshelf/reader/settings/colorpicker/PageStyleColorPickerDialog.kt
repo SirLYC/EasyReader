@@ -62,13 +62,13 @@ class PageStyleColorPickerDialog : BaseBottomSheet() {
         colorPickerView.setCurrentColorHSV(target)
         huePickerView.currentHue = target[0]
         rootView.rg.setOnCheckedChangeListener { _, checkedId ->
-            val target = if (checkedId == R.id.rbtn_bg) {
+            val targetColor = if (checkedId == R.id.rbtn_bg) {
                 colorBgHSV
             } else {
                 colorFontHSV
             }
-            colorPickerView.setCurrentColorHSV(target)
-            huePickerView.currentHue = target[0]
+            colorPickerView.setCurrentColorHSV(targetColor)
+            huePickerView.currentHue = targetColor[0]
         }
         return rootView
     }

@@ -7,10 +7,8 @@ enum class LineSpaceFactor(
     val factor: Float,
     val displayName: String
 ) {
-    NONE(0f, "无"),
-    VERY_SMALL(0.1f, "小"),
-    SMALL(0.3f, "较小"),
-    MEDIUM(0.5f, "适中"),
-    LARGE(1f, "较大"),
-    VERY_LARGE(1.5f, "大")
+    SMALL(0f, "小"),
+    MEDIUM(0.25f, "适中"),
+    LARGE(0.6f, "大"),
+    VERY_LARGE(1f, "非常大")
 }

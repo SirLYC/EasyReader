@@ -516,9 +516,14 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
             LinearLayout.LayoutParams(MATCH_PARENT, topBar.getViewHeight())
         )
 
-        ReaderTimeManager.readTimeThisSession.observe(this, Observer {
-            LogUtils.d(TAG, "本次阅读时间更新：${it.millisToString()}")
-        })
+        // Kotlin SAM-Lambda optimization
+        try {
+            ReaderTimeManager.readTimeThisSession.observe(this, Observer {
+                LogUtils.d(TAG, "本次阅读时间更新：${it.millisToString()}")
+            })
+        } catch (e: Exception) {
+            // ignore
+        }
 
         ReaderTimeManager.readTimeTodayLiveData.observe(this, Observer {
             topBar.setTitle("今日已读：${it.millisToString()}")
@@ -641,6 +646,11 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, View.OnClickListe
         NightModeManager.nightMode.observe(this, Observer {
             pageLoader?.setNightMode(it)
             applyStatusBarColorChange()
+        })
+
+        // ---------------------------- 实验设置 ---------------------------- //
+        settings.drawTextBound.observe(this, Observer {
+            pageLoader?.setDrawTextBound(it)
         })
     }
 

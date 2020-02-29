@@ -111,4 +111,9 @@ class ReaderSettings private constructor() : ISettings {
             it.applyDefaultValue()
         }
     }
+
+
+    // -------------------------------------------- 实验设置 -------------------------------------------- //
+    val drawTextBound =
+        BooleanPrefValue("draw_text_bound", false, preference).also { settingItems.add(it) }
 }

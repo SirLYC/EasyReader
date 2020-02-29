@@ -8,7 +8,9 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.text.TextPaint;
 import android.text.TextUtils;
 
@@ -67,7 +69,7 @@ public abstract class PageLoader implements Handler.Callback {
     private float widgetMaxHeight;
 
     // 当前章节列表
-    private final List<BookChapter> mChapterList;
+    private final List<BookChapter> chapterList;
     // 书本对象
     protected BookFile bookFile;
     // 监听器
@@ -169,12 +171,17 @@ public abstract class PageLoader implements Handler.Callback {
     private int batteryLevel;
     private Drawable chargeDrawable;
 
+    private final Paint.FontMetrics finalFontMetrics = new Paint.FontMetrics();
+    private PageCharPositions pageCharPositions;
+
     private Handler handler = new Handler(this);
+
+    private boolean drawTextBound;
 
     PageLoader(PageView pageView, BookFile bookFile) {
         this.pageView = pageView;
         this.bookFile = bookFile;
-        mChapterList = new ArrayList<>(1);
+        chapterList = new ArrayList<>(1);
 
         setIndent(2, true);
         lineSpaceFactor = 0.5f;
@@ -184,6 +191,100 @@ public abstract class PageLoader implements Handler.Callback {
         // 初始化画笔
         initPaint();
         mLastChapterPos = curChapterPos;
+    }
+
+    private boolean measureTextIfNeeded() {
+        if (curPage == null || curPage.lines == null || curChapterPos < 0 || curChapterPos >= chapterList.size() || curPageList == null || curPage.position < 0 || curPage.position >= curPageList.size()) {
+            return false;
+        }
+
+        if (pageCharPositions != null && pageCharPositions.isCurrentPagePosition(curChapterPos, curPage.position, contentWidth, contentHeight, indentString, contentTextSize, lineSpaceFactor, paraSpaceFactor)) {
+            return true;
+        }
+
+        long start = SystemClock.elapsedRealtime();
+        pageCharPositions = new PageCharPositions(curChapterPos, curPage.position, contentWidth, contentHeight, indentString, contentTextSize, lineSpaceFactor, paraSpaceFactor);
+        int currentLine = 0;
+        contentTextPaint.getFontMetrics(finalFontMetrics);
+        float contentLineHeight = finalFontMetrics.bottom - finalFontMetrics.top;
+        titlePaint.getFontMetrics(finalFontMetrics);
+        float titleLineHeight = finalFontMetrics.bottom - finalFontMetrics.top;
+
+        //设置总距离
+        float interval = mTextInterval + contentLineHeight;
+        float para = mTextPara + contentLineHeight;
+        float titleInterval = mTitleInterval + titleLineHeight;
+        float titlePara = mTitlePara + titleLineHeight;
+
+        float currentY = marginTop;
+        float currentX;
+        String line;
+
+        //对标题进行测量
+        List<CharPosition> positions = pageCharPositions.getPositions();
+        for (int i = 0; i < curPage.titleLines; ++i) {
+            line = curPage.lines.get(i);
+
+            //计算文字显示的起始点
+            currentX = (viewWidth - titlePaint.measureText(line)) / 2;
+            int len = line.length();
+            for (int j = 0; j < len; j++) {
+                char c = line.charAt(j);
+                if (c == '\n') {
+                    continue;
+                }
+                float textWidth = titlePaint.measureText(String.valueOf(c));
+                CharPosition charPosition = new CharPosition(currentLine, j, currentX, currentY, textWidth, titleLineHeight);
+                positions.add(charPosition);
+                currentX += textWidth;
+            }
+
+            //设置尾部间距
+            if (i == curPage.titleLines - 1) {
+                currentY += titlePara;
+            } else {
+                //行间距
+                currentY += titleInterval;
+            }
+            currentLine++;
+        }
+
+        //对内容进行测量
+        for (int i = curPage.titleLines; i < curPage.lines.size(); ++i) {
+            line = curPage.lines.get(i);
+            currentX = marginLeft;
+            int len = line.length();
+            for (int j = 0; j < len; j++) {
+                char c = line.charAt(j);
+                if (c == '\n') {
+                    continue;
+                }
+                float textWidth = contentTextPaint.measureText(String.valueOf(c));
+                CharPosition charPosition = new CharPosition(currentLine, j, currentX, currentY, textWidth, contentLineHeight);
+                positions.add(charPosition);
+                currentX += textWidth;
+                if (j - 1 >= 0 && (c == '“' || c == '‘' || c == '”' || c == '’') && StringUtilsKt.isChinesePunctuation(line.charAt(j - 1))) {
+                    float composedTextWidth = contentTextPaint.measureText(line.substring(j - 1, j + 1));
+                    int size = positions.size();
+                    if (size > 1) {
+                        CharPosition lastPosition = positions.get(size - 2);
+                        float lastCharWidth = composedTextWidth - textWidth;
+                        float lastCharX = lastPosition.getX();
+                        lastPosition.setWidth(lastCharWidth);
+                        charPosition.setX(lastCharX + lastCharWidth);
+                        currentX = lastCharX + composedTextWidth;
+                    }
+                }
+            }
+            if (line.endsWith("\n")) {
+                currentY += para;
+            } else {
+                currentY += interval;
+            }
+            currentLine++;
+        }
+        LogUtils.d(TAG, "Measure PageCharPositions" + " costs " + (SystemClock.elapsedRealtime() - start) + "ms.");
+        return true;
     }
 
     private Drawable getChargeDrawable() {
@@ -214,7 +315,8 @@ public abstract class PageLoader implements Handler.Callback {
         tipPaint.setColor(ViewUtilsKt.addColorAlpha(textColor, TIP_ALPHA));
         tipPaint.setTextAlign(Paint.Align.LEFT); // 绘制的起始点
         tipPaint.setTextSize(tipTextSize); // Tip默认的字体大小
-        Paint.FontMetrics fontMetrics = tipPaint.getFontMetrics();
+        Paint.FontMetrics fontMetrics = finalFontMetrics;
+        tipPaint.getFontMetrics(fontMetrics);
         widgetMaxHeight = fontMetrics.bottom - fontMetrics.top;
 
         // 绘制页面内容的画笔
@@ -235,9 +337,9 @@ public abstract class PageLoader implements Handler.Callback {
     }
 
     public void setChapterList(List<BookChapter> chapterList) {
-        mChapterList.clear();
-        mChapterList.addAll(chapterList);
-        if (!mChapterList.isEmpty()) {
+        this.chapterList.clear();
+        this.chapterList.addAll(chapterList);
+        if (!this.chapterList.isEmpty()) {
             isChapterListPrepare = true;
             openChapter();
         } else {
@@ -690,6 +792,13 @@ public abstract class PageLoader implements Handler.Callback {
         pageView.drawCurPage(false);
     }
 
+    public void setDrawTextBound(boolean drawTextBound) {
+        if (this.drawTextBound != drawTextBound) {
+            this.drawTextBound = drawTextBound;
+            pageView.drawCurPage(true);
+        }
+    }
+
     /**
      * 设置页面切换监听
      */
@@ -698,7 +807,7 @@ public abstract class PageLoader implements Handler.Callback {
 
         // 如果目录加载完之后才设置监听器，那么会默认回调
         if (isChapterListPrepare) {
-            mPageChangeListener.onCategoryFinish(mChapterList);
+            mPageChangeListener.onCategoryFinish(chapterList);
         }
     }
 
@@ -714,7 +823,7 @@ public abstract class PageLoader implements Handler.Callback {
     }
 
     public List<BookChapter> getChapterCategory() {
-        return mChapterList;
+        return chapterList;
     }
 
     /**
@@ -752,7 +861,7 @@ public abstract class PageLoader implements Handler.Callback {
         }
 
         // 如果获取到的章节目录为空
-        if (mChapterList.isEmpty()) {
+        if (chapterList.isEmpty()) {
             status = STATUS_CATEGORY_EMPTY;
             pageView.drawCurPage(false);
             return;
@@ -811,7 +920,7 @@ public abstract class PageLoader implements Handler.Callback {
      */
     private List<BookPage> loadPageList(int chapterPos) throws Exception {
         // 获取章节
-        BookChapter chapter = mChapterList.get(chapterPos);
+        BookChapter chapter = chapterList.get(chapterPos);
         // 判断章节是否存在
         if (!hasChapterData(chapter)) {
             return null;
@@ -864,7 +973,8 @@ public abstract class PageLoader implements Handler.Callback {
         float outFrameWidth = outFrameHeight * 2f;
 
         float polarRight = viewWidth - marginRight;
-        Paint.FontMetrics fm = tipPaint.getFontMetrics();
+        Paint.FontMetrics fm = finalFontMetrics;
+        tipPaint.getFontMetrics(fm);
         float textHeight = fm.descent - fm.ascent;
         float textCenter = drawBottom - textHeight * 0.5f;
         float outFrameBottom = textCenter + outFrameHeight * 0.5f;
@@ -922,7 +1032,8 @@ public abstract class PageLoader implements Handler.Callback {
 
         // 绘制当前时间
         //底部的字显示的位置Y
-        float y = viewHeight - tipPaint.getFontMetrics().bottom - WIDGET_MARGIN_BOTTOM;
+        tipPaint.getFontMetrics(finalFontMetrics);
+        float y = viewHeight - finalFontMetrics.bottom - WIDGET_MARGIN_BOTTOM;
         String time = StringUtilsKt.formatReaderTime(System.currentTimeMillis());
         float x = batteryFrameRect.left - tipPaint.measureText(time) - MARGIN_CHARGE_TIME;
         lastTimeTextX = x;
@@ -931,10 +1042,11 @@ public abstract class PageLoader implements Handler.Callback {
 
         if (!isUpdate) {
 
-            if (!mChapterList.isEmpty()) {
+            if (!chapterList.isEmpty()) {
                 // 绘制页码
                 // 底部的字显示的位置Y
-                y = viewHeight - tipPaint.getFontMetrics().bottom - WIDGET_MARGIN_BOTTOM;
+                tipPaint.getFontMetrics(finalFontMetrics);
+                y = viewHeight - finalFontMetrics.bottom - WIDGET_MARGIN_BOTTOM;
                 float leftDis = 0f;
                 // 只有finish的时候采用页码
                 if (status == STATUS_FINISH) {
@@ -946,7 +1058,7 @@ public abstract class PageLoader implements Handler.Callback {
                 String pendingTitle = null;
                 if (status != STATUS_FINISH) {
                     if (isChapterListPrepare) {
-                        pendingTitle = mChapterList.get(curChapterPos).getTitle();
+                        pendingTitle = chapterList.get(curChapterPos).getTitle();
                     }
                 } else {
                     pendingTitle = curPage.title;
@@ -1000,42 +1112,54 @@ public abstract class PageLoader implements Handler.Callback {
             }
 
             //将提示语句放到正中间
-            Paint.FontMetrics fontMetrics = contentTextPaint.getFontMetrics();
+            Paint.FontMetrics fontMetrics = finalFontMetrics;
+            contentTextPaint.getFontMetrics(finalFontMetrics);
             float textHeight = fontMetrics.top - fontMetrics.bottom;
             float textWidth = contentTextPaint.measureText(tip);
             float pivotX = (viewWidth - textWidth) / 2;
             float pivotY = (viewHeight - textHeight) / 2;
             canvas.drawText(tip, pivotX, pivotY, contentTextPaint);
         } else {
-            float top = marginTop - contentTextPaint.getFontMetrics().top;
+            if (drawTextBound) {
+                drawTextBound(canvas);
+            }
+
+            contentTextPaint.getFontMetrics(finalFontMetrics);
+            float contentFirstBaseline = marginTop - finalFontMetrics.top;
+            float contentLineHeight = finalFontMetrics.bottom - finalFontMetrics.top;
+            titlePaint.getFontMetrics(finalFontMetrics);
+            float titleLineHeight = finalFontMetrics.bottom - finalFontMetrics.top;
+            float titleFirstBaseline = marginTop - finalFontMetrics.top;
 
             //设置总距离
-            int interval = mTextInterval + (int) contentTextPaint.getTextSize();
-            int para = mTextPara + (int) contentTextPaint.getTextSize();
-            int titleInterval = mTitleInterval + (int) titlePaint.getTextSize();
-            int titlePara = mTitlePara + (int) contentTextPaint.getTextSize();
+            float interval = mTextInterval + contentLineHeight;
+            float para = mTextPara + contentLineHeight;
+            float titleInterval = mTitleInterval + titleLineHeight;
+            // 这里计算加的是内容的行高，因为计算的是baseline，是根据下一行的高度决定的
+            float titlePara = mTitlePara + contentLineHeight;
             String str;
 
+            float baseline = contentFirstBaseline;
             //对标题进行绘制
             for (int i = 0; i < curPage.titleLines; ++i) {
                 str = curPage.lines.get(i);
 
                 //设置顶部间距
                 if (i == 0) {
-                    top += mTitlePara;
+                    baseline = titleFirstBaseline;
                 }
 
                 //计算文字显示的起始点
                 int start = (int) (viewWidth - titlePaint.measureText(str)) / 2;
                 //进行绘制
-                canvas.drawText(str, start, top, titlePaint);
+                canvas.drawText(str, start, baseline, titlePaint);
 
                 //设置尾部间距
                 if (i == curPage.titleLines - 1) {
-                    top += titlePara;
+                    baseline += titlePara;
                 } else {
                     //行间距
-                    top += titleInterval;
+                    baseline += titleInterval;
                 }
             }
 
@@ -1043,14 +1167,27 @@ public abstract class PageLoader implements Handler.Callback {
             for (int i = curPage.titleLines; i < curPage.lines.size(); ++i) {
                 str = curPage.lines.get(i);
 
-                canvas.drawText(str, marginLeft, top, contentTextPaint);
+                canvas.drawText(str, marginLeft, baseline, contentTextPaint);
+                contentTextPaint.getFontMetrics(finalFontMetrics);
                 if (str.endsWith("\n")) {
-                    top += para;
+                    baseline += para;
                 } else {
-                    top += interval;
+                    baseline += interval;
                 }
             }
         }
+    }
+
+    private void drawTextBound(Canvas canvas) {
+        measureTextIfNeeded();
+        Paint.Style style = contentTextPaint.getStyle();
+        contentTextPaint.setStyle(Paint.Style.STROKE);
+        if (pageCharPositions != null) {
+            for (CharPosition position : pageCharPositions.getPositions()) {
+                canvas.drawRect(position.getX(), position.getY(), position.getX() + position.getWidth(), position.getY() + position.getHeight(), contentTextPaint);
+            }
+        }
+        contentTextPaint.setStyle(style);
     }
 
     void prepareDisplay(int w, int h) {
@@ -1190,7 +1327,7 @@ public abstract class PageLoader implements Handler.Callback {
 
     private boolean hasNextChapter() {
         // 判断是否到达目录最后一章
-        return curChapterPos + 1 < mChapterList.size();
+        return curChapterPos + 1 < chapterList.size();
     }
 
     private boolean parseCurChapter() {
@@ -1272,7 +1409,7 @@ public abstract class PageLoader implements Handler.Callback {
         final int nextChapter = curChapterPos + 1;
 
         // 如果不存在下一章，且下一章没有数据，则不进行加载。
-        if (!hasNextChapter() || !hasChapterData(mChapterList.get(nextChapter))) {
+        if (!hasNextChapter() || !hasChapterData(chapterList.get(nextChapter))) {
             return;
         }
 
@@ -1308,7 +1445,7 @@ public abstract class PageLoader implements Handler.Callback {
         final int preChapter = curChapterPos - 1;
 
         // 如果不存在下一章，且下一章没有数据，则不进行加载。
-        if (!hasPrevChapter() || !hasChapterData(mChapterList.get(preChapter))) {
+        if (!hasPrevChapter() || !hasChapterData(chapterList.get(preChapter))) {
             return;
         }
 
@@ -1414,6 +1551,11 @@ public abstract class PageLoader implements Handler.Callback {
      * @param br：章节的文本流
      */
     private List<BookPage> loadPages(BookChapter chapter, BufferedReader br) {
+        Paint.FontMetrics finalFontMetrics = Looper.getMainLooper() == Looper.myLooper() ? this.finalFontMetrics : new Paint.FontMetrics();
+        tipPaint.getFontMetrics(finalFontMetrics);
+        float titleLineTextHeight = finalFontMetrics.bottom - finalFontMetrics.top;
+        contentTextPaint.getFontMetrics(finalFontMetrics);
+        float contentLineTextHeight = finalFontMetrics.bottom - finalFontMetrics.top;
         //生成的页面
         List<BookPage> pages = new ArrayList<>();
         //使用流的方式加载
@@ -1434,14 +1576,15 @@ public abstract class PageLoader implements Handler.Callback {
                     //设置 title 的顶部间距
                     rHeight -= mTitlePara;
                 }
+//                paragraph = paragraph.replaceAll("“", StringUtilsKt.fullToHalf("\"")).replaceAll("”", StringUtilsKt.fullToHalf("\""));
                 int wordCount;
                 String subStr;
                 while (paragraph.length() > 0) {
                     //当前空间，是否容得下一行文字
                     if (showTitle) {
-                        rHeight -= titlePaint.getTextSize();
+                        rHeight -= titleLineTextHeight;
                     } else {
-                        rHeight -= contentTextPaint.getTextSize();
+                        rHeight -= contentLineTextHeight;
                     }
                     // 一页已经填充满了，创建 TextPage
                     if (rHeight <= 0) {

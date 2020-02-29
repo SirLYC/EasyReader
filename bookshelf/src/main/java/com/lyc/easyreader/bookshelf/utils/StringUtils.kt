@@ -34,6 +34,11 @@ fun halfToFull(input: String): String {
     return String(c)
 }
 
+fun isChinesePunctuation(c: Char): Boolean {
+    val ub = Character.UnicodeBlock.of(c)
+    return ub === Character.UnicodeBlock.GENERAL_PUNCTUATION || ub === Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION || ub === Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS || ub === Character.UnicodeBlock.CJK_COMPATIBILITY_FORMS || ub === Character.UnicodeBlock.VERTICAL_FORMS
+}
+
 private val readerTimeFormatThreadLocal = ThreadLocal<SimpleDateFormat>()
 
 fun Long.formatReaderTime(): String {

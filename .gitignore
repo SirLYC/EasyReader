@@ -12,7 +12,6 @@
 /captures
 .externalNativeBuild
 .cxx
-gradle
 gradlew*
 .idea
 repo
