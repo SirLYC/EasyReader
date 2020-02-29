@@ -17,7 +17,6 @@ import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.ui.BaseDialogFragment
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.utils.deviceWidth
-import kotlinx.android.synthetic.main.layout_rename_dialog.*
 import kotlinx.android.synthetic.main.layout_rename_dialog.view.*
 import kotlin.math.max
 
@@ -93,12 +92,12 @@ class RenameDialog : BaseDialogFragment(), View.OnClickListener, TextWatcher,
         val text = editText?.text?.toString()?.replace("[\\t\\n\\r]".toRegex(), "")
             ?.replace("\\s+".toRegex(), " ")
         if (text == null || text.isBlank()) {
-            til?.error = "输入不能为空"
+            editLayout?.error = "输入不能为空"
             return false
         }
 
         if (text.length > 30) {
-            til?.error = "最长30个字符"
+            editLayout?.error = "最长30个字符"
             return false
         }
 
@@ -119,7 +118,7 @@ class RenameDialog : BaseDialogFragment(), View.OnClickListener, TextWatcher,
     }
 
     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-        til?.error = null
+        editLayout?.error = null
     }
 
     override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {

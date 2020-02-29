@@ -13,7 +13,7 @@ import android.widget.FrameLayout
 import com.lyc.easyreader.base.ui.BaseDialogFragment
 import com.lyc.easyreader.base.utils.deviceWidth
 import com.lyc.easyreader.bookshelf.scan.ScanSettings
-import kotlinx.android.synthetic.main.layout_rename_dialog.view.*
+import kotlinx.android.synthetic.main.layout_edit_filter_dialog.view.*
 import kotlin.math.max
 
 /**
@@ -28,7 +28,7 @@ class ScanFilterEditDialog : BaseDialogFragment(), View.OnClickListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.layout_rename_dialog, container, false)
+        val view = inflater.inflate(R.layout.layout_edit_filter_dialog, container, false)
         view.btn_ok.setOnClickListener(this)
         view.btn_cancel.setOnClickListener(this)
         editText = view.et
