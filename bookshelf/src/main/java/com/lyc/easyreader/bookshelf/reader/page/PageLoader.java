@@ -1541,7 +1541,6 @@ public abstract class PageLoader implements Handler.Callback {
                     int color = contentTextPaint.getColor();
                     contentTextPaint.setColor(selectColor);
                     contentTextPaint.setAlpha((int) (0.3f * 0xff));
-                    LogUtils.d(TAG, "Start=" + startIndex + ", end=" + endIndex);
                     for (int i = startIndex; i <= endIndex; i++) {
                         CharPosition position = positions.get(i);
                         canvas.drawRect(position.x, position.y, position.x + position.width, position.y + position.drawHeight, contentTextPaint);
