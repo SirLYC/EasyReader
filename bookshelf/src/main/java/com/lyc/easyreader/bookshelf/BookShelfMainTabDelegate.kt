@@ -11,7 +11,7 @@ import com.lyc.easyreader.api.main.IMainTabDelegate
  * Created by Liu Yuchuan on 2020/1/20.
  */
 @InjectApiImpl(api = IMainTabDelegate::class, createMethod = CreateMethod.GET_INSTANCE)
-class BookShelfMainTabDelegate : AbstractMainTabDelegate<BookShelfFragment>(), IMainTabDelegate {
+class BookShelfMainTabDelegate : AbstractMainTabDelegate<BookShelfFragment>() {
     companion object {
         @JvmStatic
         val instance by lazy { BookShelfMainTabDelegate() }
