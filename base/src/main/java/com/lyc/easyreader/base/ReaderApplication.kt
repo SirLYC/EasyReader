@@ -7,6 +7,8 @@ import android.content.Intent
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.view.ContextThemeWrapper
+import com.lyc.appinject.AppInject
+import com.lyc.appinject.ILogger
 import com.lyc.easyreader.base.app.IApplicationOnCreateListener
 import com.lyc.easyreader.base.utils.LogUtils
 import kotlin.reflect.KClass
@@ -14,7 +16,7 @@ import kotlin.reflect.KClass
 /**
  * Created by Liu Yuchuan on 2020/1/7.
  */
-class ReaderApplication : Application() {
+class ReaderApplication : Application(), ILogger {
     companion object {
 
         private const val TAG = "ReaderApplication"
@@ -42,6 +44,7 @@ class ReaderApplication : Application() {
         super.onCreate()
         context = this
         StrictMode.setVmPolicy(VmPolicy.Builder().detectAll().penaltyLog().build())
+        AppInject.getInstance().setUserLogger(this)
         LogUtils.startTiming("Application Querying extensions")
         val extensions =
             getOneToManyApiList<IApplicationOnCreateListener>()
@@ -55,5 +58,21 @@ class ReaderApplication : Application() {
             it.onAppCreate(this)
             LogUtils.debugLogTiming(TAG, "${it.javaClass.name}#onAppCreate called", "onAppCreate")
         }
+    }
+
+    override fun i(tag: String, msg: String?, t: Throwable?) {
+        LogUtils.i(tag, msg, t)
+    }
+
+    override fun w(tag: String, msg: String?, t: Throwable?) {
+        LogUtils.w(tag, msg, t)
+    }
+
+    override fun e(tag: String, msg: String?, t: Throwable?) {
+        LogUtils.e(tag, msg, t)
+    }
+
+    override fun d(tag: String, msg: String?, t: Throwable?) {
+        LogUtils.d(tag, msg, t)
     }
 }
