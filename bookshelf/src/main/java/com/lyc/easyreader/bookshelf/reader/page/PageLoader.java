@@ -25,6 +25,8 @@ import com.lyc.easyreader.base.ui.theme.NightModeManager;
 import com.lyc.easyreader.base.utils.DeviceUtilsKt;
 import com.lyc.easyreader.base.utils.LogUtils;
 import com.lyc.easyreader.base.utils.ViewUtilsKt;
+import com.lyc.easyreader.bookshelf.reader.BookChapterCache;
+import com.lyc.easyreader.bookshelf.reader.BookChapterWrapper;
 import com.lyc.easyreader.bookshelf.reader.SelectTextTabDrawable;
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode;
 import com.lyc.easyreader.bookshelf.utils.StringUtilsKt;
@@ -38,7 +40,7 @@ import java.util.List;
 /**
  * Created by Liu Yuchuan on 2020/2/2.
  */
-public abstract class PageLoader implements Handler.Callback {
+public class PageLoader implements Handler.Callback {
     public static final int TEXT_SIZE_MIN_VALUE_DP = 12;
     public static final int TEXT_SIZE_MAX_VALUE_DP = 32;
     // 当前页面的状态
@@ -52,6 +54,9 @@ public abstract class PageLoader implements Handler.Callback {
     private static final int MSG_RELOAD_PAGES = 1;
 
     private static final String TAG = "PageLoader";
+
+    // 缓存已经从文件系统读取的章节
+    private BookChapterCache chapterCache = new BookChapterCache();
 
     private static final int TEXT_SIZE_MIN_VALUE = DeviceUtilsKt.dp2px(TEXT_SIZE_MIN_VALUE_DP);
     private static final int TEXT_SIZE_MAX_VALUE = DeviceUtilsKt.dp2px(TEXT_SIZE_MAX_VALUE_DP);
@@ -75,8 +80,8 @@ public abstract class PageLoader implements Handler.Callback {
     // 书本对象
     protected BookFile bookFile;
     // 监听器
-    private OnPageChangeListener mPageChangeListener;
-    /*****************params**************************/
+    private OnPageChangeListener pageChangeListener;
+
     private float lastTimeTextX;
     // 绘制电池的画笔
     private final Paint batteryPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
@@ -128,7 +133,7 @@ public abstract class PageLoader implements Handler.Callback {
     // 当前是否是夜间模式
     private boolean isNightMode;
     // 当前的状态
-    protected int status = STATUS_LOADING;
+    private int status = STATUS_PARING;
     // 书籍绘制区域的宽高
     private int contentWidth;
     private int contentHeight;
@@ -150,22 +155,21 @@ public abstract class PageLoader implements Handler.Callback {
     // 行间距系数
     private float lineSpaceFactor;
     // 行间距
-    private int mTextInterval;
+    private int textInterval;
     // 标题的行间距
-    private int mTitleInterval;
+    private int titleInterval;
     // 段间距系数
     private float paraSpaceFactor;
     // 段落距离(基于行间距的额外距离)
-    private int mTextPara;
-    private int mTitlePara;
+    private int textPara;
+    private int titlePara;
     private int viewHeight;
     // 电池的百分比
     private boolean isCharging;
     // 当前页面的背景
     private int bgColor;
-    private final Rect rect = new Rect();
     // 上一章的记录
-    private int mLastChapterPos = 0;
+    private int lastChapterPos;
     // 缩进
     private int indentCount;
     private boolean indentFull;
@@ -193,7 +197,7 @@ public abstract class PageLoader implements Handler.Callback {
     PageLoader(PageView pageView, BookFile bookFile) {
         this.pageView = pageView;
         this.bookFile = bookFile;
-        chapterList = new ArrayList<>(1);
+        chapterList = new ArrayList<>();
         setIndent(2, true);
         lineSpaceFactor = 0.5f;
         paraSpaceFactor = 1.0f;
@@ -201,18 +205,23 @@ public abstract class PageLoader implements Handler.Callback {
         setUpTextParams(DeviceUtilsKt.dp2px(16));
         // 初始化画笔
         initPaint();
-        mLastChapterPos = curChapterPos;
+        lastChapterPos = curChapterPos;
     }
 
     void setCanOperateSelectTextAndNotify(boolean canOperateSelectText) {
         if (this.canOperateSelectText != canOperateSelectText) {
             this.canOperateSelectText = canOperateSelectText;
-            if (mPageChangeListener != null) {
-                mPageChangeListener.onCanOperateSelectTextChange(canOperateSelectText);
+            if (pageChangeListener != null) {
+                pageChangeListener.onCanOperateSelectTextChange(canOperateSelectText);
             }
         }
     }
 
+    /**
+     * 返回当前选择的文字起始和结束的边界
+     *
+     * @param pos left of first character, top, right, bottom; left of second character, top , right, bottom
+     */
     public void getSelectPositions(@Size(8) float[] pos) {
         if (currentPageMeasured()) {
             int index0 = selectIndexes[0];
@@ -234,6 +243,11 @@ public abstract class PageLoader implements Handler.Callback {
         }
     }
 
+    /**
+     * Get current select text and exit selectMode
+     *
+     * @return currentSelectText
+     */
     public String getSelectedTextAndExitSelectMode() {
         if (!isSelectMode) {
             return null;
@@ -292,6 +306,7 @@ public abstract class PageLoader implements Handler.Callback {
         }
 
         if (hitTestCnt == 2) {
+            // If both tabs are hit, choose the nearest one.
             Rect rect0 = selectTextTabDrawables[0].getBounds();
             Rect rect1 = selectTextTabDrawables[1].getBounds();
             double s0 = Math.pow(x - rect0.centerX(), 2) + Math.pow(y - rect0.centerY(), 2);
@@ -346,10 +361,13 @@ public abstract class PageLoader implements Handler.Callback {
                 } else {
                     newIndexBefore = false;
                 }
+
                 if (newIndexBefore && !hitTestIndexBefore) {
+                    // change dragging tab to start position
                     hitTestIndex = 0;
                     selectIndexes[1] = Math.max(selectIndexes[anotherIndex] - 1, 0);
                 } else if (!newIndexBefore && hitTestIndexBefore) {
+                    // change dragging tab to end position
                     hitTestIndex = 1;
                     selectIndexes[0] = Math.min(selectIndexes[anotherIndex] + 1, pageCharPositions.positions.size() - 1);
                 }
@@ -560,10 +578,10 @@ public abstract class PageLoader implements Handler.Callback {
         float titleLineHeight = finalFontMetrics.bottom - finalFontMetrics.top;
 
         //设置总距离
-        float interval = mTextInterval + contentLineHeight;
-        float para = mTextPara + contentLineHeight;
-        float titleInterval = mTitleInterval + titleLineHeight;
-        float titlePara = mTitlePara + titleLineHeight;
+        float interval = textInterval + contentLineHeight;
+        float para = textPara + contentLineHeight;
+        float titleInterval = this.titleInterval + titleLineHeight;
+        float titlePara = this.titlePara + titleLineHeight;
 
         float currentY = marginTop;
         float currentX;
@@ -612,6 +630,7 @@ public abstract class PageLoader implements Handler.Callback {
                 CharPosition charPosition = new CharPosition(currentLine, j, currentX, currentY, textWidth, interval, contentLineHeight);
                 positions.add(charPosition);
                 currentX += textWidth;
+                // 这个是对中文引号的特殊处理
                 if (j - 1 >= 0 && (c == '“' || c == '‘' || c == '”' || c == '’') && StringUtilsKt.isChinesePunctuation(line.charAt(j - 1))) {
                     float composedTextWidth = contentTextPaint.measureText(line.substring(j - 1, j + 1));
                     int size = positions.size();
@@ -636,6 +655,9 @@ public abstract class PageLoader implements Handler.Callback {
         return true;
     }
 
+    /**
+     * 判断当前已经测量的结果是否和现在的页面参数匹配
+     */
     private boolean currentPageMeasured() {
         return curPage != null && pageCharPositions != null && pageCharPositions.isCurrentPagePosition(curChapterPos, curPage.position, contentWidth, contentHeight, indentString, contentTextSize, lineSpaceFactor, paraSpaceFactor);
     }
@@ -656,11 +678,11 @@ public abstract class PageLoader implements Handler.Callback {
         tipTextSize = Math.round(textSize * 0.75f);
         titleTextSize = Math.round(contentTextSize * 1.2f);
         // 行间距(大小为字体的一半)
-        mTextInterval = Math.round(contentTextSize * lineSpaceFactor);
-        mTitleInterval = Math.round(titleTextSize * lineSpaceFactor);
+        textInterval = Math.round(contentTextSize * lineSpaceFactor);
+        titleInterval = Math.round(titleTextSize * lineSpaceFactor);
         // 段落间距(大小为字体的高度)
-        mTextPara = Math.round(contentTextSize * paraSpaceFactor);
-        mTitlePara = Math.round(titleTextSize * paraSpaceFactor);
+        textPara = Math.round(contentTextSize * paraSpaceFactor);
+        titlePara = Math.round(titleTextSize * paraSpaceFactor);
     }
 
     private void initPaint() {
@@ -797,6 +819,13 @@ public abstract class PageLoader implements Handler.Callback {
         return true;
     }
 
+    /**
+     * 根据字符串偏移得到当前最有可能的页号
+     *
+     * @param offsetStart 字符串偏移起始
+     * @param offsetEnd   字符串偏移结束
+     * @return 和起始结束重合最大的页号
+     */
     private int findMostPossiblePageInOffset(int offsetStart, int offsetEnd) {
         if (curPageList == null) {
             return -1;
@@ -850,6 +879,12 @@ public abstract class PageLoader implements Handler.Callback {
         return page;
     }
 
+    /**
+     * 二分查找字符串偏移落在的页
+     *
+     * @param offsetStart 需要查找的字符串
+     * @return 页号如果找到，否则-1
+     */
     private int findPagePosAtOffset(int offsetStart) {
         if (curPageList == null) {
             return -1;
@@ -898,6 +933,12 @@ public abstract class PageLoader implements Handler.Callback {
         }
     }
 
+    /**
+     * 更新电池状态
+     *
+     * @param level      电量：0-100
+     * @param isCharging 是否在充电
+     */
     public void updateBattery(int level, boolean isCharging) {
         boolean needRedraw = false;
         if (batteryLevel != level) {
@@ -1085,8 +1126,6 @@ public abstract class PageLoader implements Handler.Callback {
 
     /**
      * 设置夜间模式
-     *
-     * @param nightMode
      */
     public void setNightMode(boolean nightMode) {
         isNightMode = nightMode;
@@ -1160,11 +1199,11 @@ public abstract class PageLoader implements Handler.Callback {
      * 设置页面切换监听
      */
     public void setOnPageChangeListener(OnPageChangeListener listener) {
-        mPageChangeListener = listener;
+        pageChangeListener = listener;
 
         // 如果目录加载完之后才设置监听器，那么会默认回调
         if (isChapterListPrepare) {
-            mPageChangeListener.onCategoryFinish(chapterList);
+            pageChangeListener.onCategoryFinish(chapterList);
         }
     }
 
@@ -1180,7 +1219,8 @@ public abstract class PageLoader implements Handler.Callback {
     }
 
     public List<BookChapter> getChapterCategory() {
-        return chapterList;
+        // 防止外部修改
+        return new ArrayList<>(chapterList);
     }
 
     /**
@@ -1259,8 +1299,8 @@ public abstract class PageLoader implements Handler.Callback {
                 curPage = getCurPage(position);
             }
 
-            if (mPageChangeListener != null) {
-                mPageChangeListener.onChapterOpen(curChapterPos);
+            if (pageChangeListener != null) {
+                pageChangeListener.onChapterOpen(curChapterPos);
             }
         } else {
             curPage = new BookPage();
@@ -1278,10 +1318,6 @@ public abstract class PageLoader implements Handler.Callback {
     private List<BookPage> loadPageList(int chapterPos) throws Exception {
         // 获取章节
         BookChapter chapter = chapterList.get(chapterPos);
-        // 判断章节是否存在
-        if (!hasChapterData(chapter)) {
-            return null;
-        }
         // 获取章节的文本流
         BufferedReader reader = getChapterReader(chapter);
         if (reader == null) {
@@ -1290,24 +1326,25 @@ public abstract class PageLoader implements Handler.Callback {
         return loadPages(chapter, reader);
     }
 
-    /*******************************abstract method***************************************/
-
     /**
      * 获取章节的文本流
-     *
-     * @param chapter
-     * @return
      */
-    protected abstract BufferedReader getChapterReader(BookChapter chapter) throws Exception;
-
-    /**
-     * 章节数据是否存在
-     *
-     * @return
-     */
-    protected abstract boolean hasChapterData(BookChapter chapter);
-
-    /***********************************default method***********************************************/
+    private BufferedReader getChapterReader(BookChapter chapter) {
+        BookChapterWrapper chapterWrapper = chapterCache.get(chapter);
+        if (chapterWrapper != null) {
+            BufferedReader bufferedReader = chapterWrapper.openBufferedReader();
+            if (bufferedReader != null) {
+                return bufferedReader;
+            }
+        }
+        chapterCache.evict(chapter);
+        BookChapterWrapper wrapper = new BookChapterWrapper(chapter, bookFile);
+        BufferedReader bufferedReader = wrapper.openBufferedReader();
+        if (bufferedReader != null) {
+            chapterCache.put(chapter, wrapper);
+        }
+        return bufferedReader;
+    }
 
     void drawPage(Bitmap bitmap, boolean isUpdate) {
         drawBackground(pageView.getBgBitmap(), isUpdate);
@@ -1477,6 +1514,17 @@ public abstract class PageLoader implements Handler.Callback {
             float pivotY = (viewHeight - textHeight) / 2;
             canvas.drawText(tip, pivotX, pivotY, contentTextPaint);
         } else {
+            final BookPage curPage = this.curPage;
+            if (curPage == null) {
+                LogUtils.w(TAG, "When draw page, page==null");
+                return;
+            }
+            final List<String> lines = curPage.lines;
+            if (lines == null) {
+                LogUtils.w(TAG, "When draw page, page.lines==null");
+                return;
+            }
+
             if (drawTextBound) {
                 drawTextBound(canvas);
             }
@@ -1489,17 +1537,17 @@ public abstract class PageLoader implements Handler.Callback {
             float titleFirstBaseline = marginTop - finalFontMetrics.top;
 
             //设置总距离
-            float interval = mTextInterval + contentLineHeight;
-            float para = mTextPara + contentLineHeight;
-            float titleInterval = mTitleInterval + titleLineHeight;
+            float interval = textInterval + contentLineHeight;
+            float para = textPara + contentLineHeight;
+            float titleInterval = this.titleInterval + titleLineHeight;
             // 这里计算加的是内容的行高，因为计算的是baseline，是根据下一行的高度决定的
-            float titlePara = mTitlePara + contentLineHeight;
+            float titlePara = this.titlePara + contentLineHeight;
             String str;
 
             float baseline = contentFirstBaseline;
             //对标题进行绘制
             for (int i = 0; i < curPage.titleLines; ++i) {
-                str = curPage.lines.get(i);
+                str = lines.get(i);
 
                 //设置顶部间距
                 if (i == 0) {
@@ -1521,8 +1569,8 @@ public abstract class PageLoader implements Handler.Callback {
             }
 
             //对内容进行绘制
-            for (int i = curPage.titleLines; i < curPage.lines.size(); ++i) {
-                str = curPage.lines.get(i);
+            for (int i = curPage.titleLines; i < lines.size(); ++i) {
+                str = lines.get(i);
 
                 canvas.drawText(str, marginLeft, baseline, contentTextPaint);
                 contentTextPaint.getFontMetrics(finalFontMetrics);
@@ -1541,6 +1589,8 @@ public abstract class PageLoader implements Handler.Callback {
                     int color = contentTextPaint.getColor();
                     contentTextPaint.setColor(selectColor);
                     contentTextPaint.setAlpha((int) (0.3f * 0xff));
+
+                    // 绘制选择的高亮方块
                     for (int i = startIndex; i <= endIndex; i++) {
                         CharPosition position = positions.get(i);
                         canvas.drawRect(position.x, position.y, position.x + position.width, position.y + position.drawHeight, contentTextPaint);
@@ -1548,10 +1598,13 @@ public abstract class PageLoader implements Handler.Callback {
                     contentTextPaint.setAlpha(0xff);
 
 
+                    // 绘制游标
                     CharPosition position0 = positions.get(selectIndexes[0]);
                     boolean isPosition0Start = selectIndexes[0] == startIndex;
                     float x0 = isPosition0Start ? position0.x : position0.x + position0.width;
+                    // 先绘制边界线
                     canvas.drawLine(x0, position0.y, x0, position0.y + position0.drawHeight, contentTextPaint);
+                    // 在绘制游标，游标在下面，是一段与等腰直角三角形两边相切的弧
                     selectTextTabDrawables[0].setBounds((int) (x0 - halfTabSize), (int) (position0.y + position0.drawHeight), (int) (x0 + halfTabSize), (int) (position0.y + position0.drawHeight + halfTabSize + halfTabSize));
                     selectTextTabDrawables[0].draw(canvas);
                     CharPosition position1 = positions.get(selectIndexes[1]);
@@ -1566,6 +1619,7 @@ public abstract class PageLoader implements Handler.Callback {
         }
     }
 
+    // 绘制文字边界，调试选项
     private void drawTextBound(Canvas canvas) {
         measureTextIfNeeded();
         Paint.Style style = contentTextPaint.getStyle();
@@ -1578,6 +1632,10 @@ public abstract class PageLoader implements Handler.Callback {
         contentTextPaint.setStyle(style);
     }
 
+    /**
+     * 在能够确定View宽高时调用
+     * 如果需要打开章节也会打开章节（根据之前是否有调用过打开章节等方法）
+     */
     void prepareDisplay(int w, int h) {
         // 获取PageView的宽高
         viewWidth = w;
@@ -1654,7 +1712,7 @@ public abstract class PageLoader implements Handler.Callback {
         // 加载上一章数据
         int prevChapter = curChapterPos - 1;
 
-        mLastChapterPos = curChapterPos;
+        lastChapterPos = curChapterPos;
         curChapterPos = prevChapter;
 
         // 当前章缓存为下一章
@@ -1734,7 +1792,7 @@ public abstract class PageLoader implements Handler.Callback {
     private boolean parseNextChapter() {
         int nextChapter = curChapterPos + 1;
 
-        mLastChapterPos = curChapterPos;
+        lastChapterPos = curChapterPos;
         curChapterPos = nextChapter;
 
         // 将当前章的页面列表，作为上一章缓存
@@ -1786,9 +1844,9 @@ public abstract class PageLoader implements Handler.Callback {
     }
 
     private void notifyChapterChange() {
-        if (mPageChangeListener != null) {
-            mPageChangeListener.onChapterChange(curChapterPos);
-            mPageChangeListener.onPageCountChange(curPageList != null ? curPageList.size() : 0);
+        if (pageChangeListener != null) {
+            pageChangeListener.onChapterChange(curChapterPos);
+            pageChangeListener.onPageCountChange(curPageList != null ? curPageList.size() : 0);
         }
     }
 
@@ -1796,8 +1854,8 @@ public abstract class PageLoader implements Handler.Callback {
     private void preLoadNextChapter() {
         final int nextChapter = curChapterPos + 1;
 
-        // 如果不存在下一章，且下一章没有数据，则不进行加载。
-        if (!hasNextChapter() || !hasChapterData(chapterList.get(nextChapter))) {
+        // 如果不存在下一章，则不进行加载。
+        if (!hasNextChapter()) {
             return;
         }
 
@@ -1832,8 +1890,8 @@ public abstract class PageLoader implements Handler.Callback {
     private void preLoadPreChapter() {
         final int preChapter = curChapterPos - 1;
 
-        // 如果不存在下一章，且下一章没有数据，则不进行加载。
-        if (!hasPrevChapter() || !hasChapterData(chapterList.get(preChapter))) {
+        // 如果不存在下一章，则不进行加载。
+        if (!hasPrevChapter()) {
             return;
         }
 
@@ -1865,7 +1923,7 @@ public abstract class PageLoader implements Handler.Callback {
 
     // 取消翻页
     void pageCancel() {
-        if (curPage.position == 0 && curChapterPos > mLastChapterPos) { // 加载到下一章取消了
+        if (curPage.position == 0 && curChapterPos > lastChapterPos) { // 加载到下一章取消了
             if (prePageList != null) {
                 cancelNextChapter();
             } else {
@@ -1878,7 +1936,7 @@ public abstract class PageLoader implements Handler.Callback {
             }
         } else if (curPageList == null
                 || (curPage.position == curPageList.size() - 1
-                && curChapterPos < mLastChapterPos)) {  // 加载上一章取消了
+                && curChapterPos < lastChapterPos)) {  // 加载上一章取消了
 
             if (nextPageList != null) {
                 cancelPreChapter();
@@ -1897,8 +1955,8 @@ public abstract class PageLoader implements Handler.Callback {
     }
 
     private void cancelNextChapter() {
-        int temp = mLastChapterPos;
-        mLastChapterPos = curChapterPos;
+        int temp = lastChapterPos;
+        lastChapterPos = curChapterPos;
         curChapterPos = temp;
 
         nextPageList = curPageList;
@@ -1915,8 +1973,8 @@ public abstract class PageLoader implements Handler.Callback {
 
     private void cancelPreChapter() {
         // 重置位置点
-        int temp = mLastChapterPos;
-        mLastChapterPos = curChapterPos;
+        int temp = lastChapterPos;
+        lastChapterPos = curChapterPos;
         curChapterPos = temp;
         // 重置页面列表
         prePageList = curPageList;
@@ -1931,7 +1989,6 @@ public abstract class PageLoader implements Handler.Callback {
         mCancelPage = null;
     }
 
-    /**************************************private method********************************************/
     /**
      * 将章节数据，解析成页面列表
      *
@@ -1962,9 +2019,8 @@ public abstract class PageLoader implements Handler.Callback {
                     paragraph = indentString == null ? "" : indentString + paragraph + "\n";
                 } else {
                     //设置 title 的顶部间距
-                    rHeight -= mTitlePara;
+                    rHeight -= titlePara;
                 }
-//                paragraph = paragraph.replaceAll("“", StringUtilsKt.fullToHalf("\"")).replaceAll("”", StringUtilsKt.fullToHalf("\""));
                 int wordCount;
                 String subStr;
                 while (paragraph.length() > 0) {
@@ -2008,9 +2064,9 @@ public abstract class PageLoader implements Handler.Callback {
                         //设置段落间距
                         if (showTitle) {
                             titleLinesCount += 1;
-                            rHeight -= mTitleInterval;
+                            rHeight -= titleInterval;
                         } else {
-                            rHeight -= mTextInterval;
+                            rHeight -= textInterval;
                         }
                     }
                     //裁剪
@@ -2019,11 +2075,11 @@ public abstract class PageLoader implements Handler.Callback {
 
                 //增加段落的间距
                 if (!showTitle && lines.size() != 0) {
-                    rHeight = rHeight - mTextPara + mTextInterval;
+                    rHeight = rHeight - textPara + textInterval;
                 }
 
                 if (showTitle) {
-                    rHeight = rHeight - mTitlePara + mTitleInterval;
+                    rHeight = rHeight - titlePara + titleInterval;
                     showTitle = false;
                 }
             }
@@ -2076,14 +2132,14 @@ public abstract class PageLoader implements Handler.Callback {
     }
 
     private void notifyCurPageChange() {
-        if (mPageChangeListener != null && curPage != null && curPage.position >= 0) {
-            mPageChangeListener.onPageChange(curPage.position);
+        if (pageChangeListener != null && curPage != null && curPage.position >= 0) {
+            pageChangeListener.onPageChange(curPage.position);
         }
     }
 
     private void notifyPageChange(int pos) {
-        if (mPageChangeListener != null) {
-            mPageChangeListener.onPageChange(pos);
+        if (pageChangeListener != null) {
+            pageChangeListener.onPageChange(pos);
         }
     }
 
@@ -2145,8 +2201,6 @@ public abstract class PageLoader implements Handler.Callback {
         return null;
     }
 
-    /*****************************************interface*****************************************/
-
     public interface OnPageChangeListener {
         /**
          * 作用：章节切换的时候进行回调
@@ -2156,13 +2210,6 @@ public abstract class PageLoader implements Handler.Callback {
         void onChapterChange(int pos);
 
         void onChapterOpen(int pos);
-
-        /**
-         * 作用：请求加载章节内容
-         *
-         * @param requestChapters:需要下载的章节列表
-         */
-        void requestChapters(List<BookChapter> requestChapters);
 
         /**
          * 作用：章节目录加载完成时候回调

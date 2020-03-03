@@ -15,13 +15,6 @@ class SelectTextTabDrawable : Drawable() {
     @JvmField
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val contentPath = Path()
-    var upAndDown = false
-        set(value) {
-            if (field != value) {
-                field = value
-                onBoundsChange(bounds)
-            }
-        }
 
     override fun onBoundsChange(bounds: Rect) {
         super.onBoundsChange(bounds)
@@ -33,13 +26,9 @@ class SelectTextTabDrawable : Drawable() {
 
         contentPath.reset()
         val halfW = w * 0.5f
-        contentPath.moveTo(halfW, if (upAndDown) h.toFloat() else 0f)
+        contentPath.moveTo(halfW, 0f)
         val r = h / (1 + sqrt2)
-        if (upAndDown) {
-            contentPath.arcTo(halfW - r, 0f, halfW + r, 2 * r, 135f, 270f, false)
-        } else {
-            contentPath.arcTo(halfW - r, h - 2 * r, halfW + r, h.toFloat(), -45f, 270f, false)
-        }
+        contentPath.arcTo(halfW - r, h - 2 * r, halfW + r, h.toFloat(), -45f, 270f, false)
         contentPath.close()
     }
 

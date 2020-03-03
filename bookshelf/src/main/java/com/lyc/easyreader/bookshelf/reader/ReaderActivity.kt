@@ -56,7 +56,8 @@ import com.lyc.easyreader.bookshelf.utils.millisToString
 /**
  * Created by Liu Yuchuan on 2020/1/30.
  */
-class ReaderActivity : BaseActivity(), PageView.TouchListener, OnClickListener,
+class ReaderActivity : BaseActivity(),
+    PageView.PageViewGestureListener, OnClickListener,
     PageLoader.OnPageChangeListener {
     companion object {
         private const val KEY_BOOK_FILE = "KEY_BOOK_FILE"
@@ -220,13 +221,12 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, OnClickListener,
             selectViewHeight = measuredHeight
         }
 
-        val page = PageView(this).apply {
+        // 这里new一个也没关系，因为后续的变化都可以赋值进去的
+        val page = PageView(this, viewModel.bookFileLiveData.value ?: BookFile()).apply {
             setTouchListener(this@ReaderActivity)
             contentView.addView(this)
         }
-        // 这里new一个也没关系，因为后续的变化都可以赋值进去的
-        // 注意传给loader的引用需要是nonnull的
-        val loader = page.getPageLoader(viewModel.bookFileLiveData.value ?: BookFile())
+        val loader = page.pageLoader
         loader.setOnPageChangeListener(this)
         viewModel.bookFileLiveData.observe(this, Observer {
             loader.bookFile?.set(it)
@@ -809,7 +809,7 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, OnClickListener,
         return viewModel.showMenu.changeState(false)
     }
 
-    override fun canTouch(): Boolean {
+    override fun enableTouch(): Boolean {
         return true
     }
 
@@ -993,10 +993,6 @@ class ReaderActivity : BaseActivity(), PageView.TouchListener, OnClickListener,
         val chapterPos = pageLoader?.chapterPos ?: -1
         pageLoader?.getPageOffset(pos, viewModel.charOffsets)
         viewModel.updateBookReadRecord(chapterPos, pos)
-    }
-
-    override fun requestChapters(requestChapters: MutableList<BookChapter>?) {
-
     }
 
     override fun onCategoryFinish(chapters: MutableList<BookChapter>?) {

@@ -1,25 +1,28 @@
 package com.lyc.easyreader.bookshelf.reader.page;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.RectF;
-import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+
+import androidx.annotation.NonNull;
 
 import com.lyc.easyreader.api.book.BookFile;
 import com.lyc.easyreader.bookshelf.reader.page.anim.AnimFactory;
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimMode;
 import com.lyc.easyreader.bookshelf.reader.page.anim.PageAnimation;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Created by Liu Yuchuan on 2020/2/2.
  */
-public class PageView extends View {
-
-    private final static String TAG = "BookPageWidget";
+@SuppressLint("ViewConstructor")
+public class PageView extends View implements PageAnimation.OnPageChangeListener {
 
     private int viewWidth = 0; // 当前View的宽
     private int viewHeight = 0; // 当前View的高
@@ -35,66 +38,40 @@ public class PageView extends View {
     private boolean isPrepare;
     // 动画类
     private PageAnimation pageAnim;
-    //点击监听
-    private TouchListener mTouchListener;
     //内容加载器
-    private PageLoader pageLoader;
-    // 动画监听类
-    private PageAnimation.OnPageChangeListener mPageAnimListener = new PageAnimation.OnPageChangeListener() {
+    @NonNull
+    private final PageLoader pageLoader;
+    private final Runnable longPressRunnable = new Runnable() {
         @Override
-        public boolean hasPrev() {
-            return PageView.this.hasPrevPage();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return PageView.this.hasNextPage();
-        }
-
-        @Override
-        public void pageCancel() {
-            PageView.this.pageCancel();
+        public void run() {
+            if (!isMove && pageLoader.enterSelectMode(pendingX, pendingY)) {
+                handledLongPressed = true;
+            }
         }
     };
 
     private static final long LONG_PRESS_DELAY = ViewConfiguration.getLongPressTimeout();
     private boolean isSelectModeWhenTouchDown = false;
-    private boolean isDragTab = false;
     private boolean handledLongPressed = false;
     private float pendingX;
     private float pendingY;
+    //点击监听
+    private PageViewGestureListener pageViewGestureListener;
 
-    private final Runnable longPressRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!isMove && pageLoader != null && pageLoader.enterSelectMode(pendingX, pendingY)) {
-                handledLongPressed = true;
-                return;
-            }
-        }
-    };
-
-    public PageView(Context context) {
-        this(context, null);
-    }
-
-    public PageView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
-
-    public PageView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+    public PageView(Context context, BookFile bookFile) {
+        super(context);
+        pageLoader = new PageLoader(this, bookFile);
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        viewWidth = w;
-        viewHeight = h;
+        if (w != oldw && h != oldh) {
+            viewWidth = w;
+            viewHeight = h;
 
-        isPrepare = true;
+            isPrepare = true;
 
-        if (pageLoader != null) {
             pageLoader.prepareDisplay(w, h);
         }
     }
@@ -105,9 +82,7 @@ public class PageView extends View {
             return;
         }
         this.pageAnimMode = pageAnimMode;
-        if (pageLoader != null) {
-            pageAnim = AnimFactory.INSTANCE.createAnim(pageAnimMode, viewWidth, viewHeight, this, mPageAnimListener);
-        }
+        pageAnim = AnimFactory.INSTANCE.createAnim(pageAnimMode, viewWidth, viewHeight, this, this);
     }
 
     public Bitmap getNextBitmap() {
@@ -131,7 +106,7 @@ public class PageView extends View {
     }
 
     private void startPageAnim(PageAnimation.Direction direction) {
-        if (mTouchListener == null) return;
+        if (pageViewGestureListener == null) return;
         if (pageAnim == null) return;
         //是否正在执行动画
         abortAnimation();
@@ -143,7 +118,7 @@ public class PageView extends View {
             //设置点击点
             pageAnim.setTouchPoint(x, y);
             //设置方向
-            boolean hasNext = hasNextPage();
+            boolean hasNext = hasNext();
 
             pageAnim.setDirection(direction);
             if (!hasNext) {
@@ -158,8 +133,7 @@ public class PageView extends View {
             pageAnim.setTouchPoint(x, y);
             pageAnim.setDirection(direction);
             //设置方向方向
-            Boolean hashPrev = hasPrevPage();
-            if (!hashPrev) {
+            if (!hasPrev()) {
                 return;
             }
         }
@@ -172,12 +146,14 @@ public class PageView extends View {
 
         if (pageAnim != null && pageAnim.isRunning && pageAnim.getNeedDrawBgColorWhenRunning()) {
             // 初始化参数
-            int bgColor = pageLoader == null ? PageStyle.BG_1.getBgColor() : pageLoader.getBgColor();
+            int bgColor = pageLoader.getBgColor();
             canvas.drawColor(bgColor);
         }
 
-        //绘制动画
-        pageAnim.draw(canvas);
+        if (pageAnim != null) {
+            //绘制动画
+            pageAnim.draw(canvas);
+        }
     }
 
     @Override
@@ -191,11 +167,9 @@ public class PageView extends View {
         int y = (int) event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_CANCEL:
-                if (pageLoader != null) {
-                    pageLoader.setCanOperateSelectTextAndNotify(pageLoader.isSelectMode());
-                    if (pageLoader.exitDrag()) {
-                        return true;
-                    }
+                pageLoader.setCanOperateSelectTextAndNotify(pageLoader.isSelectMode());
+                if (pageLoader.exitDrag()) {
+                    return true;
                 }
                 if (isMove) {
                     pageAnim.handleTouchEvent(event);
@@ -208,26 +182,22 @@ public class PageView extends View {
                 pendingX = event.getX();
                 pendingY = event.getY();
                 isMove = false;
-                canTouch = mTouchListener == null || mTouchListener.canTouch();
+                canTouch = pageViewGestureListener == null || pageViewGestureListener.enableTouch();
                 pageAnim.handleTouchEvent(event);
                 handledLongPressed = false;
-                isSelectModeWhenTouchDown = pageLoader != null && pageLoader.isSelectMode();
+                isSelectModeWhenTouchDown = pageLoader.isSelectMode();
                 if (isSelectModeWhenTouchDown && pageLoader.hitTestSelectTab(x, y)) {
-                    if (pageLoader != null) {
-                        pageLoader.setCanOperateSelectTextAndNotify(false);
-                    }
+                    pageLoader.setCanOperateSelectTextAndNotify(false);
                     return true;
                 }
 
-                if (pageLoader != null && !pageLoader.isSelectMode()) {
+                if (!pageLoader.isSelectMode()) {
                     postDelayed(longPressRunnable, LONG_PRESS_DELAY);
                 }
-                if (pageLoader != null) {
-                    pageLoader.setCanOperateSelectTextAndNotify(false);
-                }
+                pageLoader.setCanOperateSelectTextAndNotify(false);
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (pageLoader != null && pageLoader.isDragTab()) {
+                if (pageLoader.isDragTab()) {
                     pageLoader.onDragTab(event.getX(), event.getY());
                     return true;
                 }
@@ -248,28 +218,28 @@ public class PageView extends View {
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                if (pageLoader != null && pageLoader.exitDrag()) {
+                if (pageLoader.exitDrag()) {
                     pageLoader.setCanOperateSelectTextAndNotify(true);
                     return true;
                 }
 
                 if (!isMove) {
-                    if (handledLongPressed && pageLoader != null && pageLoader.isSelectMode()) {
+                    if (handledLongPressed && pageLoader.isSelectMode()) {
                         pageLoader.setCanOperateSelectTextAndNotify(true);
                         return true;
                     }
 
-                    if (pageLoader != null && pageLoader.isSelectMode()) {
+                    if (pageLoader.isSelectMode()) {
                         pageLoader.setCanOperateSelectTextAndNotify(false);
                     }
 
-                    if (!handledLongPressed && pageLoader != null && pageLoader.exitSelectMode()) {
+                    if (!handledLongPressed && pageLoader.exitSelectMode()) {
                         return true;
                     }
 
                     removeCallbacks(longPressRunnable);
 
-                    if (mTouchListener != null && mTouchListener.handlePageViewClick()) {
+                    if (pageViewGestureListener != null && pageViewGestureListener.handlePageViewClick()) {
                         return true;
                     }
 
@@ -281,8 +251,8 @@ public class PageView extends View {
 
                     //是否点击了中间
                     if (mCenterRect.contains(x, y)) {
-                        if (mTouchListener != null) {
-                            mTouchListener.centerClick();
+                        if (pageViewGestureListener != null) {
+                            pageViewGestureListener.centerClick();
                         }
                         return true;
                     }
@@ -295,31 +265,6 @@ public class PageView extends View {
                 break;
         }
         return true;
-    }
-
-    /**
-     * 判断是否存在上一页
-     *
-     * @return
-     */
-    private boolean hasPrevPage() {
-        mTouchListener.prePage();
-        return pageLoader.prev();
-    }
-
-    /**
-     * 判断是否下一页存在
-     *
-     * @return
-     */
-    private boolean hasNextPage() {
-        mTouchListener.nextPage();
-        return pageLoader.next();
-    }
-
-    private void pageCancel() {
-        mTouchListener.cancel();
-        pageLoader.pageCancel();
     }
 
     @Override
@@ -346,12 +291,12 @@ public class PageView extends View {
         return isPrepare;
     }
 
-    public void setTouchListener(TouchListener mTouchListener) {
-        this.mTouchListener = mTouchListener;
+    public void setTouchListener(PageViewGestureListener mPageViewGestureListener) {
+        this.pageViewGestureListener = mPageViewGestureListener;
     }
 
     public void drawNextPage() {
-        if (!isPrepare || pageAnim == null || pageLoader == null) return;
+        if (!isPrepare || pageAnim == null) return;
 
         pageAnim.changePage();
         pageLoader.drawPage(getNextBitmap(), false);
@@ -359,8 +304,6 @@ public class PageView extends View {
 
     /**
      * 绘制当前页。
-     *
-     * @param isUpdate
      */
     public void drawCurPage(boolean isUpdate) {
         if (!isPrepare) return;
@@ -373,36 +316,47 @@ public class PageView extends View {
         removeCallbacks(longPressRunnable);
         pageAnim.abortAnim();
         pageAnim.clear();
-
-        pageLoader = null;
         pageAnim = null;
     }
 
-    /**
-     * 获取 PageLoader
-     *
-     * @return
-     */
-    public PageLoader getPageLoader(BookFile bookFile) {
-        // 判是否已经存在
-        if (pageLoader != null) {
-            return pageLoader;
-        }
-        pageLoader = new LocalPageLoader(this, bookFile);
-        // 判断是否 PageView 已经初始化完成
-        if (viewWidth != 0 || viewHeight != 0) {
-            // 初始化 PageLoader 的屏幕大小
-            pageLoader.prepareDisplay(viewWidth, viewHeight);
-        }
-
+    @NotNull
+    public PageLoader getPageLoader() {
         return pageLoader;
     }
 
-    public interface TouchListener {
-        boolean canTouch();
+    @Override
+    public boolean hasPrev() {
+        pageViewGestureListener.prePage();
+        return pageLoader.prev();
+    }
 
+    @Override
+    public boolean hasNext() {
+        pageViewGestureListener.nextPage();
+        return pageLoader.next();
+    }
+
+    @Override
+    public void pageCancel() {
+        pageViewGestureListener.cancel();
+        pageLoader.pageCancel();
+    }
+
+    public interface PageViewGestureListener {
+
+        /**
+         * @return false if disable all touch event on this view.
+         */
+        boolean enableTouch();
+
+        /**
+         * @return true if handled
+         */
         boolean handlePageViewClick();
 
+        /**
+         * Click center
+         */
         void centerClick();
 
         void prePage();
