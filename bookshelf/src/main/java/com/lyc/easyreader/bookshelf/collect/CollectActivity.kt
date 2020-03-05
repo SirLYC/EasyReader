@@ -118,10 +118,15 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
         val data = collectViewModel.collectBookList[position]
         val menu = ReaderPopupMenu(this, view)
 
-        val renameId = 1
+        val secreteId = 1
+        val renameId = 5
         val collectId = 9
         val shareId = 18
 
+        menu.addItem(
+            secreteId,
+            "私密模式打开"
+        )
         menu.addItem(
             renameId,
             "重命名"
@@ -140,6 +145,9 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
 
         menu.setOnMenuItemClickListener {
             when (it.itemId) {
+                secreteId -> {
+                    ReaderActivity.openBookFile(data, true)
+                }
                 collectId -> {
                     BookManager.instance.updateBookCollect(data.id, false)
                 }

@@ -61,8 +61,9 @@ class ReaderActivity : BaseActivity(),
     PageLoader.OnPageChangeListener {
     companion object {
         private const val KEY_BOOK_FILE = "KEY_BOOK_FILE"
+        private const val KEY_SECRET_MODE = "KEY_SECRET_MODE"
 
-        fun openBookFile(bookFile: BookFile) {
+        fun openBookFile(bookFile: BookFile, secretMode: Boolean = false) {
             if (bookFile.id == null) {
                 ReaderToast.showToast("记录不存在")
                 return
@@ -70,6 +71,7 @@ class ReaderActivity : BaseActivity(),
             val context = ReaderApplication.appContext()
             val intent = Intent(context, ReaderActivity::class.java).apply {
                 putExtra(KEY_BOOK_FILE, bookFile)
+                putExtra(KEY_SECRET_MODE, secretMode)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
@@ -174,7 +176,7 @@ class ReaderActivity : BaseActivity(),
         viewModel = provideViewModel()
         if (savedInstanceState == null) {
             intent?.getParcelableExtra<BookFile>(KEY_BOOK_FILE)?.run {
-                viewModel.init(this)
+                viewModel.init(this, intent?.getBooleanExtra(KEY_SECRET_MODE, false) == true)
             }
         } else if (!isCreateFromConfigChange) {
             viewModel.restoreState(savedInstanceState)

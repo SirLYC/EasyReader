@@ -364,6 +364,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         } else {
             if (adapter?.exitEditMode(anim) == true) {
                 viewModel.editModeLiveData.value = false
+                viewModel.checkedIds.clear()
                 return true
             }
         }
@@ -501,12 +502,17 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
         activity?.apply {
             val menu = ReaderPopupMenu(this, view)
 
-            val renameId = 1
+            val secreteId = 1
+            val renameId = 3
             val deleteId = 5
             val collectId = 9
             val batchId = 15
             val shareId = 18
 
+            menu.addItem(
+                secreteId,
+                "私密模式打开"
+            )
             menu.addItem(
                 renameId,
                 "重命名"
@@ -540,6 +546,9 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
 
             menu.setOnMenuItemClickListener {
                 when (it.itemId) {
+                    secreteId -> {
+                        ReaderActivity.openBookFile(data, true)
+                    }
                     collectId -> {
                         BookManager.instance.updateBookCollect(data.id, !data.collect)
                     }
@@ -559,6 +568,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     }
                     batchId -> {
                         setEditMode(true)
+                        adapter?.checkPosition(position)
                     }
                     shareId -> {
                         BookManager.instance.shareBookFile(data)

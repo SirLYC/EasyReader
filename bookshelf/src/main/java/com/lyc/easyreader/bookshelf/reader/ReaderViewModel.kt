@@ -10,6 +10,7 @@ import com.lyc.easyreader.api.book.*
 import com.lyc.easyreader.base.arch.LiveState
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.arch.SingleLiveEvent
+import com.lyc.easyreader.base.ui.ReaderHeadsUp
 import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.rv.ObservableList
@@ -28,6 +29,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
     companion object {
         const val TAG = "ReaderViewModel"
         const val KEY_BOOK_FILE = "${TAG}_KEY_BOOK_FILE"
+        const val KEY_SECRET_MODE = "${TAG}_SECRET_MODE"
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -40,6 +42,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
     @Volatile
     var alive = true
 
+    private var secretMode = false
     val bookFileLiveData = MutableLiveData<BookFile>()
     val bookChapterList = ObservableList<BookChapter>(arrayListOf())
     val loadingChapterListLiveData = NonNullLiveData(true)
@@ -60,8 +63,12 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
     val changeChapterCall = SingleLiveEvent<Int>()
     val skipBookMarkCall = SingleLiveEvent<Triple<Int, Int, Int>>()
 
-    fun init(bookFile: BookFile) {
+    fun init(bookFile: BookFile, secretMode: Boolean) {
         bookFileLiveData.value = bookFile
+        this.secretMode = secretMode
+        if (secretMode) {
+            ReaderHeadsUp.showHeadsUp("私密模式下不会记录阅读记录")
+        }
         loadChapterIfNeeded()
     }
 
@@ -123,7 +130,11 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
                         this.collected = it.collected
                     }
                     bookFileLiveData.value = newBookFile
-                    BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
+                    if (secretMode) {
+                        LogUtils.i(TAG, "私密模式跳过记录AccessTime!")
+                    } else {
+                        BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
+                    }
                     currentPage.value = bookRecord.page
                     currentChapter.value = bookRecord.chapter
                     charOffsets[0] = bookRecord.offsetStart
@@ -195,16 +206,22 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
                 page,
                 desc
             ).also { this.bookReadRecord = it }
-            BookShelfOpenHelper.instance.asyncUpdateBookReadRecord(record)
+            if (secretMode) {
+                LogUtils.i(TAG, "私密模式，跳过记录进度到数据库！")
+            } else {
+                BookShelfOpenHelper.instance.asyncUpdateBookReadRecord(record)
+            }
         }
     }
 
     fun saveState(bundle: Bundle) {
         bundle.putParcelable(KEY_BOOK_FILE, bookFileLiveData.value)
+        bundle.putBoolean(KEY_SECRET_MODE, secretMode)
     }
 
     fun restoreState(bundle: Bundle) {
         bookFileLiveData.value = bundle.getParcelable(KEY_BOOK_FILE)
+        secretMode = bundle.getBoolean(KEY_SECRET_MODE, false)
         loadChapterIfNeeded()
     }
 
