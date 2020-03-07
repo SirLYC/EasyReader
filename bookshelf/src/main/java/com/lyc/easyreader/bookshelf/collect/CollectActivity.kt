@@ -121,11 +121,12 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
         val secreteId = 1
         val renameId = 5
         val collectId = 9
+        val secretId = 11
         val shareId = 18
 
         menu.addItem(
             secreteId,
-            "私密模式打开"
+            "无痕阅读"
         )
         menu.addItem(
             renameId,
@@ -135,6 +136,7 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
             collectId,
             "取消收藏"
         )
+        menu.addItem(secretId, "加入私密空间")
         menu.addItem(
             shareId,
             "分享"
@@ -153,6 +155,9 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
                 }
                 renameId -> {
                     RenameDialog.show(supportFragmentManager, data)
+                }
+                secretId -> {
+                    BookManager.instance.addBooksToSecret(listOf(data))
                 }
                 shareId -> {
                     BookManager.instance.shareBookFile(data)

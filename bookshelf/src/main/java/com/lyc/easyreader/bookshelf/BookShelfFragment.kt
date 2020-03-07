@@ -506,12 +506,13 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
             val renameId = 3
             val deleteId = 5
             val collectId = 9
+            val secretId = 12
             val batchId = 15
             val shareId = 18
 
             menu.addItem(
                 secreteId,
-                "私密模式打开"
+                "无痕阅读"
             )
             menu.addItem(
                 renameId,
@@ -532,6 +533,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     "收藏"
                 )
             }
+            menu.addItem(secretId, "加入私密空间")
             menu.addItem(
                 batchId,
                 "批量管理"
@@ -560,6 +562,9 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                             }
                             .setNegativeButton("否", null)
                             .show()
+                    }
+                    secretId -> {
+                        BookManager.instance.addBooksToSecret(listOf(data))
                     }
                     renameId -> {
                         activity?.run {

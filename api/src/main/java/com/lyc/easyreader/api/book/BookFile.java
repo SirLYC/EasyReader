@@ -26,6 +26,7 @@ public class BookFile implements Parcelable {
     private String realPath;
     private String filename;
     private String fileExt;
+    private boolean isSecret;
     private long importTime;
     private long lastAccessTime;
     public static final Creator<BookFile> CREATOR = new Creator<BookFile>() {
@@ -49,12 +50,14 @@ public class BookFile implements Parcelable {
     @Id
     private String id;
 
-    @Generated(hash = 1818824846)
-    public BookFile(String realPath, String filename, String fileExt, long importTime, long lastAccessTime,
-                    long deleteTime, long handleChapterLastModified, Charset charset, @NotNull Status status, String id) {
+    @Generated(hash = 449745737)
+    public BookFile(String realPath, String filename, String fileExt, boolean isSecret, long importTime,
+                    long lastAccessTime, long deleteTime, long handleChapterLastModified, Charset charset, @NotNull Status status,
+                    String id) {
         this.realPath = realPath;
         this.filename = filename;
         this.fileExt = fileExt;
+        this.isSecret = isSecret;
         this.importTime = importTime;
         this.lastAccessTime = lastAccessTime;
         this.deleteTime = deleteTime;
@@ -72,6 +75,7 @@ public class BookFile implements Parcelable {
         this.realPath = other.realPath;
         this.filename = other.filename;
         this.fileExt = other.fileExt;
+        this.isSecret = other.isSecret;
         this.importTime = other.importTime;
         this.lastAccessTime = other.lastAccessTime;
         this.deleteTime = other.deleteTime;
@@ -85,6 +89,7 @@ public class BookFile implements Parcelable {
         realPath = in.readString();
         filename = in.readString();
         fileExt = in.readString();
+        isSecret = in.readByte() != 0;
         importTime = in.readLong();
         lastAccessTime = in.readLong();
         deleteTime = in.readLong();
@@ -102,6 +107,7 @@ public class BookFile implements Parcelable {
         this.realPath = other.realPath;
         this.filename = other.filename;
         this.fileExt = other.fileExt;
+        this.isSecret = other.isSecret;
         this.importTime = other.importTime;
         this.lastAccessTime = other.lastAccessTime;
         this.deleteTime = other.deleteTime;
@@ -121,6 +127,7 @@ public class BookFile implements Parcelable {
         dest.writeString(realPath);
         dest.writeString(filename);
         dest.writeString(fileExt);
+        dest.writeByte(isSecret ? (byte) 1 : (byte) 0);
         dest.writeLong(importTime);
         dest.writeLong(lastAccessTime);
         dest.writeLong(deleteTime);
@@ -233,6 +240,14 @@ public class BookFile implements Parcelable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public boolean getIsSecret() {
+        return this.isSecret;
+    }
+
+    public void setIsSecret(boolean isSecret) {
+        this.isSecret = isSecret;
     }
 
     public enum Status {

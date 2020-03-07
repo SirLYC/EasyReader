@@ -67,7 +67,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
         bookFileLiveData.value = bookFile
         this.secretMode = secretMode
         if (secretMode) {
-            ReaderHeadsUp.showHeadsUp("私密模式下不会记录阅读记录")
+            ReaderHeadsUp.showHeadsUp("无痕阅读模式下不会记录阅读记录")
         }
         loadChapterIfNeeded()
     }
@@ -131,7 +131,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
                     }
                     bookFileLiveData.value = newBookFile
                     if (secretMode) {
-                        LogUtils.i(TAG, "私密模式跳过记录AccessTime!")
+                        LogUtils.i(TAG, "无痕阅读跳过记录AccessTime!")
                     } else {
                         BookShelfOpenHelper.instance.asyncSaveUpdateBookAccess(newBookFile)
                     }
@@ -207,7 +207,7 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
                 desc
             ).also { this.bookReadRecord = it }
             if (secretMode) {
-                LogUtils.i(TAG, "私密模式，跳过记录进度到数据库！")
+                LogUtils.i(TAG, "无痕阅读模式，跳过记录进度到数据库！")
             } else {
                 BookShelfOpenHelper.instance.asyncUpdateBookReadRecord(record)
             }
@@ -234,20 +234,12 @@ class ReaderViewModel : ViewModel(), IBookManager.IBookChangeListener,
         super.onCleared()
     }
 
-    override fun onBooksImported(list: List<BookFile>) {}
-
-    override fun onBookDeleted() {}
-
     override fun onBookCollectChange(id: String, collect: Boolean) {
         handler.post {
             if (id == bookFileLiveData.value?.id) {
                 this.collected = collect
             }
         }
-    }
-
-    override fun onBookInfoUpdate(id: String) {
-
     }
 
     override fun onBookMarkChange(bookId: String) {

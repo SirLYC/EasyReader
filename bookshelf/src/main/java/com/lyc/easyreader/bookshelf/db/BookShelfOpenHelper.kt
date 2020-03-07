@@ -22,7 +22,11 @@ class BookShelfOpenHelper private constructor() :
         private const val TAG = "BookShelfOpenHelper"
     }
 
-    private val daoMaster by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { MyDaoMaster(writableDb) }
+    private val daoMaster by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) {
+        MyDaoMaster(
+            writableDb
+        )
+    }
 
     private val daoSession by lazy(mode = LazyThreadSafetyMode.SYNCHRONIZED) { daoMaster.newSession() }
 
@@ -275,7 +279,7 @@ class BookShelfOpenHelper private constructor() :
         )
         sb.append(", j1.${BookReadRecordDao.Properties.Desc.columnName}, j2.${BookCollectDao.Properties.BookId.columnName}")
         sb.append(" from ${BookFileDao.TABLENAME} t left join ${BookReadRecordDao.TABLENAME} j1 on t.${BookFileDao.Properties.Id.columnName}=j1.${BookReadRecordDao.Properties.BookId.columnName} left join ${BookCollectDao.TABLENAME} j2 on t.${BookFileDao.Properties.Id.columnName}=j2.${BookCollectDao.Properties.BookId.columnName}")
-            .append(" where t.${BookFileDao.Properties.Status.columnName}=\"${BookFile.Status.NORMAL.name}\"")
+            .append(" where t.${BookFileDao.Properties.Status.columnName}=\"${BookFile.Status.NORMAL.name}\" and t.${BookFileDao.Properties.IsSecret.columnName} == 0")
             .append(" order by ${BookFileDao.Properties.LastAccessTime.columnName} desc, ${BookFileDao.Properties.ImportTime.columnName} desc")
         Log.d(TAG, "sql=$sb")
 
@@ -319,6 +323,7 @@ class BookShelfOpenHelper private constructor() :
         sb.append(", j1.${BookReadRecordDao.Properties.Desc.columnName}, j2.${BookCollectDao.Properties.BookId.columnName}")
         sb.append(" from ${BookFileDao.TABLENAME} t left join ${BookReadRecordDao.TABLENAME} j1 on t.${BookFileDao.Properties.Id.columnName}=j1.${BookReadRecordDao.Properties.BookId.columnName} left join ${BookCollectDao.TABLENAME} j2 on t.${BookFileDao.Properties.Id.columnName}=j2.${BookCollectDao.Properties.BookId.columnName}")
             .append(" where t.${BookFileDao.Properties.Status.columnName}=\"${BookFile.Status.NORMAL.name}\" and j2.${BookCollectDao.Properties.Collected.columnName} != 0 and j2.${BookCollectDao.Properties.Collected.columnName} is not null")
+            .append(" and t.${BookFileDao.Properties.IsSecret.columnName} == 0")
             .append(" order by ${BookCollectDao.Properties.CollectTime.columnName} desc")
         Log.d(TAG, "loadCollectBookList sql=$sb")
 
@@ -430,5 +435,68 @@ class BookShelfOpenHelper private constructor() :
                 }
             }
         })
+    }
+
+    fun loadSecretBookList(): List<BookFile> {
+        val daoSession = daoSession
+        val queryBuilder =
+            daoSession.bookFileDao.queryBuilder().where(BookFileDao.Properties.IsSecret.notEq(0))
+                .orderDesc(BookFileDao.Properties.LastAccessTime)
+                .orderAsc(BookFileDao.Properties.Filename)
+        return queryBuilder.list()
+    }
+
+    fun addBooksToSecret(
+        bookFiles: Iterable<BookFile>,
+        async: Boolean = true,
+        callback: () -> Unit = {}
+    ) {
+        val list = bookFiles.toList()
+        if (list.isEmpty()) {
+            return
+        }
+
+        val command = Runnable {
+            val db = writableDatabase
+            daoSession.runInTx {
+                list.forEach {
+                    db.execSQL("update ${BookFileDao.TABLENAME} set ${BookFileDao.Properties.IsSecret.columnName} = 1 where ${BookFileDao.Properties.Id.columnName} = '${it.id}'")
+                }
+            }
+            callback()
+        }
+
+        if (async) {
+            dbRunner.asyncRun(command)
+        } else {
+            dbRunner.awaitRun(command)
+        }
+    }
+
+    fun removeBooksFromSecret(
+        bookFiles: Iterable<BookFile>,
+        async: Boolean = true,
+        callback: () -> Unit = {}
+    ) {
+        val list = bookFiles.toList()
+        if (list.isEmpty()) {
+            return
+        }
+
+        val command = Runnable {
+            val db = writableDatabase
+            daoSession.runInTx {
+                list.forEach {
+                    db.execSQL("update ${BookFileDao.TABLENAME} set ${BookFileDao.Properties.IsSecret.columnName} = 0 where ${BookFileDao.Properties.Id.columnName} = '${it.id}'")
+                }
+            }
+            callback()
+        }
+
+        if (async) {
+            dbRunner.asyncRun(command)
+        } else {
+            dbRunner.awaitRun(command)
+        }
     }
 }

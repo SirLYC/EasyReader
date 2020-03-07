@@ -29,14 +29,20 @@ interface IBookManager {
 
     fun openBookFileByOther(bookFile: BookFile)
 
+    fun addBooksToSecret(bookFiles: Iterable<BookFile>, async: Boolean = true)
+
+    fun removeBooksFromSecret(bookFiles: Iterable<BookFile>, async: Boolean = true)
+
     interface IBookChangeListener {
 
-        fun onBooksImported(list: List<BookFile>)
+        fun onBooksImported(list: List<BookFile>) = Unit
 
-        fun onBookDeleted()
+        fun onSecretBooksChanged() = Unit
 
-        fun onBookCollectChange(id: String, collect: Boolean)
+        fun onBookDeleted() = Unit
 
-        fun onBookInfoUpdate(id: String)
+        fun onBookCollectChange(id: String, collect: Boolean) = Unit
+
+        fun onBookInfoUpdate(id: String) = Unit
     }
 }

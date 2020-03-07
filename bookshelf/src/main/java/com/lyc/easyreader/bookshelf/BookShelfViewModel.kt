@@ -175,6 +175,12 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
         }
     }
 
+    override fun onSecretBooksChanged() {
+        if (list.isNotEmpty()) {
+            handler.post { refreshList(fromCallback = true) }
+        }
+    }
+
     override fun onBookDeleted() {
         handler.post { refreshList(fromCallback = true) }
     }

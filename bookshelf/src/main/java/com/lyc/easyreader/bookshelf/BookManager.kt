@@ -88,6 +88,24 @@ class BookManager private constructor() : IBookManager {
         }
     }
 
+    override fun addBooksToSecret(bookFiles: Iterable<BookFile>, async: Boolean) {
+        BookShelfOpenHelper.instance.addBooksToSecret(bookFiles, async) {
+            ReaderToast.showToast("已加入私密空间")
+            eventHub.forEachListener {
+                it.onSecretBooksChanged()
+            }
+        }
+    }
+
+    override fun removeBooksFromSecret(bookFiles: Iterable<BookFile>, async: Boolean) {
+        BookShelfOpenHelper.instance.removeBooksFromSecret(bookFiles, async) {
+            ReaderToast.showToast("已移除私密空间")
+            eventHub.forEachListener {
+                it.onSecretBooksChanged()
+            }
+        }
+    }
+
     override fun openBookFileByOther(bookFile: BookFile) {
         val context = ReaderApplication.appContext()
         val uri = FileProvider.getUriForFile(
@@ -325,6 +343,7 @@ class BookManager private constructor() : IBookManager {
                         outputFile.absolutePath,
                         orgFilename.substringBeforeLast("."),
                         orgFilename.substringAfterLast(".", "txt"),
+                        false,
                         currentTime,
                         0,
                         0,

@@ -4,7 +4,6 @@ import android.os.Handler
 import androidx.annotation.MainThread
 import androidx.lifecycle.ViewModel
 import com.lyc.common.thread.ExecutorFactory
-import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.api.book.IBookManager
 import com.lyc.easyreader.base.arch.NonNullLiveData
 import com.lyc.easyreader.base.utils.rv.ObservableList
@@ -51,9 +50,11 @@ class CollectViewModel : ViewModel(), IBookManager.IBookChangeListener,
         }
     }
 
-    override fun onBooksImported(list: List<BookFile>) {}
-
     override fun onBookDeleted() {
+        handler.post { refreshList() }
+    }
+
+    override fun onSecretBooksChanged() {
         handler.post { refreshList() }
     }
 
