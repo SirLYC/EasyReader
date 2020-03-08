@@ -11,7 +11,7 @@ class PageStylePrefValue(
     key: String,
     preference: IPreference
 ) : PrefValue<PageStyle>(key, PageStyle.BG_1, preference, { k, defVal ->
-    val string = preference.getString(k, null)
+    val string = preference.getString(k, "")
     if (string != null) {
         try {
             val split = string.split("&")

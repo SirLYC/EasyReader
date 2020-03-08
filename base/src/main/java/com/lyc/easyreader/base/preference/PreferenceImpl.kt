@@ -26,7 +26,7 @@ internal class PreferenceImpl(
         return key
     }
 
-    override fun getString(key: String, defaultValue: String?): String? {
+    override fun getString(key: String, defaultValue: String): String? {
         return preference.getString(key, defaultValue)
     }
 
@@ -56,7 +56,7 @@ internal class PreferenceImpl(
         }
     }
 
-    override fun putString(key: String, value: String) {
+    override fun putString(key: String, value: String?) {
         preference.writePref {
             it.putString(key, value)
         }

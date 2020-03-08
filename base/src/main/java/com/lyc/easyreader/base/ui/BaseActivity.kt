@@ -105,9 +105,9 @@ abstract class BaseActivity : AppCompatActivity() {
         }
         rootView = FrameLayout(this)
         rootView.setBackgroundColor(color_bg)
-        afterBaseOnCreate(savedInstanceState, rootView)
         createRootView = true
         setContentView(rootView)
+        afterBaseOnCreate(savedInstanceState, rootView)
         NightModeManager.nightMode.observe(this, Observer { onNightModeChange(it) })
     }
 

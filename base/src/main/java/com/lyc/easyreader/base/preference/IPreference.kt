@@ -6,7 +6,7 @@ package com.lyc.easyreader.base.preference
 interface IPreference {
     fun getKey(): String
 
-    fun getString(key: String, defaultValue: String? = null): String?
+    fun getString(key: String, defaultValue: String = ""): String?
 
     fun getStringSet(key: String, defaultValue: Set<String>? = null): Set<String>?
 
@@ -20,7 +20,7 @@ interface IPreference {
 
     fun putStringSet(key: String, value: Set<String>)
 
-    fun putString(key: String, value: String)
+    fun putString(key: String, value: String?)
 
     fun putBoolean(key: String, value: Boolean)
 

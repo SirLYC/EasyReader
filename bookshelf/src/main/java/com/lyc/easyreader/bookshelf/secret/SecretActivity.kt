@@ -1,4 +1,4 @@
-package com.lyc.easyreader.bookshelf.collect
+package com.lyc.easyreader.bookshelf.secret
 
 import android.os.Bundle
 import android.util.TypedValue
@@ -30,31 +30,30 @@ import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.RenameDialog
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
-import com.lyc.easyreader.bookshelf.secret.SecretManager
 
 /**
  * Created by Liu Yuchuan on 2020/2/14.
  */
-class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.ItemClickListener {
-    private lateinit var collectViewModel: CollectViewModel
+class SecretActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.ItemClickListener {
+    private lateinit var secretViewModel: SecretViewModel
 
     override fun beforeBaseOnCreate(savedInstanceState: Bundle?) {
         super.beforeBaseOnCreate(savedInstanceState)
-        collectViewModel = provideViewModel()
-        collectViewModel.refreshList()
+        secretViewModel = provideViewModel()
+        secretViewModel.refreshList()
     }
 
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
         super.afterBaseOnCreate(savedInstanceState, rootView)
         val toolBar = BaseToolBar(this)
-        toolBar.setTitle("收藏夹")
+        toolBar.setTitle("私密空间")
         toolBar.setBarClickListener(this)
         rootView.addView(toolBar, FrameLayout.LayoutParams(MATCH_PARENT, toolBar.getViewHeight()))
         val rv = RecyclerView(this)
         rv.layoutManager = LinearLayoutManager(this)
-        rv.adapter = CollectItemAdapter(collectViewModel.collectBookList).apply {
-            observe(this@CollectActivity)
-            itemClickListener = this@CollectActivity
+        rv.adapter = SecretListAdapter(secretViewModel.secretBookList).apply {
+            observe(this@SecretActivity)
+            itemClickListener = this@SecretActivity
         }
         rootView.addView(rv, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT).apply {
             topMargin = toolBar.getViewHeight()
@@ -83,14 +82,14 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
             )
-            text = "还没有任何收藏"
+            text = "还没有任何私密书籍"
         }
 
-        collectViewModel.isRefreshingLiveData.observe(this, Observer {
+        secretViewModel.isRefreshingLiveData.observe(this, Observer {
             emptyView.isVisible =
-                collectViewModel.collectBookList.isEmpty() && collectViewModel.firstRefreshFinish
+                secretViewModel.secretBookList.isEmpty() && secretViewModel.firstRefreshFinish
             rv.isVisible =
-                collectViewModel.collectBookList.isNotEmpty() && collectViewModel.firstRefreshFinish
+                secretViewModel.secretBookList.isNotEmpty() && secretViewModel.firstRefreshFinish
         })
     }
 
@@ -106,38 +105,33 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
     }
 
     override fun onItemClick(position: Int, view: View, editMode: Boolean) {
-        if (position < 0 || position >= collectViewModel.collectBookList.size) {
+        if (position < 0 || position >= secretViewModel.secretBookList.size) {
             return
         }
-        ReaderActivity.openBookFile(collectViewModel.collectBookList[position])
+        ReaderActivity.openBookFile(secretViewModel.secretBookList[position])
     }
 
     override fun onItemLongClick(position: Int, view: View, editMode: Boolean): Boolean {
-        if (editMode || position < 0 || position >= collectViewModel.collectBookList.size) {
+        if (editMode || position < 0 || position >= secretViewModel.secretBookList.size) {
             return false
         }
-        val data = collectViewModel.collectBookList[position]
+        val data = secretViewModel.secretBookList[position]
         val menu = ReaderPopupMenu(this, view)
 
-        val noHistoryId = 1
+        val secreteId = 1
         val renameId = 5
-        val collectId = 9
         val secretId = 11
         val shareId = 18
 
         menu.addItem(
-            noHistoryId,
+            secreteId,
             "无痕阅读"
         )
         menu.addItem(
             renameId,
             "重命名"
         )
-        menu.addItem(
-            collectId,
-            "取消收藏"
-        )
-        menu.addItem(secretId, "加入私密空间")
+        menu.addItem(secretId, "移除私密空间")
         menu.addItem(
             shareId,
             "分享"
@@ -148,17 +142,14 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
 
         menu.setOnMenuItemClickListener {
             when (it.itemId) {
-                noHistoryId -> {
+                secreteId -> {
                     ReaderActivity.openBookFile(data, true)
-                }
-                collectId -> {
-                    BookManager.instance.updateBookCollect(data.id, false)
                 }
                 renameId -> {
                     RenameDialog.show(supportFragmentManager, data)
                 }
                 secretId -> {
-                    SecretManager.addBooksToSecret(listOf(data))
+                    BookManager.instance.removeBooksFromSecret(listOf(data))
                 }
                 shareId -> {
                     BookManager.instance.shareBookFile(data)

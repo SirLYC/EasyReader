@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="password_input_size">16dp</dimen>
+    <dimen name="password_input_margin">8dp</dimen>
+    <dimen name="button_margin_horizontal">16dp</dimen>
+</resources>

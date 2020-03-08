@@ -14,5 +14,11 @@
         <activity
             android:name=".collect.CollectActivity"
             android:launchMode="singleTop" />
+        <activity
+            android:name=".secret.SecretActivity"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".secret.password.PasswordActivity"
+            android:launchMode="singleTop" />
     </application>
 </manifest>

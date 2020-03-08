@@ -43,6 +43,8 @@ import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
 import com.lyc.easyreader.bookshelf.collect.CollectActivity
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
+import com.lyc.easyreader.bookshelf.secret.SecretManager
+import com.lyc.easyreader.bookshelf.secret.password.PasswordActivity
 import com.lyc.easyreader.bookshelf.utils.detectCharset
 import com.lyc.easyreader.bookshelf.utils.singleUriDocumentFile
 import java.io.File
@@ -296,6 +298,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                     activity?.run {
                         val dialog = LinearDialogBottomSheet(this)
                         val collectId = dialog.addItem("收藏夹", R.drawable.ic_star_border_24dp)
+                        val secretId = dialog.addItem("私密空间", R.drawable.ic_package)
                         val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
                         val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
                         val batchId = if (viewModel.list.isNotEmpty()) {
@@ -310,6 +313,9 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                                 collectId -> ReaderApplication.openActivity(CollectActivity::class)
                                 importFileId -> performFileSearch()
                                 scanDirId -> performDirSearch()
+                                secretId -> {
+                                    PasswordActivity.openPasswordActivity(SecretManager.ActivityAction.OpenSecretPage)
+                                }
                                 batchId -> {
                                     if (!viewModel.isLoadingLiveData.value) {
                                         setEditMode(true)
@@ -564,7 +570,7 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                             .show()
                     }
                     secretId -> {
-                        BookManager.instance.addBooksToSecret(listOf(data))
+                        SecretManager.addBooksToSecret(listOf(data))
                     }
                     renameId -> {
                         activity?.run {

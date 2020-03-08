@@ -64,28 +64,58 @@ class BookManager private constructor() : IBookManager {
         }
     }
 
-    override fun shareBookFile(bookFile: BookFile) {
+    private inline fun copyBookFileToShareSpace(
+        bookFile: BookFile,
+        crossinline callback: (filepath: String) -> Unit,
+        crossinline errorCallback: (reason: String, ex: Throwable?) -> Unit = { _, _ -> }
+    ) {
         val context = ReaderApplication.appContext()
-        val uri = FileProvider.getUriForFile(
-            context,
-            Schema.FILE_PROVIDER_AUTH,
-            File(bookFile.realPath)
-        )
-        val intent = Intent().apply {
-            setDataAndType(
-                uri,
-                MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
+        val shareFolderPath = context.getExternalFilesDir("share")
+        if (shareFolderPath == null) {
+            errorCallback("无法找到文件", null)
+            return
+        }
+        ExecutorFactory.IO_EXECUTOR.execute {
+            val fromFile = File(bookFile.realPath)
+            val destFile = File(shareFolderPath, bookFile.filename + "." + bookFile.fileExt)
+            try {
+                val filepath = fromFile.copyTo(destFile, true).absolutePath
+                ExecutorFactory.MAIN_EXECUTOR.execute {
+                    callback(filepath)
+                }
+            } catch (e: Exception) {
+                errorCallback("无法分享该文件", e)
+            }
+        }
+    }
+
+    override fun shareBookFile(bookFile: BookFile) {
+        copyBookFileToShareSpace(bookFile, { filepath ->
+            val context = ReaderApplication.appContext()
+            val uri = FileProvider.getUriForFile(
+                context,
+                Schema.FILE_PROVIDER_AUTH,
+                File(filepath)
             )
-            action = Intent.ACTION_SEND
-        }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        try {
-            context.startActivity(Intent.createChooser(intent, "分享到...").apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        } catch (e: Exception) {
-            LogUtils.e(ReaderActivity.TAG, ex = e)
-        }
+            val intent = Intent().apply {
+                setDataAndType(
+                    uri,
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
+                )
+                action = Intent.ACTION_SEND
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            try {
+                context.startActivity(Intent.createChooser(intent, "分享到...").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+            } catch (e: Exception) {
+                LogUtils.e(ReaderActivity.TAG, ex = e)
+            }
+        }, { reason, t ->
+            ReaderToast.showToast("分享失败：${reason}")
+            LogUtils.e(TAG, reason, t)
+        })
     }
 
     override fun addBooksToSecret(bookFiles: Iterable<BookFile>, async: Boolean) {
@@ -107,27 +137,32 @@ class BookManager private constructor() : IBookManager {
     }
 
     override fun openBookFileByOther(bookFile: BookFile) {
-        val context = ReaderApplication.appContext()
-        val uri = FileProvider.getUriForFile(
-            context,
-            Schema.FILE_PROVIDER_AUTH,
-            File(bookFile.realPath)
-        )
-        val intent = Intent().apply {
-            setDataAndType(
-                uri,
-                MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
+        copyBookFileToShareSpace(bookFile, { filepath ->
+            val context = ReaderApplication.appContext()
+            val uri = FileProvider.getUriForFile(
+                context,
+                Schema.FILE_PROVIDER_AUTH,
+                File(filepath)
             )
-            action = Intent.ACTION_VIEW
-        }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        try {
-            context.startActivity(Intent.createChooser(intent, "选择APP打开").apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        } catch (e: Exception) {
-            LogUtils.e(ReaderActivity.TAG, ex = e)
-        }
+            val intent = Intent().apply {
+                setDataAndType(
+                    uri,
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
+                )
+                action = Intent.ACTION_VIEW
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            try {
+                context.startActivity(Intent.createChooser(intent, "选择APP打开").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+            } catch (e: Exception) {
+                LogUtils.e(ReaderActivity.TAG, ex = e)
+            }
+        }, { reason, t ->
+            ReaderToast.showToast("打开失败：${reason}")
+            LogUtils.e(TAG, reason, t)
+        })
     }
 
     @AnyThread

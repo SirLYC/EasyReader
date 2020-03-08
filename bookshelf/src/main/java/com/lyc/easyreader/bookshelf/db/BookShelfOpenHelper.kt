@@ -270,7 +270,7 @@ class BookShelfOpenHelper private constructor() :
             .list()
     }
 
-    fun loadBookShelfBookList(): MutableList<BookShelfBook> {
+    fun loadBookShelfBookList(secret: Boolean = false): MutableList<BookShelfBook> {
         val sb = StringBuilder("select ")
         SqlUtils.appendColumns(
             sb,
@@ -279,7 +279,7 @@ class BookShelfOpenHelper private constructor() :
         )
         sb.append(", j1.${BookReadRecordDao.Properties.Desc.columnName}, j2.${BookCollectDao.Properties.BookId.columnName}")
         sb.append(" from ${BookFileDao.TABLENAME} t left join ${BookReadRecordDao.TABLENAME} j1 on t.${BookFileDao.Properties.Id.columnName}=j1.${BookReadRecordDao.Properties.BookId.columnName} left join ${BookCollectDao.TABLENAME} j2 on t.${BookFileDao.Properties.Id.columnName}=j2.${BookCollectDao.Properties.BookId.columnName}")
-            .append(" where t.${BookFileDao.Properties.Status.columnName}=\"${BookFile.Status.NORMAL.name}\" and t.${BookFileDao.Properties.IsSecret.columnName} == 0")
+            .append(" where t.${BookFileDao.Properties.Status.columnName}=\"${BookFile.Status.NORMAL.name}\" and t.${BookFileDao.Properties.IsSecret.columnName} ${if (secret) "!=0" else "==0"}")
             .append(" order by ${BookFileDao.Properties.LastAccessTime.columnName} desc, ${BookFileDao.Properties.ImportTime.columnName} desc")
         Log.d(TAG, "sql=$sb")
 
@@ -437,15 +437,6 @@ class BookShelfOpenHelper private constructor() :
         })
     }
 
-    fun loadSecretBookList(): List<BookFile> {
-        val daoSession = daoSession
-        val queryBuilder =
-            daoSession.bookFileDao.queryBuilder().where(BookFileDao.Properties.IsSecret.notEq(0))
-                .orderDesc(BookFileDao.Properties.LastAccessTime)
-                .orderAsc(BookFileDao.Properties.Filename)
-        return queryBuilder.list()
-    }
-
     fun addBooksToSecret(
         bookFiles: Iterable<BookFile>,
         async: Boolean = true,
@@ -460,6 +451,7 @@ class BookShelfOpenHelper private constructor() :
             val db = writableDatabase
             daoSession.runInTx {
                 list.forEach {
+                    it.isSecret = true
                     db.execSQL("update ${BookFileDao.TABLENAME} set ${BookFileDao.Properties.IsSecret.columnName} = 1 where ${BookFileDao.Properties.Id.columnName} = '${it.id}'")
                 }
             }
@@ -487,6 +479,7 @@ class BookShelfOpenHelper private constructor() :
             val db = writableDatabase
             daoSession.runInTx {
                 list.forEach {
+                    it.isSecret = false
                     db.execSQL("update ${BookFileDao.TABLENAME} set ${BookFileDao.Properties.IsSecret.columnName} = 0 where ${BookFileDao.Properties.Id.columnName} = '${it.id}'")
                 }
             }
