@@ -1,13 +1,18 @@
 package com.lyc.easyreader.bookshelf.secret
 
+import android.os.SystemClock
 import androidx.annotation.IntDef
 import com.lyc.easyreader.api.book.BookFile
 import com.lyc.easyreader.base.preference.PreferenceManager
+import com.lyc.easyreader.base.preference.value.EnumPrefValue
+import com.lyc.easyreader.base.preference.value.PrefValue
 import com.lyc.easyreader.base.preference.value.StringPrefValue
+import com.lyc.easyreader.base.ui.ReaderToast
 import com.lyc.easyreader.base.utils.LogUtils
 import com.lyc.easyreader.base.utils.getMd5
 import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.secret.password.PasswordActivity
+import com.lyc.easyreader.bookshelf.secret.settings.PasswordSession
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -56,6 +61,14 @@ object SecretManager {
         }
     }
 
+    fun updateSecretAccessTime() {
+        passwordAccessLock.withLock {
+            val time = SystemClock.elapsedRealtime()
+            lastEnterPasswordTime = time
+            LogUtils.d(TAG, "更新正确输入密码进入私密空间的时间: $time")
+        }
+    }
+
     fun setPassword(newPassword: String): Boolean {
         LogUtils.i(TAG, "Set password=$newPassword")
         if (newPassword.any { !it.isDigit() }) {
@@ -67,7 +80,12 @@ object SecretManager {
         }
         val md5 = newPassword.getMd5()
         passwordAccessLock.withLock {
+            val old = passwordHash.value
             passwordHash.value = md5
+            lastEnterPasswordTime = 0
+            if (old.length == 32) {
+                ReaderToast.showToast("修改密码成功")
+            }
         }
         return true
     }
@@ -83,7 +101,7 @@ object SecretManager {
 
         // 初始状态
         // 修改密码的第一个状态
-        object ModifyInput : PasswordAction("输入原密码", Modify, needValidPassword = true)
+        object Modify : PasswordAction("输入新密码", ModifyRepeat)
 
         // （有密码）进入私密空间的第一个状态
         object Input : PasswordAction("输入密码", ActionImportOrOpen, true)
@@ -93,8 +111,6 @@ object SecretManager {
         object Set : PasswordAction("设置私密空间密码", SetAndAddRepeat, false)
 
         // 中间状态
-        object Modify : PasswordAction("输入新密码密码", ModifyRepeat)
-
         object ModifyRepeat :
             PasswordAction("重复密码", ActionBack, needValidLast = true, needModifyPassword = true)
 
@@ -134,7 +150,6 @@ object SecretManager {
 
     fun actionToInt(action: PasswordAction): Int {
         return when (action) {
-            PasswordAction.ModifyInput -> ACTION_MODIFY_INPUT
             PasswordAction.Input -> ACTION_INPUT
             PasswordAction.Set -> ACTION_SET
             PasswordAction.Modify -> ACTION_MODIFY
@@ -148,7 +163,6 @@ object SecretManager {
 
     fun intToAction(@ActionInt actionInt: Int): PasswordAction {
         return when (actionInt) {
-            ACTION_MODIFY_INPUT -> PasswordAction.ModifyInput
             ACTION_INPUT -> PasswordAction.Input
             ACTION_SET -> PasswordAction.Set
             ACTION_MODIFY -> PasswordAction.Modify
@@ -159,6 +173,32 @@ object SecretManager {
             else -> {
                 throw IllegalArgumentException("Cannot recognize action! ActionInt=${actionInt}")
             }
+        }
+    }
+
+    // ---------------------------------------- settings ---------------------------------------- //
+    val secretSettings = hashSetOf<PrefValue<*>>()
+
+    val passwordSession = EnumPrefValue(
+        "password_session",
+        PasswordSession.Never,
+        preference,
+        { PasswordSession.valueOf(it) }).also { secretSettings.add(it) }
+
+    @Volatile
+    private var lastEnterPasswordTime = 0L
+
+    fun passwordSessionValid(): Boolean {
+        return passwordAccessLock.withLock {
+            val time = SystemClock.elapsedRealtime()
+            val session = passwordSession.value
+            val expireTime = lastEnterPasswordTime + session.duration * 1000L
+            val result = expireTime > time
+            LogUtils.i(
+                TAG,
+                "CurrentTime=$time sessionValidDuration=${session.displayName} expireTime=$expireTime isValidNow=$result"
+            )
+            result
         }
     }
 }

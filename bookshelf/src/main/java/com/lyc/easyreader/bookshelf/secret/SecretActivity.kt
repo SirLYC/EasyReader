@@ -15,12 +15,14 @@ import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.lyc.easyreader.base.ReaderApplication
 import com.lyc.easyreader.base.arch.provideViewModel
 import com.lyc.easyreader.base.ui.BaseActivity
 import com.lyc.easyreader.base.ui.getDrawableRes
 import com.lyc.easyreader.base.ui.theme.color_secondary_text
 import com.lyc.easyreader.base.ui.widget.BaseToolBar
 import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
+import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.changeToColor
 import com.lyc.easyreader.base.utils.dp2px
 import com.lyc.easyreader.base.utils.dp2pxf
@@ -30,6 +32,7 @@ import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.RenameDialog
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
+import com.lyc.easyreader.bookshelf.secret.settings.SecretSettingsActivity
 
 /**
  * Created by Liu Yuchuan on 2020/2/14.
@@ -45,7 +48,7 @@ class SecretActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.Ite
 
     override fun afterBaseOnCreate(savedInstanceState: Bundle?, rootView: FrameLayout) {
         super.afterBaseOnCreate(savedInstanceState, rootView)
-        val toolBar = BaseToolBar(this)
+        val toolBar = SimpleToolbar(this, R.drawable.ic_settings_24dp)
         toolBar.setTitle("私密空间")
         toolBar.setBarClickListener(this)
         rootView.addView(toolBar, FrameLayout.LayoutParams(MATCH_PARENT, toolBar.getViewHeight()))
@@ -101,6 +104,9 @@ class SecretActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.Ite
     override fun onClick(v: View?) {
         when (v?.id) {
             BaseToolBar.VIEW_ID_LEFT_BUTTON -> onBackPressed()
+            SimpleToolbar.VIEW_ID_RIGHT_BUTTON -> ReaderApplication.openActivity(
+                SecretSettingsActivity::class
+            )
         }
     }
 

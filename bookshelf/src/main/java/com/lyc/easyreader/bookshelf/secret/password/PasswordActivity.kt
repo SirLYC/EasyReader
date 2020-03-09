@@ -22,7 +22,6 @@ import kotlinx.android.synthetic.main.activity_password.*
  * Created by Liu Yuchuan on 2020/3/7.
  */
 class PasswordActivity : BaseActivity(), View.OnClickListener {
-    private var bookFile: BookFile? = null
     private lateinit var viewModel: PasswordViewModel
 
     companion object {
@@ -34,11 +33,19 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
             bookFiles: Iterable<BookFile>? = null
         ) {
             val passwordAction = when (action) {
-                SecretManager.ActivityAction.ModifyPassword -> SecretManager.PasswordAction.ModifyInput
-                SecretManager.ActivityAction.OpenSecretPage -> if (SecretManager.hasPassword()) {
-                    SecretManager.PasswordAction.Input
-                } else {
-                    SecretManager.PasswordAction.Set
+                SecretManager.ActivityAction.ModifyPassword -> SecretManager.PasswordAction.Modify
+                SecretManager.ActivityAction.OpenSecretPage -> {
+                    if (SecretManager.hasPassword()) {
+                        if (SecretManager.passwordSessionValid()) {
+                            // 密码还在有效期，直接打开私密空间
+                            ReaderApplication.openActivity(SecretActivity::class)
+                            return
+                        } else {
+                            SecretManager.PasswordAction.Input
+                        }
+                    } else {
+                        SecretManager.PasswordAction.Set
+                    }
                 }
                 SecretManager.ActivityAction.SetOrImportBookFile -> SecretManager.PasswordAction.Set
             }
@@ -128,6 +135,7 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
                         onBackPressed()
                     } else {
                         ReaderApplication.openActivity(SecretActivity::class)
+                        SecretManager.updateSecretAccessTime()
                         finish()
                     }
                 }
