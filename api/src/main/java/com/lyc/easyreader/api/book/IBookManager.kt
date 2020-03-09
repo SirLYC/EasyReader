@@ -27,8 +27,6 @@ interface IBookManager {
 
     fun shareBookFile(bookFile: BookFile)
 
-    fun openBookFileByOther(bookFile: BookFile)
-
     fun addBooksToSecret(bookFiles: Iterable<BookFile>, async: Boolean = true)
 
     fun removeBooksFromSecret(bookFiles: Iterable<BookFile>, async: Boolean = true)

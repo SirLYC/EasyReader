@@ -102,13 +102,11 @@ class BookManager private constructor() : IBookManager {
                     uri,
                     MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
                 )
-                action = Intent.ACTION_SEND
+                action = Intent.ACTION_VIEW
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
             try {
-                context.startActivity(Intent.createChooser(intent, "分享到...").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
+                context.startActivity(intent)
             } catch (e: Exception) {
                 LogUtils.e(ReaderActivity.TAG, ex = e)
             }
@@ -134,35 +132,6 @@ class BookManager private constructor() : IBookManager {
                 it.onSecretBooksChanged()
             }
         }
-    }
-
-    override fun openBookFileByOther(bookFile: BookFile) {
-        copyBookFileToShareSpace(bookFile, { filepath ->
-            val context = ReaderApplication.appContext()
-            val uri = FileProvider.getUriForFile(
-                context,
-                Schema.FILE_PROVIDER_AUTH,
-                File(filepath)
-            )
-            val intent = Intent().apply {
-                setDataAndType(
-                    uri,
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(bookFile.fileExt)
-                )
-                action = Intent.ACTION_VIEW
-            }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            try {
-                context.startActivity(Intent.createChooser(intent, "选择APP打开").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-            } catch (e: Exception) {
-                LogUtils.e(ReaderActivity.TAG, ex = e)
-            }
-        }, { reason, t ->
-            ReaderToast.showToast("打开失败：${reason}")
-            LogUtils.e(TAG, reason, t)
-        })
     }
 
     @AnyThread

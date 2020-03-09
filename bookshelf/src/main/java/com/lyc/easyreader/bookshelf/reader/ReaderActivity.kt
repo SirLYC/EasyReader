@@ -935,8 +935,6 @@ class ReaderActivity : BaseActivity(),
                 val bookMarkId =
                     dialog.addItem("添加书签", R.drawable.ic_bookmark_border_24dp, pageStyle.fontColor)
                 val shareId = dialog.addItem("分享", R.drawable.ic_share_24dp, pageStyle.fontColor)
-                val exportId =
-                    dialog.addItem("其他应用打开", R.drawable.ic_launch_24dp, color = pageStyle.fontColor)
                 dialog.bgColor = pageStyle.bgColor
                 dialog.show()
                 dialog.itemClickListener = { id, _ ->
@@ -948,7 +946,6 @@ class ReaderActivity : BaseActivity(),
                             addBookMark()
                         }
                         shareId -> shareBookFileByOtherApp()
-                        exportId -> openBookFileByOtherApp()
                     }
                 }
 
@@ -1057,10 +1054,6 @@ class ReaderActivity : BaseActivity(),
 
     override fun onPageCountChange(count: Int) {
         viewModel.pageCount.value = count
-    }
-
-    private fun openBookFileByOtherApp() {
-        viewModel.bookFileLiveData.value?.let { BookManager.instance.openBookFileByOther(it) }
     }
 
     private fun shareBookFileByOtherApp() {
