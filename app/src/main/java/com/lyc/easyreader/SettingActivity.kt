@@ -1,6 +1,8 @@
 package com.lyc.easyreader
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -9,9 +11,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Observer
+import com.lyc.easyreader.api.book.ISecretManager
 import com.lyc.easyreader.api.settings.ISettingGroup
 import com.lyc.easyreader.api.settings.ISettings
 import com.lyc.easyreader.base.getOneToManyApiList
+import com.lyc.easyreader.base.getSingleApi
 import com.lyc.easyreader.base.preference.view.SettingGroupView
 import com.lyc.easyreader.base.preference.view.SwitchSettingItemView
 import com.lyc.easyreader.base.preference.view.TextSettingItemView
@@ -27,7 +31,7 @@ import com.lyc.easyreader.base.utils.statusBarBlackText
 /**
  * Created by Liu Yuchuan on 2020/2/14.
  */
-class SettingActivity : BaseActivity(), View.OnClickListener {
+class SettingActivity : BaseActivity(), View.OnClickListener, Handler.Callback {
     companion object {
         private val VIEW_ID_SCROLL_VIEW = generateNewViewId()
         private const val TAG = "SettingActivity"
@@ -40,7 +44,15 @@ class SettingActivity : BaseActivity(), View.OnClickListener {
         }.apply {
             LogUtils.i(TAG, "RegisteredSettingGroups: $this")
         }
+
+        private const val CONTINUES_CLICK_DELAY = 2000L
+        private const val MSG_RESET_CNT = 1
+        private const val RESET_SECRET_PASSWORD_STEP = 6
     }
+
+    private var resetSecretSpaceClickCnt = RESET_SECRET_PASSWORD_STEP
+
+    private val handler = Handler(this)
 
     private var settingsContainer: ViewGroup? = null
     private var attachExperimentalViews = false
@@ -138,6 +150,7 @@ class SettingActivity : BaseActivity(), View.OnClickListener {
     }
 
     override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null)
         settingGroups.forEach {
             it.detach(this)
             it.destroy()
@@ -156,6 +169,37 @@ class SettingActivity : BaseActivity(), View.OnClickListener {
     override fun onClick(v: View?) {
         when (v?.id) {
             BaseToolBar.VIEW_ID_LEFT_BUTTON -> onBackPressed()
+
+            BaseToolBar.VIEW_ID_TITLE -> {
+                val secretManager = getSingleApi<ISecretManager>()
+                if (secretManager == null || secretManager.resetChangeCnt() <= 0 || !secretManager.hasPassword()) {
+                    return
+                }
+                if ((resetSecretSpaceClickCnt - 1).also { resetSecretSpaceClickCnt = it } == 0) {
+                    resetSecretSpaceClickCnt = RESET_SECRET_PASSWORD_STEP
+                    AlertDialog.Builder(this)
+                        .setMessage(
+                            "要重置私密空间密码吗（还剩${secretManager.resetChangeCnt()}次机会）？"
+                        )
+                        .setPositiveButton("是") { _, _ -> secretManager.resetPassword() }
+                        .setNegativeButton("否", null)
+                        .showWithNightMode()
+                } else if (resetSecretSpaceClickCnt <= RESET_SECRET_PASSWORD_STEP - 3) {
+                    ReaderToast.showToast("还有${resetSecretSpaceClickCnt}步可以重置私密空间密码")
+                    handler.removeMessages(MSG_RESET_CNT)
+                    handler.sendEmptyMessageDelayed(
+                        MSG_RESET_CNT,
+                        CONTINUES_CLICK_DELAY
+                    )
+                }
+            }
         }
+    }
+
+    override fun handleMessage(msg: Message): Boolean {
+        if (msg.what == MSG_RESET_CNT) {
+            resetSecretSpaceClickCnt = RESET_SECRET_PASSWORD_STEP
+        }
+        return true
     }
 }

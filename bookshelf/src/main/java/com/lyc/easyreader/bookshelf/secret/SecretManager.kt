@@ -2,9 +2,13 @@ package com.lyc.easyreader.bookshelf.secret
 
 import android.os.SystemClock
 import androidx.annotation.IntDef
+import com.lyc.appinject.CreateMethod
+import com.lyc.appinject.annotations.InjectApiImpl
 import com.lyc.easyreader.api.book.BookFile
+import com.lyc.easyreader.api.book.ISecretManager
 import com.lyc.easyreader.base.preference.PreferenceManager
 import com.lyc.easyreader.base.preference.value.EnumPrefValue
+import com.lyc.easyreader.base.preference.value.IntPrefValue
 import com.lyc.easyreader.base.preference.value.PrefValue
 import com.lyc.easyreader.base.preference.value.StringPrefValue
 import com.lyc.easyreader.base.ui.ReaderToast
@@ -20,13 +24,18 @@ import kotlin.concurrent.withLock
 /**
  * Created by Liu Yuchuan on 2020/3/8.
  */
-object SecretManager {
+@InjectApiImpl(api = ISecretManager::class, createMethod = CreateMethod.GET_INSTANCE)
+object SecretManager : ISecretManager {
+
+    @JvmStatic
+    val instance = SecretManager
+
     private val preference = PreferenceManager.getPrefernce("SecretManager")
     private val passwordAccessLock = ReentrantLock()
     private val passwordHash = StringPrefValue("secret_password_hash", "", preference)
     private const val TAG = "SECRET_MANAGER"
 
-    fun hasPassword(): Boolean {
+    override fun hasPassword(): Boolean {
         return passwordAccessLock.withLock {
             val value = passwordHash.value
             value.length == 32
@@ -200,5 +209,22 @@ object SecretManager {
             )
             result
         }
+    }
+
+    override fun resetPassword() {
+        if (resetChangeCnt.value <= 0) {
+            return
+        }
+        PasswordActivity.openPasswordActivity(ActivityAction.ModifyPassword, needDecResetCnt = true)
+    }
+
+    private val resetChangeCnt = IntPrefValue("reset_change_cnt", 2, preference)
+
+    override fun resetChangeCnt(): Int {
+        return resetChangeCnt.value
+    }
+
+    fun decResetCnt() {
+        resetChangeCnt.dec()
     }
 }

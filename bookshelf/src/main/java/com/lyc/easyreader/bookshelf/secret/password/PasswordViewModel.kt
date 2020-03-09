@@ -16,6 +16,7 @@ import java.util.*
 class PasswordViewModel : ViewModel() {
     private var bookFiles: Array<BookFile>? = null
 
+    private var needDecResetCnt = false
     private val actionBackStack = LinkedList<SecretManager.PasswordAction>()
     private val inputBackStack = Stack<String>()
 
@@ -31,10 +32,16 @@ class PasswordViewModel : ViewModel() {
         const val KEY_CURRENT_ACTION = "${TAG}_CURRENT_ACTION"
         const val KEY_ACTION_STACK = "${TAG}_ACTION_STACK"
         const val KEY_INPUT_STACK = "${TAG}_INPUT_STACK"
+        const val KEY_NEED_DEC_RESET_CNT = "${TAG}_NEED_DEC_RESET_CNT"
     }
 
-    fun init(action: SecretManager.PasswordAction, bookFile: Array<BookFile>?) {
+    fun init(
+        action: SecretManager.PasswordAction,
+        bookFile: Array<BookFile>?,
+        needDecResetCnt: Boolean
+    ) {
         currentAction.state = action
+        this.needDecResetCnt = needDecResetCnt
         this.bookFiles = bookFile
     }
 
@@ -55,6 +62,7 @@ class PasswordViewModel : ViewModel() {
             KEY_INPUT_STACK,
             inputBackStack.toTypedArray()
         )
+        outState.putBoolean(KEY_NEED_DEC_RESET_CNT, needDecResetCnt)
     }
 
     fun restoreState(bundle: Bundle) {
@@ -141,6 +149,9 @@ class PasswordViewModel : ViewModel() {
         val input = currentInput.value
         if (state.needModifyPassword) {
             SecretManager.setPassword(input)
+            if (needDecResetCnt) {
+                SecretManager.decResetCnt()
+            }
         }
         errorString.value = null
         inputBackStack.push(input)

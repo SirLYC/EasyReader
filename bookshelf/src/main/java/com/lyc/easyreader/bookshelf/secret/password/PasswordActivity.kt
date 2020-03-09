@@ -27,10 +27,12 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
     companion object {
         private const val KEY_ACTION = "KEY_ACTION"
         private const val KEY_BOOK_FILES = "KEY_BOOK_FILES"
+        private const val KEY_DEC_RESET_CNT = "KEY_DEC_RESET_CNT"
 
         fun openPasswordActivity(
             action: SecretManager.ActivityAction,
-            bookFiles: Iterable<BookFile>? = null
+            bookFiles: Iterable<BookFile>? = null,
+            needDecResetCnt: Boolean = false
         ) {
             val passwordAction = when (action) {
                 SecretManager.ActivityAction.ModifyPassword -> SecretManager.PasswordAction.Modify
@@ -57,6 +59,7 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
                 if (bookFiles != null) {
                     putExtra(KEY_BOOK_FILES, bookFiles.toMutableList().toTypedArray())
                 }
+                putExtra(KEY_DEC_RESET_CNT, needDecResetCnt)
             }
             context.startActivity(intent)
         }
@@ -73,7 +76,11 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
             val bookFiles =
                 intent?.getParcelableArrayExtra(KEY_BOOK_FILES)?.mapNotNull { it as? BookFile }
                     ?.toTypedArray()
-            viewModel.init(action, bookFiles)
+            viewModel.init(
+                action,
+                bookFiles,
+                intent?.getBooleanExtra(KEY_DEC_RESET_CNT, false) ?: false
+            )
         } else if (!isCreateFromConfigChange) {
             viewModel.restoreState(savedInstanceState)
         }
