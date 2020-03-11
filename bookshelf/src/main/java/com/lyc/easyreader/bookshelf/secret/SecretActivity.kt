@@ -166,9 +166,7 @@ class SecretActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.Ite
                         secretViewModel.secretBookList,
                         arrayOf(
                             BatchManageOption.DELETE,
-                            BatchManageOption.COLLECT,
-                            BatchManageOption.CANCEL_COLLECT,
-                            BatchManageOption.ADD_TO_SECRET
+                            BatchManageOption.REMOVE_FROM_SECRET
                         )
                     )
                 }

@@ -25,6 +25,7 @@
             android:launchMode="singleTop" />
         <activity
             android:name=".batch.BookBatchManageActivity"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop"
+            android:theme="@style/AppTheme.BookBatchManageActivity" />
     </application>
 </manifest>

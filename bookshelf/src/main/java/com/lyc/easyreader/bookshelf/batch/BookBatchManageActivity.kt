@@ -35,6 +35,9 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
 
         private const val KEY_BOOK_FILES = "KEY_BOOK_FILES"
         private const val KEY_OPTIONS = "KEY_OPTIONS"
+        private const val KEY_DELETE_IF_REMOVE_COLLECT = "KEY_DELETE_IF_REMOVE_COLLECT"
+        private const val KEY_DELETE_IF_REMOVE_SECRET = "KEY_DELETE_IF_REMOVE_SECRET"
+        private const val KEY_DELETE_IF_ADD_SECRET = "KEY_DELETE_IF_ADD_SECRET"
 
         private val VIEW_ID_BAR_DELETE = generateNewViewId()
         private val VIEW_ID_BAR_COLLECT = generateNewViewId()
@@ -46,7 +49,10 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
 
         fun batchManageBooks(
             books: List<BookShelfBook>,
-            options: Array<BatchManageOption> = BatchManageOption.values()
+            options: Array<BatchManageOption> = BatchManageOption.values(),
+            deleteIfRemoveCollect: Boolean = false,
+            deleteIfRemoveSecret: Boolean = true,
+            deleteIfAddSecret: Boolean = true
         ) {
             if (books.isEmpty()) {
                 return
@@ -57,6 +63,9 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 putExtra(KEY_BOOK_FILES, ArrayList(books))
                 putExtra(KEY_OPTIONS, options.map { it.name }.toTypedArray())
+                putExtra(KEY_DELETE_IF_REMOVE_COLLECT, deleteIfRemoveCollect)
+                putExtra(KEY_DELETE_IF_REMOVE_SECRET, deleteIfRemoveSecret)
+                putExtra(KEY_DELETE_IF_ADD_SECRET, deleteIfAddSecret)
             }
             context.startActivity(intent)
         }
@@ -73,6 +82,8 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
     private var optionAddToSecretIdx = -1
     private var optionRemoveFromSecretIdx = -1
 
+    private val pendingRemoveSet = hashSetOf<String>()
+
     private val optionButtonIdxs = hashSetOf<Int>()
 
     override fun beforeBaseOnCreate(savedInstanceState: Bundle?) {
@@ -86,6 +97,12 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
         intent?.getParcelableArrayListExtra<BookFile>(KEY_BOOK_FILES)?.let {
             viewModel.list.addAll(it)
         }
+        intent?.getBooleanExtra(KEY_DELETE_IF_REMOVE_COLLECT, viewModel.deleteIfRemoveCollect)
+            ?.let { viewModel.deleteIfRemoveCollect = it }
+        intent?.getBooleanExtra(KEY_DELETE_IF_REMOVE_SECRET, viewModel.deleteIfRemoveSecret)
+            ?.let { viewModel.deleteIfRemoveSecret = it }
+        intent?.getBooleanExtra(KEY_DELETE_IF_ADD_SECRET, viewModel.deleteIfAddSecret)
+            ?.let { viewModel.deleteIfAddSecret = it }
 
         if (viewModel.list.isEmpty()) {
             finish()
@@ -207,6 +224,10 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
     override fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (requestCode == REQUEST_CODE_SECRET && resultCode == Activity.RESULT_OK) {
             adapter?.uncheckAll()
+            viewModel.list.removeAll { it.id in pendingRemoveSet }
+            if (viewModel.list.isEmpty()) {
+                finish()
+            }
             return true
         }
         return false
@@ -250,16 +271,22 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
         if (viewModel.checkedIds.isEmpty()) {
             return
         }
-        viewModel.changeCheckIdsCollect(true)
-        adapter?.uncheckAll()
+        if (viewModel.changeCheckIdsCollect(true)) {
+            finish()
+        } else {
+            adapter?.uncheckAll()
+        }
     }
 
     private fun handleCancelCollectClick() {
         if (viewModel.checkedIds.isEmpty()) {
             return
         }
-        viewModel.changeCheckIdsCollect(false)
-        adapter?.uncheckAll()
+        if (viewModel.changeCheckIdsCollect(false)) {
+            finish()
+        } else {
+            adapter?.uncheckAll()
+        }
     }
 
     private fun handleAddToSecretClick() {
@@ -274,6 +301,15 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
             )
         ) {
             adapter?.uncheckAll()
+            if (viewModel.deleteIfAddSecret) {
+                viewModel.list.removeAll { it.id in set }
+                if (viewModel.list.isEmpty()) {
+                    finish()
+                }
+            }
+        } else {
+            pendingRemoveSet.clear()
+            pendingRemoveSet.addAll(set)
         }
     }
 
@@ -281,8 +317,11 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
         if (viewModel.checkedIds.isEmpty()) {
             return
         }
-        viewModel.removeCheckedIdsFromSecret()
-        adapter?.uncheckAll()
+        if (viewModel.removeCheckedIdsFromSecret()) {
+            finish()
+        } else {
+            adapter?.uncheckAll()
+        }
     }
 
     override fun onItemCheckChange(position: Int, check: Boolean) {

@@ -12,4 +12,15 @@
         <item name="android:textColor">@color/colorPrimaryText</item>
         <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
     </style>
+
+    <style name="BookBatchManageActivityAnim">
+        <item name="android:activityCloseEnterAnimation">@anim/book_batch_manager_last_anim</item>
+        <item name="android:activityCloseExitAnimation">@anim/book_batch_manager_exit_anim</item>
+        <item name="android:activityOpenEnterAnimation">@anim/book_batch_manager_enter_anim</item>
+        <item name="android:activityOpenExitAnimation">@anim/book_batch_manager_last_anim</item>
+    </style>
+
+    <style name="AppTheme.BookBatchManageActivity" parent="AppTheme">
+        <item name="android:windowAnimationStyle">@style/BookBatchManageActivityAnim</item>
+    </style>
 </resources>

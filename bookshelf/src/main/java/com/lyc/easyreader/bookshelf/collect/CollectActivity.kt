@@ -171,7 +171,8 @@ class CollectActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.It
                             BatchManageOption.DELETE,
                             BatchManageOption.CANCEL_COLLECT,
                             BatchManageOption.ADD_TO_SECRET
-                        )
+                        ),
+                        deleteIfRemoveCollect = true
                     )
                 }
                 shareId -> {
