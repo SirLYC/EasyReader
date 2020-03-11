@@ -29,8 +29,6 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
     val list = ObservableList(arrayListOf<BookShelfBook>())
     var firstLoadFinish = false
         private set
-    val editModeLiveData = NonNullLiveData(false)
-    val checkedIds = arrayListOf<String>()
     var afterDataUpdate: (() -> Unit)? = null
 
     init {
@@ -45,11 +43,6 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
         refreshList()
     }
 
-    fun getCheckItems(): List<BookShelfBook> {
-        val set = checkedIds.toSet()
-        return list.filter { set.contains(it.id) }
-    }
-
     @MainThread
     fun refreshList(fromCallback: Boolean = false) {
         if (isLoadingLiveData.value) {
@@ -62,17 +55,8 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
             val shelfBooks = BookShelfOpenHelper.instance.loadBookShelfBookList()
             val diffResultRef = AtomicReference<DiffUtil.DiffResult>(null)
             val hasChange = AtomicBoolean(true)
-            val newBookIds = shelfBooks.map { it.id }.toSet()
             val mainTask = Runnable {
                 val diffResult: DiffUtil.DiffResult? = diffResultRef.get()
-                checkedIds.iterator().let {
-                    while (it.hasNext()) {
-                        val id = it.next()
-                        if (!newBookIds.contains(id)) {
-                            it.remove()
-                        }
-                    }
-                }
                 if (diffResult == null) {
                     if (hasChange.get()) {
                         list.replaceAll(shelfBooks)
