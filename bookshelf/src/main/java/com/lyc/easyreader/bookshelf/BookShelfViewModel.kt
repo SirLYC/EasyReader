@@ -206,4 +206,10 @@ class BookShelfViewModel : ViewModel(), IBookManager.IBookChangeListener,
             refreshList(true)
         }
     }
+
+    override fun onBookBatchChange() {
+        handler.post {
+            refreshList(true)
+        }
+    }
 }

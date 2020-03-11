@@ -31,6 +31,8 @@ import com.lyc.easyreader.base.utils.statusBarBlackText
 import com.lyc.easyreader.bookshelf.BookManager
 import com.lyc.easyreader.bookshelf.R
 import com.lyc.easyreader.bookshelf.RenameDialog
+import com.lyc.easyreader.bookshelf.batch.BatchManageOption
+import com.lyc.easyreader.bookshelf.batch.BookBatchManageActivity
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.secret.settings.SecretSettingsActivity
 
@@ -127,6 +129,7 @@ class SecretActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.Ite
         val secreteId = 1
         val renameId = 5
         val secretId = 11
+        val batchId = 15
         val shareId = 18
 
         menu.addItem(
@@ -138,6 +141,7 @@ class SecretActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.Ite
             "重命名"
         )
         menu.addItem(secretId, "移除私密空间")
+        menu.addItem(batchId, "批量管理")
         menu.addItem(
             shareId,
             "分享"
@@ -156,6 +160,17 @@ class SecretActivity : BaseActivity(), View.OnClickListener, ReactiveAdapter.Ite
                 }
                 secretId -> {
                     BookManager.instance.removeBooksFromSecret(listOf(data))
+                }
+                batchId -> {
+                    BookBatchManageActivity.batchManageBooks(
+                        secretViewModel.secretBookList,
+                        arrayOf(
+                            BatchManageOption.DELETE,
+                            BatchManageOption.COLLECT,
+                            BatchManageOption.CANCEL_COLLECT,
+                            BatchManageOption.ADD_TO_SECRET
+                        )
+                    )
                 }
                 shareId -> {
                     BookManager.instance.shareBookFile(data)

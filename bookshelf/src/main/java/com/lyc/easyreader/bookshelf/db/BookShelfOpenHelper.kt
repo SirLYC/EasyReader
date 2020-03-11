@@ -297,9 +297,9 @@ class BookShelfOpenHelper private constructor() :
                         )
                         list.add(
                             BookShelfBook(
-                                if (it.isNull(recordOffset)) null else it.getString(
+                                bookFile, if (it.isNull(recordOffset)) null else it.getString(
                                     recordOffset
-                                ), it.getShort(recordOffset + 1).toInt() != 0, bookFile
+                                ), it.getShort(recordOffset + 1).toInt() != 0
                             )
                         )
                     } while (it.moveToNext())
@@ -341,9 +341,9 @@ class BookShelfOpenHelper private constructor() :
                         )
                         list.add(
                             BookShelfBook(
-                                if (it.isNull(recordOffset)) null else it.getString(
+                                bookFile, if (it.isNull(recordOffset)) null else it.getString(
                                     recordOffset
-                                ), true, bookFile
+                                ), true
                             )
                         )
                     } while (it.moveToNext())
@@ -362,6 +362,38 @@ class BookShelfOpenHelper private constructor() :
             return null
         }
         return daoSession.bookCollectDao.load(bookFile.id)
+    }
+
+    fun batchUpdateBookCollect(
+        ids: Iterable<String>,
+        collect: Boolean,
+        async: Boolean = true,
+        callback: () -> Unit = {}
+    ) {
+        val time = System.currentTimeMillis()
+        val command = Runnable {
+            if (collect) {
+                daoSession.bookCollectDao.insertOrReplaceInTx(ids.map {
+                    BookCollect(
+                        it,
+                        true,
+                        time
+                    )
+                })
+            } else {
+                daoSession.runInTx {
+                    ids.forEach { id ->
+                        writableDatabase.execSQL("update ${BookCollectDao.TABLENAME} set ${BookCollectDao.Properties.Collected.columnName}=0 where ${BookCollectDao.Properties.BookId.columnName}=\"${id}\"")
+                    }
+                }
+            }
+            callback()
+        }
+        if (async) {
+            dbRunner.asyncRun(command)
+        } else {
+            dbRunner.awaitRun(command)
+        }
     }
 
     fun updateBookCollect(

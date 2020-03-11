@@ -40,6 +40,8 @@ import com.lyc.easyreader.base.ui.widget.ReaderPopupMenu
 import com.lyc.easyreader.base.ui.widget.SimpleToolbar
 import com.lyc.easyreader.base.utils.*
 import com.lyc.easyreader.base.utils.rv.ReactiveAdapter
+import com.lyc.easyreader.bookshelf.batch.BatchManageOption
+import com.lyc.easyreader.bookshelf.batch.BookBatchManageActivity
 import com.lyc.easyreader.bookshelf.collect.CollectActivity
 import com.lyc.easyreader.bookshelf.reader.ReaderActivity
 import com.lyc.easyreader.bookshelf.scan.BookScanActivity
@@ -301,11 +303,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                         val secretId = dialog.addItem("私密空间", R.drawable.ic_package)
                         val importFileId = dialog.addItem("导入本地书籍", R.drawable.ic_book_24dp)
                         val scanDirId = dialog.addItem("扫描书籍", R.drawable.ic_folder_open_24dp)
-                        val batchId = if (viewModel.list.isNotEmpty()) {
-                            dialog.addItem("批量管理", R.drawable.ic_format_list_bulleted_24dp)
-                        } else {
-                            -1
-                        }
                         val settingId = dialog.addItem("设置", R.drawable.ic_settings_24dp)
                         dialog.show()
                         dialog.itemClickListener = { id, _ ->
@@ -315,11 +312,6 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                                 scanDirId -> performDirSearch()
                                 secretId -> {
                                     PasswordActivity.openPasswordActivity(SecretManager.ActivityAction.OpenSecretPage)
-                                }
-                                batchId -> {
-                                    if (!viewModel.isLoadingLiveData.value) {
-                                        setEditMode(true)
-                                    }
                                 }
                                 settingId -> {
                                     getSingleApi<ISettingService>()?.openSettingActivity()
@@ -540,10 +532,12 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                 )
             }
             menu.addItem(secretId, "加入私密空间")
-            menu.addItem(
-                batchId,
-                "批量管理"
-            )
+            if (viewModel.list.isNotEmpty()) {
+                menu.addItem(
+                    batchId,
+                    "批量管理"
+                )
+            }
             menu.addItem(
                 shareId,
                 "分享"
@@ -578,8 +572,15 @@ class BookShelfFragment : AbstractMainTabFragment(), View.OnClickListener,
                         }
                     }
                     batchId -> {
-                        setEditMode(true)
-                        adapter?.checkPosition(position)
+                        BookBatchManageActivity.batchManageBooks(
+                            viewModel.list,
+                            arrayOf(
+                                BatchManageOption.DELETE,
+                                BatchManageOption.COLLECT,
+                                BatchManageOption.CANCEL_COLLECT,
+                                BatchManageOption.ADD_TO_SECRET
+                            )
+                        )
                     }
                     shareId -> {
                         BookManager.instance.shareBookFile(data)

@@ -19,6 +19,8 @@ interface IBookManager {
 
     fun updateBookCollect(id: String, collect: Boolean, async: Boolean = true)
 
+    fun batchUpdateBookCollect(ids: Iterable<String>, collect: Boolean, async: Boolean = true)
+
     fun addBookChangeListener(listener: IBookChangeListener)
 
     fun removeBookChangeListener(listener: IBookChangeListener)
@@ -38,6 +40,8 @@ interface IBookManager {
         fun onSecretBooksChanged() = Unit
 
         fun onBookDeleted() = Unit
+
+        fun onBookBatchChange() = Unit
 
         fun onBookCollectChange(id: String, collect: Boolean) = Unit
 

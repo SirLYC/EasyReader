@@ -65,4 +65,8 @@ class SecretViewModel : ViewModel(), IBookManager.IBookChangeListener,
     override fun onBookInfoUpdate() {
         handler.post { refreshList() }
     }
+
+    override fun onBookBatchChange() {
+        handler.post { refreshList() }
+    }
 }

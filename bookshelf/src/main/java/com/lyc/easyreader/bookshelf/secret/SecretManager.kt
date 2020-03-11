@@ -42,11 +42,16 @@ object SecretManager : ISecretManager {
         }
     }
 
-    fun addBooksToSecret(bookFiles: Iterable<BookFile>, async: Boolean = true) {
-        if (hasPassword()) {
+    /**
+     * @return [hasPassword]
+     */
+    fun addBooksToSecret(bookFiles: Iterable<BookFile>, async: Boolean = true): Boolean {
+        return if (hasPassword()) {
             BookManager.instance.addBooksToSecret(bookFiles)
+            true
         } else {
             PasswordActivity.openPasswordActivity(ActivityAction.SetOrImportBookFile, bookFiles)
+            false
         }
     }
 

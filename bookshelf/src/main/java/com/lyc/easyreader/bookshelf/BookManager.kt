@@ -206,6 +206,15 @@ class BookManager private constructor() : IBookManager {
 
     }
 
+    override fun batchUpdateBookCollect(ids: Iterable<String>, collect: Boolean, async: Boolean) {
+        BookShelfOpenHelper.instance.batchUpdateBookCollect(ids, collect, async) {
+            eventHub.getEventListeners().forEach {
+                it.onBookBatchChange()
+                ReaderToast.showToast(if (collect) "已收藏" else "已取消收藏")
+            }
+        }
+    }
+
     override fun updateBookCollect(id: String, collect: Boolean, async: Boolean) {
         BookShelfOpenHelper.instance.updateBookCollect(id, collect, async) {
             eventHub.getEventListeners().forEach {

@@ -5,7 +5,8 @@ import com.lyc.easyreader.base.arch.NonNullLiveData
 /**
  * Created by Liu Yuchuan on 2020/1/20.
  */
-class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableList<T>(),
+class ObservableList<T>(private val realList: MutableList<T> = arrayListOf()) :
+    AbstractMutableList<T>(),
     ListUpdateCallbackExt {
 
     val sizeLiveData = NonNullLiveData(realList.size)
