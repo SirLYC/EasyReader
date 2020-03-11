@@ -1,5 +1,6 @@
 package com.lyc.easyreader.bookshelf.secret
 
+import android.app.Activity
 import android.os.SystemClock
 import androidx.annotation.IntDef
 import com.lyc.appinject.CreateMethod
@@ -45,12 +46,34 @@ object SecretManager : ISecretManager {
     /**
      * @return [hasPassword]
      */
-    fun addBooksToSecret(bookFiles: Iterable<BookFile>, async: Boolean = true): Boolean {
+    fun addBooksToSecret(bookFiles: Iterable<BookFile>): Boolean {
         return if (hasPassword()) {
             BookManager.instance.addBooksToSecret(bookFiles)
             true
         } else {
             PasswordActivity.openPasswordActivity(ActivityAction.SetOrImportBookFile, bookFiles)
+            false
+        }
+    }
+
+    /**
+     * @return [hasPassword]
+     */
+    fun addBooksToSecretForResult(
+        bookFiles: Iterable<BookFile>,
+        activity: Activity,
+        requestCode: Int
+    ): Boolean {
+        return if (hasPassword()) {
+            BookManager.instance.addBooksToSecret(bookFiles)
+            true
+        } else {
+            PasswordActivity.openPasswordActivity(
+                ActivityAction.SetOrImportBookFile,
+                bookFiles,
+                activity = activity,
+                requestCode = requestCode
+            )
             false
         }
     }

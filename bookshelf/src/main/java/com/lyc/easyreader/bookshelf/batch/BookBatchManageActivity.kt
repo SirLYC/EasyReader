@@ -1,5 +1,6 @@
 package com.lyc.easyreader.bookshelf.batch
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
@@ -40,6 +41,8 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
         private val VIEW_ID_BAR_CANCEL_COLLECT = generateNewViewId()
         private val VIEW_ID_BAR_ADD_TO_SECRET = generateNewViewId()
         private val VIEW_ID_BAR_REMOVE_FROM_SECRET = generateNewViewId()
+
+        private val REQUEST_CODE_SECRET = generateNewRequestCode()
 
         fun batchManageBooks(
             books: List<BookShelfBook>,
@@ -201,6 +204,14 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
         applyCheckCountChange()
     }
 
+    override fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == REQUEST_CODE_SECRET && resultCode == Activity.RESULT_OK) {
+            adapter?.uncheckAll()
+            return true
+        }
+        return false
+    }
+
     override fun onResume() {
         window.statusBarBlackText(true)
         super.onResume()
@@ -256,7 +267,12 @@ class BookBatchManageActivity : BaseActivity(), View.OnClickListener,
             return
         }
         val set = viewModel.checkedIds.toSet()
-        if (SecretManager.addBooksToSecret(viewModel.list.filter { set.contains(it.id) })) {
+        if (SecretManager.addBooksToSecretForResult(
+                viewModel.list.filter { set.contains(it.id) },
+                activity = this,
+                requestCode = REQUEST_CODE_SECRET
+            )
+        ) {
             adapter?.uncheckAll()
         }
     }

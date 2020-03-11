@@ -1,5 +1,6 @@
 package com.lyc.easyreader.bookshelf.secret.password
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -32,7 +33,9 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
         fun openPasswordActivity(
             action: SecretManager.ActivityAction,
             bookFiles: Iterable<BookFile>? = null,
-            needDecResetCnt: Boolean = false
+            needDecResetCnt: Boolean = false,
+            activity: Activity? = null,
+            requestCode: Int = -1
         ) {
             val passwordAction = when (action) {
                 SecretManager.ActivityAction.ModifyPassword -> SecretManager.PasswordAction.Modify
@@ -52,16 +55,21 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
                 SecretManager.ActivityAction.SetOrImportBookFile -> SecretManager.PasswordAction.Set
             }
 
-            val context = ReaderApplication.appContext()
+            val context = activity ?: ReaderApplication.appContext()
             val intent = Intent(context, PasswordActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 putExtra(KEY_ACTION, SecretManager.actionToInt(passwordAction))
                 if (bookFiles != null) {
                     putExtra(KEY_BOOK_FILES, bookFiles.toMutableList().toTypedArray())
                 }
                 putExtra(KEY_DEC_RESET_CNT, needDecResetCnt)
             }
-            context.startActivity(intent)
+
+            if (activity != null && requestCode != -1) {
+                activity.startActivityForResult(intent, requestCode)
+            } else {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
         }
     }
 
@@ -139,7 +147,8 @@ class PasswordActivity : BaseActivity(), View.OnClickListener {
 
                 SecretManager.PasswordAction.ActionImportOrOpen -> {
                     if (viewModel.importBookToSecret()) {
-                        onBackPressed()
+                        setResult(Activity.RESULT_OK)
+                        finish()
                     } else {
                         ReaderApplication.openActivity(SecretActivity::class)
                         SecretManager.updateSecretAccessTime()
