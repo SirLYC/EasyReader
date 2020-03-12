@@ -203,7 +203,13 @@ class BookScanActivity : BaseActivity(), View.OnClickListener,
 
     override fun onResume() {
         super.onResume()
+        viewModel.changeActivityVisibility(true)
         window.statusBarBlackText(true)
+    }
+
+    override fun onStop() {
+        viewModel.changeActivityVisibility(false)
+        super.onStop()
     }
 
     override fun onDestroy() {

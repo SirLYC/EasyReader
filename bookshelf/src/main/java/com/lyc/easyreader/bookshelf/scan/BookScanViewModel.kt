@@ -26,11 +26,35 @@ class BookScanViewModel : ViewModel() {
     private val idle = AtomicBoolean(true)
     val list = ObservableList<Any>(arrayListOf())
     val selectController = PositionSelectController()
+    var activityVisible = false
+    @Volatile
+    var alive = false
+    var pendingToast: String? = null
 
     companion object {
         const val KEY_URI = "KEY_URI"
 
         const val TAG = "BookScanViewModel"
+    }
+
+    fun changeActivityVisibility(visible: Boolean) {
+        if (activityVisible != visible) {
+            activityVisible = visible
+            if (visible) {
+                pendingToast?.let {
+                    ReaderHeadsUp.showHeadsUp(it)
+                    pendingToast = null
+                }
+            }
+        }
+    }
+
+    private fun showToastIfVisible(toast: String) {
+        if (activityVisible) {
+            ReaderHeadsUp.showHeadsUp(toast)
+        } else {
+            pendingToast = toast
+        }
     }
 
     fun startScan() {
@@ -56,6 +80,9 @@ class BookScanViewModel : ViewModel() {
         val filters = ScanSettings.filterSet.value.toSet()
         val depth = ScanSettings.scanDepth.value.depth
         ExecutorFactory.CPU_BOUND_EXECUTOR.execute {
+            if (!alive) {
+                return@execute
+            }
             val lock = ReentrantLock()
             val tmpList = LinkedList<BookScanItem>()
             treeDocumentFile(uriLocal).forEach({ file ->
@@ -86,15 +113,17 @@ class BookScanViewModel : ViewModel() {
                 notifyAppendList(tmpList)
             }
             ExecutorFactory.MAIN_EXECUTOR.execute {
-                if (list.isEmpty()) {
-                    ReaderHeadsUp.showHeadsUp("没有扫描到相关文件")
-                    list.add(EmptyItem)
-                } else {
-                    ReaderHeadsUp.showHeadsUp("扫描到${list.size}本书，可多选导入")
+                if (alive) {
+                    if (list.isEmpty()) {
+                        showToastIfVisible("没有扫描到相关文件")
+                        list.add(EmptyItem)
+                    } else {
+                        showToastIfVisible("扫描到${list.size}本书，可多选导入")
+                    }
+                    scanFinishLiveData.value = true
+                    scanningLiveData.value = false
+                    LogUtils.d(TAG, "Book scan finished, size=${list.size}")
                 }
-                scanFinishLiveData.value = true
-                scanningLiveData.value = false
-                LogUtils.d(TAG, "Book scan finished, size=${list.size}")
             }
         }
     }
@@ -103,7 +132,9 @@ class BookScanViewModel : ViewModel() {
         val copiedValues = newItems.toArray()
         newItems.clear()
         ExecutorFactory.MAIN_EXECUTOR.execute {
-            list.addAll(copiedValues)
+            if (alive) {
+                list.addAll(copiedValues)
+            }
         }
     }
 
@@ -134,6 +165,7 @@ class BookScanViewModel : ViewModel() {
     }
 
     override fun onCleared() {
+        alive = false
         super.onCleared()
         idle.set(true)
     }
