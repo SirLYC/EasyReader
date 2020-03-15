@@ -48,6 +48,19 @@ android {
             signingConfig signingConfigs.common
         }
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                final buildType = variant.buildType.name
+                //这里修改apk文件名
+                def filename = "${rootProject.name}-${buildType}-${defaultConfig.versionName}-Build${defaultConfig.versionCode}.apk"
+                println("For BuildType ${buildType}:\nOutput filename=${filename}")
+                output.outputFileName = filename
+            }
+        }
+    }
 }
 
 dependencies {
