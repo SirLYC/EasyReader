@@ -2111,7 +2111,7 @@ public class PageLoader implements Handler.Callback {
         for (int i = 0, s = pages.size(); i < s; i++) {
             BookPage firstPage = pages.get(i);
             firstPage.setCharStart(currentOffSet);
-            currentOffSet += firstPage.caulateCharCnt();
+            currentOffSet += firstPage.calculateCharCnt();
             firstPage.setCharEnd(currentOffSet);
         }
 

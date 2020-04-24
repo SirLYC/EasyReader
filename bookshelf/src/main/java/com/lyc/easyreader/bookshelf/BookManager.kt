@@ -313,10 +313,10 @@ class BookManager private constructor() : IBookManager {
                     LogUtils.e(TAG, reason)
                     return false
                 }
-                val randomString = "${SystemClock.elapsedRealtimeNanos()}&${UUID.randomUUID()}"
+                val randomString = "${System.currentTimeMillis()}&${UUID.randomUUID()}"
                 val filename = ".Book_${randomString.getMd5()}"
                 val outputFile = File(outputDir, filename)
-                LogUtils.i(TAG, "Copy file from uri $outputDir to file $outputFile")
+                LogUtils.i(TAG, "Copy file from uri $uri to file $outputFile")
 
                 val bufferSize = if (size < 4 shl 10) {
                     size.toInt()

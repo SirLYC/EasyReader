@@ -234,8 +234,9 @@ class BookShelfOpenHelper private constructor() :
         var success = false
         dbRunner.awaitRun(Runnable {
             try {
-                daoSession.bookFileDao.insert(bookFile)
-                success = true
+                if (daoSession.bookFileDao.insert(bookFile) != -1L) {
+                    success = true
+                }
             } catch (e: SQLiteConstraintException) {
                 // ignore
             }

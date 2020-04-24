@@ -16,7 +16,7 @@ internal class BookPage {
     @JvmField
     var lines: List<String>? = null
 
-    fun caulateCharCnt(): Int {
+    fun calculateCharCnt(): Int {
         if (lines == null) {
             return 0
         }

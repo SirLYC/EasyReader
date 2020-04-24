@@ -35,10 +35,16 @@ class LiveState<T>(initValue: T) {
         liveState.postValue(value)
     }
 
+    /**
+     * 注册对状态变化的观察者
+     */
     fun observeEvent(owner: LifecycleOwner, observer: Observer<in T>) {
         liveEvent.observe(owner, observer)
     }
 
+    /**
+     * 注册对状态的观察者
+     */
     fun observeState(owner: LifecycleOwner, observer: Observer<in T>) {
         liveState.observe(owner, observer)
     }
