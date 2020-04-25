@@ -54,6 +54,8 @@ class BookParser(private val bookFile: BookFile) {
         const val CODE_FILE_TOO_SMALL = -9
 
         const val CODE_CANCEL = -14
+
+        const val USE_OLD_VIRTUAL_SPLIT = false
     }
 
     sealed class ParseChapterResult(
@@ -283,42 +285,151 @@ class BookParser(private val bookFile: BookFile) {
                         )
                         bookStream.seek(0L)
 
-                        // 不需要关闭，因为这个fd最终会被bookStream关掉的
-                        val reader = ByteCountingLineReader(bookStream.fd, charset)
-                        // 下一次需要分章的首个字节偏移
-                        var chapterByteOffset = 0L
-                        var lastLineByteCount: Long
-                        var currentByteCount = 0L
-                        var chapterIndex = 1
+                        val virtualSplitStartTime = SystemClock.elapsedRealtime()
 
-                        while (reader.readLine() != null) {
-                            if (cancelToken.canceld) {
-                                return@use
+                        if (USE_OLD_VIRTUAL_SPLIT) {
+                            // 不需要关闭，因为这个fd最终会被bookStream关掉的
+                            val reader = ByteCountingLineReader(bookStream.fd, charset)
+                            // 下一次需要分章的首个字节偏移
+                            var chapterByteOffset = 0L
+                            var lastLineByteCount: Long
+                            var currentByteCount = 0L
+                            var chapterIndex = 1
+
+                            while (reader.readLine() != null) {
+                                if (cancelToken.canceld) {
+                                    return@use
+                                }
+                                lastLineByteCount = currentByteCount
+                                currentByteCount = reader.byteCount()
+
+                                // 总计读入的内容超过了最大章节，就分一章
+                                if (currentByteCount - chapterByteOffset > MAX_LENGTH_WITH_NO_CHAPTER) {
+                                    val chapter = BookChapter()
+                                    chapter.title = "第${chapterIndex++}章"
+                                    chapter.start = chapterByteOffset
+                                    chapter.end = lastLineByteCount
+                                    chapterByteOffset = lastLineByteCount
+                                    chapters.add(chapter)
+                                }
                             }
-                            lastLineByteCount = currentByteCount
-                            currentByteCount = reader.byteCount()
 
-                            // 总计读入的内容超过了最大章节，就分一章
-                            if (currentByteCount - chapterByteOffset > MAX_LENGTH_WITH_NO_CHAPTER) {
+                            // 最后一章
+                            if (currentByteCount > chapterByteOffset + 1) {
                                 val chapter = BookChapter()
-                                chapter.title = "第${chapterIndex++}章"
+                                chapter.title = "第${chapterIndex}章"
                                 chapter.start = chapterByteOffset
-                                chapter.end = lastLineByteCount
-                                chapterByteOffset = lastLineByteCount
+                                chapter.end = currentByteCount
                                 chapters.add(chapter)
                             }
+                        } else {
+                            val reader = FileInputStream(bookStream.fd).bufferedReader(charset)
+
+                            val buffer = CharArray(CHAR_BUFFER_SIZE)
+                            var len = 0
+                            var currentChapterCharCount = 0
+                            var currentChapterByteCount = 0L
+                            var currentChapterByteOffsetStart = 0L
+
+                            while (reader.read(buffer).also { len = it } != -1) {
+                                if (cancelToken.canceld) {
+                                    return@use
+                                }
+                                if (len <= 0) {
+                                    continue
+                                }
+
+                                val str = String(buffer, 0, len)
+
+                                var endIndex = 0
+                                var startIndex = 0
+                                var skipNext = false
+                                for (i in 0 until len) {
+                                    if (cancelToken.canceld) {
+                                        return@use
+                                    }
+
+                                    if (skipNext) {
+                                        skipNext = false
+                                        continue
+                                    }
+                                    if (str[i] == '\n') {
+                                        if (i + 1 < len && str[i + 1] == '\r') {
+                                            endIndex = i + 2
+                                            skipNext = true
+                                        } else {
+                                            endIndex = i
+                                        }
+
+                                        currentChapterCharCount += endIndex - startIndex
+                                        currentChapterByteCount += str.substring(
+                                            startIndex,
+                                            endIndex
+                                        ).toByteArray(charset).size
+                                        startIndex = endIndex
+                                    } else if (str[i] == '\r') {
+                                        endIndex = i
+                                        currentChapterCharCount += endIndex - startIndex
+                                        currentChapterByteCount += str.substring(
+                                            startIndex,
+                                            endIndex
+                                        ).toByteArray(charset).size
+                                        startIndex = endIndex
+                                    }
+
+                                    if (currentChapterCharCount >= MAX_LENGTH_WITH_NO_CHAPTER) {
+                                        // new chapter
+                                        chapters.add(
+                                            BookChapter(
+                                                null,
+                                                0,
+                                                lastModified,
+                                                bookFile.id,
+                                                bookFile.filename,
+                                                currentChapterByteOffsetStart,
+                                                currentChapterByteOffsetStart + currentChapterByteCount,
+                                                BookChapter.ChapterType.VIRTUAL
+                                            )
+                                        )
+
+                                        currentChapterByteOffsetStart += currentChapterByteCount
+                                        currentChapterByteCount = 0
+                                        currentChapterCharCount = 0
+                                    }
+                                }
+
+                                if (endIndex != len) {
+                                    currentChapterByteCount += str.substring(
+                                        if (endIndex == 0) 0 else endIndex - 1,
+                                        len
+                                    ).toByteArray(charset).size
+                                    currentChapterCharCount += len - endIndex + 1
+                                }
+                            }
+
+                            if (fileLen != currentChapterByteOffsetStart) {
+                                // last chapter
+                                chapters.add(
+                                    BookChapter(
+                                        null,
+                                        0,
+                                        lastModified,
+                                        bookFile.id,
+                                        bookFile.filename,
+                                        currentChapterByteOffsetStart,
+                                        fileLen,
+                                        BookChapter.ChapterType.VIRTUAL
+                                    )
+                                )
+                            }
                         }
 
-                        // 最后一章
-                        if (currentByteCount > chapterByteOffset + 1) {
-                            val chapter = BookChapter()
-                            chapter.title = "第${chapterIndex}章"
-                            chapter.start = chapterByteOffset
-                            chapter.end = currentByteCount
-                            chapters.add(chapter)
-                        }
+                        val costTime = SystemClock.elapsedRealtime() - virtualSplitStartTime
 
-                        LogUtils.d(TAG, "[Virtual chapters] fileLen=${fileLen}")
+                        LogUtils.d(
+                            TAG,
+                            "[Virtual chapters] fileLen=${fileLen}, useTime=${costTime}ms, useOldMethod=$USE_OLD_VIRTUAL_SPLIT"
+                        )
                         chapters.forEachIndexed { index, bookChapter ->
                             bookChapter.order = index
                             bookChapter.lastModified = lastModified
