@@ -28,7 +28,7 @@ class BookScanViewModel : ViewModel() {
     val selectController = PositionSelectController()
     var activityVisible = false
     @Volatile
-    var alive = false
+    var alive = true
     var pendingToast: String? = null
 
     companion object {
