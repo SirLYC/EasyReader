@@ -22,6 +22,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="测试链接跳转主页" />
+
+        <Button
+            android:id="@+id/bt_test_file_scan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="测试文件扫描速度提升" />
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

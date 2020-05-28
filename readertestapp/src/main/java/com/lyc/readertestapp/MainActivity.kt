@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.lyc.readertestapp.testfilescan.TestFileScanActivity
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -18,9 +19,14 @@ class MainActivity : AppCompatActivity() {
             try {
                 intent.data = Uri.parse(edit_test_link.text.toString())
                 startActivity(intent)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Toast.makeText(this, "打开主页失败", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        bt_test_file_scan.setOnClickListener {
+            val intent = Intent(this, TestFileScanActivity::class.java)
+            startActivity(intent)
         }
     }
 }
